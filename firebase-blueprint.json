@@ -1,0 +1,386 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account information and private contact settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "whatsappNumber": { "type": "string", "maxLength": 32 },
+        "facebookUrl": { "type": "string", "maxLength": 512 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "activeRole": { "type": "string", "enum": ["learner", "tutor", "admin"] },
+        "availableRoles": { "type": "array" },
+        "learnerSubtype": { "type": "string", "enum": ["student", "guardian"] },
+        "division": { "type": "string", "maxLength": 64 },
+        "district": { "type": "string", "maxLength": 64 },
+        "upazila": { "type": "string", "maxLength": 64 },
+        "area": { "type": "string", "maxLength": 128 },
+        "phoneVisibility": { "type": "boolean" },
+        "accountStatus": { "type": "string", "enum": ["active", "suspended"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "email", "activeRole", "accountStatus"]
+    },
+    "LearnerProfile": {
+      "title": "LearnerProfile",
+      "description": "Learner or guardian profile preferences and private contact info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "learnerType": { "type": "string", "enum": ["student", "guardian"] },
+        "name": { "type": "string", "maxLength": 128 },
+        "phone": { "type": "string", "maxLength": 32 },
+        "whatsappNumber": { "type": "string", "maxLength": 32 },
+        "facebookUrl": { "type": "string", "maxLength": 512 },
+        "division": { "type": "string", "maxLength": 64 },
+        "district": { "type": "string", "maxLength": 64 },
+        "upazila": { "type": "string", "maxLength": 64 },
+        "area": { "type": "string", "maxLength": 128 },
+        "phoneVisibility": { "type": "boolean" },
+        "profileCompletion": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "learnerType", "district"]
+    },
+    "TutorProfile": {
+      "title": "TutorProfile",
+      "description": "Public educator discovery profile with academic credentials and visibility flags (PII stored in /private/contact)",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "maxLength": 128 },
+        "gender": { "type": "string", "enum": ["Male", "Female"] },
+        "avatar": { "type": "string", "maxLength": 512 },
+        "profilePhotoURL": { "type": "string", "maxLength": 512 },
+        "headline": { "type": "string", "maxLength": 256 },
+        "bio": { "type": "string", "maxLength": 2048 },
+        "experienceSummary": { "type": "string", "maxLength": 1024 },
+        "university": { "type": "string", "maxLength": 256 },
+        "degree": { "type": "string", "maxLength": 128 },
+        "department": { "type": "string", "maxLength": 128 },
+        "academicYear": { "type": "string", "maxLength": 64 },
+        "semester": { "type": "string", "maxLength": 64 },
+        "passingYear": { "type": "string", "maxLength": 16 },
+        "gpa": { "type": "string", "maxLength": 32 },
+        "schoolName": { "type": "string", "maxLength": 256 },
+        "collegeName": { "type": "string", "maxLength": 256 },
+        "sscGpa": { "type": "string", "maxLength": 32 },
+        "hscGpa": { "type": "string", "maxLength": 32 },
+        "achievements": { "type": "array" },
+        "division": { "type": "string", "maxLength": 64 },
+        "district": { "type": "string", "maxLength": 64 },
+        "upazila": { "type": "string", "maxLength": 64 },
+        "preferredAreas": { "type": "array" },
+        "mediums": { "type": "array" },
+        "classes": { "type": "array" },
+        "subjects": { "type": "array" },
+        "tuitionTypes": { "type": "array" },
+        "expectedSalaryMin": { "type": "number" },
+        "expectedSalaryMax": { "type": "number" },
+        "daysPerWeek": { "type": "array" },
+        "experienceYears": { "type": "number" },
+        "verification": { "type": "object" },
+        "badges": { "type": "array" },
+        "rating": { "type": "number" },
+        "reviewCount": { "type": "number" },
+        "completedTuitionsCount": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "whatsappPublic": { "type": "boolean" },
+        "whatsappConsent": { "type": "boolean" },
+        "profileVisibility": { "type": "string", "enum": ["public", "hidden"] },
+        "contactVisibility": { "type": "string", "enum": ["authenticated", "shortlisted_only", "hidden"] },
+        "isPublished": { "type": "boolean" },
+        "availability": { "type": "string", "enum": ["Available Now", "Busy", "Available from Next Month"] },
+        "teachingStyleSummary": { "type": "string", "maxLength": 1024 },
+        "profileCompletion": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "name", "university", "department", "district"]
+    },
+    "TutorPrivateContact": {
+      "title": "TutorPrivateContact",
+      "description": "Isolated tutor WhatsApp and Facebook contact details protected against unauthenticated scraping",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "whatsappNumber": { "type": "string", "maxLength": 32 },
+        "normalizedWhatsappNumber": { "type": "string", "maxLength": 20 },
+        "facebookUrl": { "type": "string", "maxLength": 512 },
+        "whatsappConsent": { "type": "boolean" },
+        "contactVisibility": { "type": "string", "enum": ["authenticated", "shortlisted_only", "hidden"] },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "whatsappConsent", "contactVisibility"]
+    },
+    "TuitionPost": {
+      "title": "TuitionPost",
+      "description": "Public tuition requirement posted by student or guardian",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 256 },
+        "learnerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "learnerName": { "type": "string", "maxLength": 128 },
+        "learnerType": { "type": "string", "enum": ["student", "guardian"] },
+        "studentGender": { "type": "string", "enum": ["Male", "Female"] },
+        "studentSchoolCollege": { "type": "string", "maxLength": 256 },
+        "classGrade": { "type": "string", "maxLength": 64 },
+        "curriculum": { "type": "string", "maxLength": 64 },
+        "subjects": { "type": "array" },
+        "medium": { "type": "string", "maxLength": 64 },
+        "tuitionType": { "type": "string", "maxLength": 64 },
+        "division": { "type": "string", "maxLength": 64 },
+        "district": { "type": "string", "maxLength": 64 },
+        "upazila": { "type": "string", "maxLength": 64 },
+        "area": { "type": "string", "maxLength": 128 },
+        "preferredTutorGender": { "type": "string", "enum": ["Any", "Male", "Female"] },
+        "preferredUniversity": { "type": "string", "maxLength": 128 },
+        "preferredQualifications": { "type": "string", "maxLength": 512 },
+        "daysPerWeek": { "type": "number" },
+        "preferredTime": { "type": "string", "maxLength": 128 },
+        "salaryOfferBDT": { "type": "number" },
+        "isNegotiable": { "type": "boolean" },
+        "startDate": { "type": "string", "maxLength": 32 },
+        "deadline": { "type": "string", "maxLength": 32 },
+        "preferredContactMethod": { "type": "string", "enum": ["WhatsApp", "Phone Call", "Platform Proposal First"] },
+        "specialInstructions": { "type": "string", "maxLength": 1024 },
+        "postedDate": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["open", "paused", "assigned", "closed", "expired"] },
+        "totalApplicants": { "type": "number" },
+        "requirementsDescription": { "type": "string", "maxLength": 2048 },
+        "isFeatured": { "type": "boolean" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "learnerId", "classGrade", "medium", "district", "salaryOfferBDT", "status"]
+    },
+    "TuitionPrivateContact": {
+      "title": "TuitionPrivateContact",
+      "description": "Guardian private WhatsApp and street address unlocked only after shortlisting or invitation",
+      "type": "object",
+      "properties": {
+        "learnerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "whatsappNumber": { "type": "string", "maxLength": 32 },
+        "detailedAddress": { "type": "string", "maxLength": 256 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["learnerId"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Structured tutor proposal for a tuition post with deterministic ID",
+      "type": "object",
+      "properties": {
+        "tuitionPostId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tuitionTitle": { "type": "string", "maxLength": 256 },
+        "learnerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "learnerName": { "type": "string", "maxLength": 128 },
+        "tutorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tutorName": { "type": "string", "maxLength": 128 },
+        "tutorAvatar": { "type": "string", "maxLength": 512 },
+        "tutorUniversity": { "type": "string", "maxLength": 128 },
+        "tutorDepartment": { "type": "string", "maxLength": 128 },
+        "tutorAcademicYear": { "type": "string", "maxLength": 64 },
+        "tutorRating": { "type": "number" },
+        "tutorExperienceYears": { "type": "number" },
+        "tutorWhatsApp": { "type": "string", "maxLength": 32 },
+        "tutorFacebookUrl": { "type": "string", "maxLength": 512 },
+        "guardianWhatsApp": { "type": "string", "maxLength": 32 },
+        "proposedSalaryBDT": { "type": "number" },
+        "introduction": { "type": "string", "maxLength": 1024 },
+        "coverLetter": { "type": "string", "maxLength": 2048 },
+        "experienceSummary": { "type": "string", "maxLength": 1024 },
+        "suitabilityReason": { "type": "string", "maxLength": 1024 },
+        "availableSchedule": { "type": "string", "maxLength": 256 },
+        "additionalQualifications": { "type": "string", "maxLength": 512 },
+        "appliedAt": { "type": "string", "maxLength": 32 },
+        "status": { "type": "string", "enum": ["pending", "shortlisted", "invited", "accepted", "rejected", "withdrawn"] },
+        "demoDate": { "type": "string", "maxLength": 64 },
+        "feedbackNote": { "type": "string", "maxLength": 1024 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["tuitionPostId", "tutorId", "learnerId", "proposedSalaryBDT", "status", "coverLetter"]
+    },
+    "Invitation": {
+      "title": "Invitation",
+      "description": "Direct tuition invitation from guardian to tutor",
+      "type": "object",
+      "properties": {
+        "learnerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "learnerName": { "type": "string", "maxLength": 128 },
+        "learnerWhatsApp": { "type": "string", "maxLength": 32 },
+        "tutorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tutorName": { "type": "string", "maxLength": 128 },
+        "tutorWhatsApp": { "type": "string", "maxLength": 32 },
+        "tutorFacebookUrl": { "type": "string", "maxLength": 512 },
+        "tuitionPostId": { "type": "string", "maxLength": 128 },
+        "tuitionTitle": { "type": "string", "maxLength": 256 },
+        "classGrade": { "type": "string", "maxLength": 64 },
+        "subjects": { "type": "array" },
+        "offerSalaryBDT": { "type": "number" },
+        "offerBDT": { "type": "number" },
+        "preferredSchedule": { "type": "string", "maxLength": 256 },
+        "message": { "type": "string", "maxLength": 2048 },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] },
+        "sentAt": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["learnerId", "tutorId", "offerSalaryBDT", "status", "message"]
+    },
+    "TutorFavourite": {
+      "title": "TutorFavourite",
+      "description": "Learner saved tutor shortlist bookmark",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tutorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "tutorId"]
+    },
+    "SavedTuition": {
+      "title": "SavedTuition",
+      "description": "Tutor saved tuition opportunity bookmark",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tuitionPostId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "tuitionPostId"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "User notification event",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "maxLength": 128 },
+        "message": { "type": "string", "maxLength": 512 },
+        "time": { "type": "string", "maxLength": 64 },
+        "read": { "type": "boolean" },
+        "type": { "type": "string", "enum": ["application", "invitation", "verification", "tuition", "system"] },
+        "actionView": { "type": "string", "maxLength": 64 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "senderId", "title", "message", "read", "type"]
+    },
+    "VerificationRequest": {
+      "title": "VerificationRequest",
+      "description": "Tutor credential verification submission for admin review",
+      "type": "object",
+      "properties": {
+        "tutorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "tutorName": { "type": "string", "maxLength": 128 },
+        "university": { "type": "string", "maxLength": 256 },
+        "verificationType": { "type": "string", "enum": ["identity", "institution", "qualification"] },
+        "documentName": { "type": "string", "maxLength": 256 },
+        "documentUrl": { "type": "string", "maxLength": 512 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "rejectionReason": { "type": "string", "maxLength": 512 },
+        "submittedAt": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["tutorId", "verificationType", "documentName", "status"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Platform safety and moderation report",
+      "type": "object",
+      "properties": {
+        "reportedItemType": { "type": "string", "enum": ["tutor", "tuition", "user"] },
+        "targetTitle": { "type": "string", "maxLength": 256 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "reportedBy": { "type": "string", "maxLength": 128 },
+        "reportedById": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reason": { "type": "string", "maxLength": 1024 },
+        "status": { "type": "string", "enum": ["pending", "investigating", "resolved"] },
+        "submittedAt": { "type": "string", "maxLength": 32 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "resolvedAt": { "type": "string" }
+      },
+      "required": ["reportedItemType", "targetTitle", "reportedById", "reason", "status"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Trusted platform administrator record",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Root user account records and private contact fields"
+    },
+    "/learnerProfiles/{profileId}": {
+      "schema": { "$ref": "#/entities/LearnerProfile" },
+      "description": "Learner and guardian profiles"
+    },
+    "/tutorProfiles/{profileId}": {
+      "schema": { "$ref": "#/entities/TutorProfile" },
+      "description": "Public educator discovery profiles"
+    },
+    "/tutorProfiles/{profileId}/private/contact": {
+      "schema": { "$ref": "#/entities/TutorPrivateContact" },
+      "description": "Isolated tutor WhatsApp and Facebook contact details"
+    },
+    "/tuitionPosts/{postId}": {
+      "schema": { "$ref": "#/entities/TuitionPost" },
+      "description": "Public tuition job board listings"
+    },
+    "/tuitionPosts/{postId}/private/contact": {
+      "schema": { "$ref": "#/entities/TuitionPrivateContact" },
+      "description": "Private guardian WhatsApp and detailed street address"
+    },
+    "/applications/{applicationId}": {
+      "schema": { "$ref": "#/entities/Application" },
+      "description": "Deterministic tutor applications and proposals"
+    },
+    "/invitations/{invitationId}": {
+      "schema": { "$ref": "#/entities/Invitation" },
+      "description": "Direct hire invitations sent to tutors"
+    },
+    "/tutorFavourites/{favId}": {
+      "schema": { "$ref": "#/entities/TutorFavourite" },
+      "description": "Saved tutor bookmarks"
+    },
+    "/savedTuitions/{saveId}": {
+      "schema": { "$ref": "#/entities/SavedTuition" },
+      "description": "Saved tuition opportunity bookmarks"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User notification events"
+    },
+    "/verificationRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/VerificationRequest" },
+      "description": "Tutor verification audit queue"
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Safety moderation reports"
+    },
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/Admin" },
+      "description": "Trusted platform admins"
+    }
+  }
+}

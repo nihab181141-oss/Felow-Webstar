@@ -1,0 +1,6 @@
+{
+  "name": "Tutorly - Bangladesh EdTech Marketplace",
+  "description": "Two-sided EdTech tuition and learning marketplace connecting students, guardians, verified tutors, and educational institutions across Bangladesh.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

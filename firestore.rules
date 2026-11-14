@@ -1,0 +1,801 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Security Primitives
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'nihabalmahjabin@gmail.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap: no existing() or diff() inside helpers)
+    function isValidAdmin(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() <= 128 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'activeRole', 'accountStatus', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'name', 'email', 'phone', 'whatsappNumber', 'facebookUrl', 'photoURL',
+          'activeRole', 'availableRoles', 'learnerSubtype', 'division', 'district',
+          'upazila', 'area', 'phoneVisibility', 'accountStatus', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.name is string && data.name.size() <= 128 &&
+        data.email is string && data.email.size() <= 128 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+        (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 32)) &&
+        (!('facebookUrl' in data) || (data.facebookUrl is string && data.facebookUrl.size() <= 512)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512)) &&
+        data.activeRole in ['learner', 'tutor', 'admin'] &&
+        (!('availableRoles' in data) || (data.availableRoles is list && data.availableRoles.size() >= 1 && data.availableRoles.size() <= 3 && data.availableRoles[0] is string)) &&
+        (!('learnerSubtype' in data) || data.learnerSubtype in ['student', 'guardian']) &&
+        (!('division' in data) || (data.division is string && data.division.size() <= 64)) &&
+        (!('district' in data) || (data.district is string && data.district.size() <= 64)) &&
+        (!('upazila' in data) || (data.upazila is string && data.upazila.size() <= 64)) &&
+        (!('area' in data) || (data.area is string && data.area.size() <= 128)) &&
+        (!('phoneVisibility' in data) || data.phoneVisibility is bool) &&
+        data.accountStatus in ['active', 'suspended'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidLearnerProfile(data) {
+      return data.keys().hasAll(['uid', 'learnerType', 'district', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'learnerType', 'name', 'phone', 'whatsappNumber', 'facebookUrl',
+          'division', 'district', 'upazila', 'area', 'phoneVisibility', 'profileCompletion',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.learnerType in ['student', 'guardian'] &&
+        (!('name' in data) || (data.name is string && data.name.size() <= 128)) &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 32)) &&
+        (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 32)) &&
+        (!('facebookUrl' in data) || (data.facebookUrl is string && data.facebookUrl.size() <= 512)) &&
+        (!('division' in data) || (data.division is string && data.division.size() <= 64)) &&
+        data.district is string && data.district.size() <= 64 &&
+        (!('upazila' in data) || (data.upazila is string && data.upazila.size() <= 64)) &&
+        (!('area' in data) || (data.area is string && data.area.size() <= 128)) &&
+        (!('phoneVisibility' in data) || data.phoneVisibility is bool) &&
+        (!('profileCompletion' in data) || (data.profileCompletion is number && data.profileCompletion >= 0 && data.profileCompletion <= 100)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTutorProfile(data) {
+      return data.keys().hasAll(['uid', 'name', 'university', 'department', 'district', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'name', 'gender', 'avatar', 'profilePhotoURL', 'headline', 'bio', 'experienceSummary',
+          'university', 'degree', 'department', 'academicYear', 'semester', 'passingYear', 'gpa',
+          'schoolName', 'collegeName', 'sscGpa', 'hscGpa', 'achievements', 'division', 'district',
+          'upazila', 'preferredAreas', 'mediums', 'classes', 'subjects', 'tuitionTypes',
+          'expectedSalaryMin', 'expectedSalaryMax', 'daysPerWeek', 'experienceYears',
+          'verification', 'badges', 'rating', 'reviewCount', 'completedTuitionsCount',
+          'isFeatured', 'whatsappPublic', 'whatsappConsent', 'profileVisibility',
+          'contactVisibility', 'isPublished', 'availability', 'teachingStyleSummary',
+          'profileCompletion', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        data.name is string && data.name.size() <= 128 &&
+        (!('gender' in data) || data.gender in ['Male', 'Female']) &&
+        (!('avatar' in data) || (data.avatar is string && data.avatar.size() <= 512)) &&
+        (!('profilePhotoURL' in data) || (data.profilePhotoURL is string && data.profilePhotoURL.size() <= 512)) &&
+        (!('headline' in data) || (data.headline is string && data.headline.size() <= 256)) &&
+        (!('bio' in data) || (data.bio is string && data.bio.size() <= 2048)) &&
+        (!('experienceSummary' in data) || (data.experienceSummary is string && data.experienceSummary.size() <= 1024)) &&
+        data.university is string && data.university.size() <= 256 &&
+        (!('degree' in data) || (data.degree is string && data.degree.size() <= 128)) &&
+        data.department is string && data.department.size() <= 128 &&
+        (!('academicYear' in data) || (data.academicYear is string && data.academicYear.size() <= 64)) &&
+        (!('semester' in data) || (data.semester is string && data.semester.size() <= 64)) &&
+        (!('passingYear' in data) || (data.passingYear is string && data.passingYear.size() <= 16)) &&
+        (!('gpa' in data) || (data.gpa is string && data.gpa.size() <= 32)) &&
+        (!('schoolName' in data) || (data.schoolName is string && data.schoolName.size() <= 256)) &&
+        (!('collegeName' in data) || (data.collegeName is string && data.collegeName.size() <= 256)) &&
+        (!('sscGpa' in data) || (data.sscGpa is string && data.sscGpa.size() <= 32)) &&
+        (!('hscGpa' in data) || (data.hscGpa is string && data.hscGpa.size() <= 32)) &&
+        (!('achievements' in data) || (data.achievements is list && data.achievements.size() <= 15 && (data.achievements.size() == 0 || data.achievements[0] is string))) &&
+        (!('division' in data) || (data.division is string && data.division.size() <= 64)) &&
+        data.district is string && data.district.size() <= 64 &&
+        (!('upazila' in data) || (data.upazila is string && data.upazila.size() <= 64)) &&
+        (!('preferredAreas' in data) || (data.preferredAreas is list && data.preferredAreas.size() <= 20 && (data.preferredAreas.size() == 0 || data.preferredAreas[0] is string))) &&
+        (!('mediums' in data) || (data.mediums is list && data.mediums.size() <= 10 && (data.mediums.size() == 0 || data.mediums[0] is string))) &&
+        (!('classes' in data) || (data.classes is list && data.classes.size() <= 20 && (data.classes.size() == 0 || data.classes[0] is string))) &&
+        (!('subjects' in data) || (data.subjects is list && data.subjects.size() <= 30 && (data.subjects.size() == 0 || data.subjects[0] is string))) &&
+        (!('tuitionTypes' in data) || (data.tuitionTypes is list && data.tuitionTypes.size() <= 10 && (data.tuitionTypes.size() == 0 || data.tuitionTypes[0] is string))) &&
+        (!('expectedSalaryMin' in data) || (data.expectedSalaryMin is number && data.expectedSalaryMin >= 0 && data.expectedSalaryMin <= 500000)) &&
+        (!('expectedSalaryMax' in data) || (data.expectedSalaryMax is number && data.expectedSalaryMax >= 0 && data.expectedSalaryMax <= 500000)) &&
+        (!('daysPerWeek' in data) || (data.daysPerWeek is list && data.daysPerWeek.size() <= 7 && (data.daysPerWeek.size() == 0 || data.daysPerWeek[0] is number))) &&
+        (!('experienceYears' in data) || (data.experienceYears is number && data.experienceYears >= 0 && data.experienceYears <= 60)) &&
+        (!('verification' in data) || data.verification is map) &&
+        (!('badges' in data) || (data.badges is list && data.badges.size() <= 15)) &&
+        (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
+        (!('reviewCount' in data) || (data.reviewCount is number && data.reviewCount >= 0)) &&
+        (!('completedTuitionsCount' in data) || (data.completedTuitionsCount is number && data.completedTuitionsCount >= 0)) &&
+        (!('isFeatured' in data) || data.isFeatured is bool) &&
+        (!('whatsappPublic' in data) || data.whatsappPublic is bool) &&
+        (!('whatsappConsent' in data) || data.whatsappConsent is bool) &&
+        (!('profileVisibility' in data) || data.profileVisibility in ['public', 'hidden']) &&
+        (!('contactVisibility' in data) || data.contactVisibility in ['authenticated', 'shortlisted_only', 'hidden']) &&
+        (!('isPublished' in data) || data.isPublished is bool) &&
+        (!('isPublished' in data) || data.isPublished == false || (data.university.size() > 0 && data.department.size() > 0 && 'semester' in data && data.semester is string && data.semester.size() > 0)) &&
+        (!('availability' in data) || data.availability in ['Available Now', 'Busy', 'Available from Next Month']) &&
+        (!('teachingStyleSummary' in data) || (data.teachingStyleSummary is string && data.teachingStyleSummary.size() <= 1024)) &&
+        (!('profileCompletion' in data) || (data.profileCompletion is number && data.profileCompletion >= 0 && data.profileCompletion <= 100)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTutorPrivateContact(data) {
+      return data.keys().hasAll(['uid', 'whatsappConsent', 'contactVisibility', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'uid', 'whatsappNumber', 'normalizedWhatsappNumber', 'facebookUrl',
+          'whatsappConsent', 'contactVisibility', 'updatedAt'
+        ]) &&
+        isValidId(data.uid) &&
+        (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 32)) &&
+        (!('normalizedWhatsappNumber' in data) || (data.normalizedWhatsappNumber is string && data.normalizedWhatsappNumber.size() <= 20)) &&
+        (!('facebookUrl' in data) || (data.facebookUrl is string && data.facebookUrl.size() <= 512)) &&
+        data.whatsappConsent is bool &&
+        data.contactVisibility in ['authenticated', 'shortlisted_only', 'hidden'] &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTuitionPost(data) {
+      return data.keys().hasAll(['title', 'learnerId', 'classGrade', 'medium', 'district', 'salaryOfferBDT', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'title', 'learnerId', 'learnerName', 'learnerType', 'studentGender',
+          'studentSchoolCollege', 'classGrade', 'curriculum', 'subjects', 'medium',
+          'tuitionType', 'division', 'district', 'upazila', 'area',
+          'preferredTutorGender', 'preferredUniversity', 'preferredQualifications',
+          'daysPerWeek', 'preferredTime', 'salaryOfferBDT', 'isNegotiable',
+          'startDate', 'deadline', 'preferredContactMethod', 'specialInstructions',
+          'postedDate', 'status', 'totalApplicants', 'requirementsDescription',
+          'isFeatured', 'createdAt', 'updatedAt'
+        ]) &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 256 &&
+        isValidId(data.learnerId) &&
+        (!('learnerName' in data) || (data.learnerName is string && data.learnerName.size() <= 128)) &&
+        (!('learnerType' in data) || data.learnerType in ['student', 'guardian']) &&
+        (!('studentGender' in data) || data.studentGender in ['Male', 'Female']) &&
+        (!('studentSchoolCollege' in data) || (data.studentSchoolCollege is string && data.studentSchoolCollege.size() <= 256)) &&
+        data.classGrade is string && data.classGrade.size() <= 64 &&
+        (!('curriculum' in data) || (data.curriculum is string && data.curriculum.size() <= 64)) &&
+        (!('subjects' in data) || (data.subjects is list && data.subjects.size() <= 20 && (data.subjects.size() == 0 || data.subjects[0] is string))) &&
+        data.medium is string && data.medium.size() <= 64 &&
+        (!('tuitionType' in data) || (data.tuitionType is string && data.tuitionType.size() <= 64)) &&
+        (!('division' in data) || (data.division is string && data.division.size() <= 64)) &&
+        data.district is string && data.district.size() <= 64 &&
+        (!('upazila' in data) || (data.upazila is string && data.upazila.size() <= 64)) &&
+        (!('area' in data) || (data.area is string && data.area.size() <= 128)) &&
+        (!('preferredTutorGender' in data) || data.preferredTutorGender in ['Any', 'Male', 'Female']) &&
+        (!('preferredUniversity' in data) || (data.preferredUniversity is string && data.preferredUniversity.size() <= 128)) &&
+        (!('preferredQualifications' in data) || (data.preferredQualifications is string && data.preferredQualifications.size() <= 512)) &&
+        (!('daysPerWeek' in data) || (data.daysPerWeek is number && data.daysPerWeek >= 1 && data.daysPerWeek <= 7)) &&
+        (!('preferredTime' in data) || (data.preferredTime is string && data.preferredTime.size() <= 128)) &&
+        data.salaryOfferBDT is number && data.salaryOfferBDT >= 0 && data.salaryOfferBDT <= 500000 &&
+        (!('isNegotiable' in data) || data.isNegotiable is bool) &&
+        (!('startDate' in data) || (data.startDate is string && data.startDate.size() <= 32)) &&
+        (!('deadline' in data) || (data.deadline is string && data.deadline.size() <= 32)) &&
+        (!('preferredContactMethod' in data) || data.preferredContactMethod in ['WhatsApp', 'Phone Call', 'Platform Proposal First']) &&
+        (!('specialInstructions' in data) || (data.specialInstructions is string && data.specialInstructions.size() <= 1024)) &&
+        (!('postedDate' in data) || (data.postedDate is string && data.postedDate.size() <= 32)) &&
+        data.status in ['open', 'paused', 'assigned', 'closed', 'expired'] &&
+        (!('totalApplicants' in data) || (data.totalApplicants is number && data.totalApplicants >= 0)) &&
+        (!('requirementsDescription' in data) || (data.requirementsDescription is string && data.requirementsDescription.size() <= 2048)) &&
+        (!('isFeatured' in data) || data.isFeatured is bool) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTuitionPrivateContact(data) {
+      return data.keys().hasAll(['learnerId', 'updatedAt']) &&
+        data.keys().hasOnly(['learnerId', 'whatsappNumber', 'detailedAddress', 'updatedAt']) &&
+        isValidId(data.learnerId) &&
+        (!('whatsappNumber' in data) || (data.whatsappNumber is string && data.whatsappNumber.size() <= 32)) &&
+        (!('detailedAddress' in data) || (data.detailedAddress is string && data.detailedAddress.size() <= 256)) &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidApplication(data) {
+      return data.keys().hasAll(['tuitionPostId', 'tutorId', 'learnerId', 'proposedSalaryBDT', 'status', 'coverLetter', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'tuitionPostId', 'tuitionTitle', 'learnerId', 'learnerName', 'tutorId', 'tutorName',
+          'tutorAvatar', 'tutorUniversity', 'tutorDepartment', 'tutorAcademicYear', 'tutorRating',
+          'tutorExperienceYears', 'tutorWhatsApp', 'tutorFacebookUrl', 'guardianWhatsApp',
+          'proposedSalaryBDT', 'introduction', 'coverLetter', 'experienceSummary',
+          'suitabilityReason', 'availableSchedule', 'additionalQualifications', 'appliedAt',
+          'status', 'demoDate', 'feedbackNote', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.tuitionPostId) &&
+        (!('tuitionTitle' in data) || (data.tuitionTitle is string && data.tuitionTitle.size() <= 256)) &&
+        isValidId(data.learnerId) &&
+        (!('learnerName' in data) || (data.learnerName is string && data.learnerName.size() <= 128)) &&
+        isValidId(data.tutorId) &&
+        (!('tutorName' in data) || (data.tutorName is string && data.tutorName.size() <= 128)) &&
+        (!('tutorAvatar' in data) || (data.tutorAvatar is string && data.tutorAvatar.size() <= 512)) &&
+        (!('tutorUniversity' in data) || (data.tutorUniversity is string && data.tutorUniversity.size() <= 128)) &&
+        (!('tutorDepartment' in data) || (data.tutorDepartment is string && data.tutorDepartment.size() <= 128)) &&
+        (!('tutorAcademicYear' in data) || (data.tutorAcademicYear is string && data.tutorAcademicYear.size() <= 64)) &&
+        (!('tutorRating' in data) || (data.tutorRating is number && data.tutorRating >= 0 && data.tutorRating <= 5)) &&
+        (!('tutorExperienceYears' in data) || (data.tutorExperienceYears is number && data.tutorExperienceYears >= 0 && data.tutorExperienceYears <= 60)) &&
+        (!('tutorWhatsApp' in data) || (data.tutorWhatsApp is string && data.tutorWhatsApp.size() <= 32)) &&
+        (!('tutorFacebookUrl' in data) || (data.tutorFacebookUrl is string && data.tutorFacebookUrl.size() <= 512)) &&
+        (!('guardianWhatsApp' in data) || (data.guardianWhatsApp is string && data.guardianWhatsApp.size() <= 32)) &&
+        data.proposedSalaryBDT is number && data.proposedSalaryBDT >= 0 && data.proposedSalaryBDT <= 500000 &&
+        (!('introduction' in data) || (data.introduction is string && data.introduction.size() <= 1024)) &&
+        data.coverLetter is string && data.coverLetter.size() > 0 && data.coverLetter.size() <= 2048 &&
+        (!('experienceSummary' in data) || (data.experienceSummary is string && data.experienceSummary.size() <= 1024)) &&
+        (!('suitabilityReason' in data) || (data.suitabilityReason is string && data.suitabilityReason.size() <= 1024)) &&
+        (!('availableSchedule' in data) || (data.availableSchedule is string && data.availableSchedule.size() <= 256)) &&
+        (!('additionalQualifications' in data) || (data.additionalQualifications is string && data.additionalQualifications.size() <= 512)) &&
+        (!('appliedAt' in data) || (data.appliedAt is string && data.appliedAt.size() <= 32)) &&
+        data.status in ['pending', 'shortlisted', 'invited', 'accepted', 'rejected', 'withdrawn'] &&
+        (!('demoDate' in data) || (data.demoDate is string && data.demoDate.size() <= 64)) &&
+        (!('feedbackNote' in data) || (data.feedbackNote is string && data.feedbackNote.size() <= 1024)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidInvitation(data) {
+      return data.keys().hasAll(['learnerId', 'tutorId', 'offerSalaryBDT', 'status', 'message', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'learnerId', 'learnerName', 'learnerWhatsApp', 'tutorId', 'tutorName', 'tutorWhatsApp',
+          'tutorFacebookUrl', 'tuitionPostId', 'tuitionTitle', 'classGrade', 'subjects',
+          'offerSalaryBDT', 'offerBDT', 'preferredSchedule', 'message', 'status', 'sentAt',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.learnerId) &&
+        (!('learnerName' in data) || (data.learnerName is string && data.learnerName.size() <= 128)) &&
+        (!('learnerWhatsApp' in data) || (data.learnerWhatsApp is string && data.learnerWhatsApp.size() <= 32)) &&
+        isValidId(data.tutorId) &&
+        (!('tutorName' in data) || (data.tutorName is string && data.tutorName.size() <= 128)) &&
+        (!('tutorWhatsApp' in data) || (data.tutorWhatsApp is string && data.tutorWhatsApp.size() <= 32)) &&
+        (!('tutorFacebookUrl' in data) || (data.tutorFacebookUrl is string && data.tutorFacebookUrl.size() <= 512)) &&
+        (!('tuitionPostId' in data) || (data.tuitionPostId is string && data.tuitionPostId.size() <= 128)) &&
+        (!('tuitionTitle' in data) || (data.tuitionTitle is string && data.tuitionTitle.size() <= 256)) &&
+        (!('classGrade' in data) || (data.classGrade is string && data.classGrade.size() <= 64)) &&
+        (!('subjects' in data) || (data.subjects is list && data.subjects.size() <= 20 && (data.subjects.size() == 0 || data.subjects[0] is string))) &&
+        data.offerSalaryBDT is number && data.offerSalaryBDT >= 0 && data.offerSalaryBDT <= 500000 &&
+        (!('offerBDT' in data) || (data.offerBDT is number && data.offerBDT >= 0 && data.offerBDT <= 500000)) &&
+        (!('preferredSchedule' in data) || (data.preferredSchedule is string && data.preferredSchedule.size() <= 256)) &&
+        data.message is string && data.message.size() > 0 && data.message.size() <= 2048 &&
+        data.status in ['pending', 'accepted', 'declined'] &&
+        (!('sentAt' in data) || (data.sentAt is string && data.sentAt.size() <= 32)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidTutorFavourite(data) {
+      return data.keys().hasAll(['userId', 'tutorId', 'createdAt']) &&
+        data.keys().hasOnly(['userId', 'tutorId', 'createdAt']) &&
+        isValidId(data.userId) &&
+        isValidId(data.tutorId) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSavedTuition(data) {
+      return data.keys().hasAll(['userId', 'tuitionPostId', 'createdAt']) &&
+        data.keys().hasOnly(['userId', 'tuitionPostId', 'createdAt']) &&
+        isValidId(data.userId) &&
+        isValidId(data.tuitionPostId) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['userId', 'senderId', 'title', 'message', 'read', 'type', 'createdAt']) &&
+        data.keys().hasOnly(['userId', 'senderId', 'title', 'message', 'time', 'read', 'type', 'actionView', 'targetId', 'createdAt']) &&
+        isValidId(data.userId) &&
+        isValidId(data.senderId) &&
+        data.title is string && data.title.size() <= 128 &&
+        data.message is string && data.message.size() <= 512 &&
+        (!('time' in data) || (data.time is string && data.time.size() <= 64)) &&
+        data.read is bool &&
+        data.type in ['application', 'invitation', 'verification', 'tuition', 'system'] &&
+        (!('actionView' in data) || (data.actionView is string && data.actionView.size() <= 64)) &&
+        (!('targetId' in data) || (data.targetId is string && data.targetId.size() <= 128)) &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidVerificationRequest(data) {
+      return data.keys().hasAll(['tutorId', 'verificationType', 'documentName', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'tutorId', 'tutorName', 'university', 'verificationType', 'documentName',
+          'documentUrl', 'status', 'rejectionReason', 'submittedAt', 'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.tutorId) &&
+        (!('tutorName' in data) || (data.tutorName is string && data.tutorName.size() <= 128)) &&
+        (!('university' in data) || (data.university is string && data.university.size() <= 256)) &&
+        data.verificationType in ['identity', 'institution', 'qualification'] &&
+        data.documentName is string && data.documentName.size() > 0 && data.documentName.size() <= 256 &&
+        (!('documentUrl' in data) || (data.documentUrl is string && data.documentUrl.size() <= 512)) &&
+        data.status in ['pending', 'approved', 'rejected'] &&
+        (!('rejectionReason' in data) || (data.rejectionReason is string && data.rejectionReason.size() <= 512)) &&
+        (!('submittedAt' in data) || (data.submittedAt is string && data.submittedAt.size() <= 32)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidReport(data) {
+      return data.keys().hasAll(['reportedItemType', 'targetTitle', 'reportedById', 'reason', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly([
+          'reportedItemType', 'targetTitle', 'targetId', 'reportedBy', 'reportedById',
+          'reason', 'status', 'submittedAt', 'createdAt', 'updatedAt', 'resolvedAt'
+        ]) &&
+        data.reportedItemType in ['tutor', 'tuition', 'user'] &&
+        data.targetTitle is string && data.targetTitle.size() > 0 && data.targetTitle.size() <= 256 &&
+        (!('targetId' in data) || (data.targetId is string && data.targetId.size() <= 128)) &&
+        (!('reportedBy' in data) || (data.reportedBy is string && data.reportedBy.size() <= 128)) &&
+        isValidId(data.reportedById) &&
+        data.reason is string && data.reason.size() > 0 && data.reason.size() <= 1024 &&
+        data.status in ['pending', 'investigating', 'resolved'] &&
+        (!('submittedAt' in data) || (data.submittedAt is string && data.submittedAt.size() <= 32)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp &&
+        (!('resolvedAt' in data) || data.resolvedAt is timestamp);
+    }
+
+    // 4. Connection Health Check (Read-only single document)
+    match /test/connection {
+      allow get: if true;
+      allow list, create, update, delete: if false;
+    }
+
+    // 5. Admins Collection
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminId) && isValidAdmin(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(adminId) && isValidAdmin(incoming()) && incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin() && isValidId(adminId);
+    }
+
+    // 6. Users Collection (Strict PII Isolation: Owner or Admin only)
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUser(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().accountStatus == 'active' &&
+        incoming().activeRole in ['learner', 'tutor'] &&
+        incoming().availableRoles.hasOnly(['learner', 'tutor']) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(userId) &&
+        isValidUser(incoming()) &&
+        (
+          isAdmin() ||
+          (
+            isOwner(userId) &&
+            incoming().uid == existing().uid &&
+            incoming().email == existing().email &&
+            incoming().accountStatus == existing().accountStatus &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().activeRole in ['learner', 'tutor'] &&
+            (!('availableRoles' in incoming()) || incoming().availableRoles.hasOnly(['learner', 'tutor'])) &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'phone', 'whatsappNumber', 'facebookUrl', 'photoURL',
+              'activeRole', 'availableRoles', 'learnerSubtype', 'division',
+              'district', 'upazila', 'area', 'phoneVisibility', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // 7. Learner Profiles (Strict PII Isolation: Owner or Admin only)
+    match /learnerProfiles/{profileId} {
+      allow get: if isValidId(profileId) && (isOwner(profileId) || isAdmin());
+      allow list: if isSignedIn() && (existing().uid == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(profileId) &&
+        isOwner(profileId) &&
+        isValidLearnerProfile(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(profileId) &&
+        isValidLearnerProfile(incoming()) &&
+        (
+          isAdmin() ||
+          (
+            isOwner(profileId) &&
+            incoming().uid == existing().uid &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'learnerType', 'phone', 'whatsappNumber', 'facebookUrl',
+              'division', 'district', 'upazila', 'area', 'phoneVisibility',
+              'profileCompletion', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(profileId);
+    }
+
+    // 8. Tutor Profiles (Public Discovery — zero raw PII; WhatsApp/Facebook isolated in /private/contact)
+    match /tutorProfiles/{profileId} {
+      allow get: if isValidId(profileId);
+      allow list: if true;
+      allow create: if isVerifiedUser() &&
+        isValidId(profileId) &&
+        isOwner(profileId) &&
+        isValidTutorProfile(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().rating == 0 &&
+        incoming().reviewCount == 0 &&
+        incoming().completedTuitionsCount == 0 &&
+        incoming().isFeatured == false &&
+        incoming().badges.size() == 0 &&
+        incoming().verification.identity.status == 'unverified' &&
+        incoming().verification.institution.status == 'unverified' &&
+        incoming().verification.qualification.status == 'unverified' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(profileId) &&
+        isValidTutorProfile(incoming()) &&
+        (
+          isAdmin() ||
+          (
+            isOwner(profileId) &&
+            incoming().uid == existing().uid &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().rating == existing().rating &&
+            incoming().reviewCount == existing().reviewCount &&
+            incoming().completedTuitionsCount == existing().completedTuitionsCount &&
+            incoming().isFeatured == existing().isFeatured &&
+            incoming().badges == existing().badges &&
+            incoming().verification == existing().verification &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 'gender', 'avatar', 'profilePhotoURL', 'headline', 'bio', 'experienceSummary',
+              'university', 'degree', 'department', 'academicYear', 'semester', 'passingYear', 'gpa',
+              'schoolName', 'collegeName', 'sscGpa', 'hscGpa', 'achievements', 'division', 'district',
+              'upazila', 'preferredAreas', 'mediums', 'classes', 'subjects', 'tuitionTypes',
+              'expectedSalaryMin', 'expectedSalaryMax', 'daysPerWeek', 'experienceYears',
+              'whatsappPublic', 'whatsappConsent', 'profileVisibility', 'contactVisibility',
+              'isPublished', 'availability', 'teachingStyleSummary', 'profileCompletion', 'updatedAt'
+            ])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(profileId);
+
+      match /private/contact {
+        allow get: if isValidId(profileId) && isSignedIn() && (
+          isOwner(profileId) ||
+          isAdmin() ||
+          (existing().whatsappConsent == true && existing().contactVisibility == 'authenticated')
+        );
+        allow list: if false;
+        allow create, update: if isVerifiedUser() &&
+          isValidId(profileId) &&
+          isOwner(profileId) &&
+          isValidTutorPrivateContact(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().updatedAt == request.time;
+        allow delete: if isAdmin() && isValidId(profileId);
+      }
+    }
+
+    // 9. Tuition Posts (Public Job Board) & Isolated Guardian Private Contact
+    match /tuitionPosts/{postId} {
+      allow get: if isValidId(postId);
+      allow list: if true;
+      allow create: if isVerifiedUser() &&
+        isValidId(postId) &&
+        isValidTuitionPost(incoming()) &&
+        incoming().learnerId == request.auth.uid &&
+        incoming().status == 'open' &&
+        incoming().totalApplicants == 0 &&
+        incoming().isFeatured == false &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(postId) &&
+        isValidTuitionPost(incoming()) &&
+        (
+          isAdmin() ||
+          // Action: Post owner edits or transitions post status (locked once closed)
+          (
+            existing().learnerId == request.auth.uid &&
+            existing().status != 'closed' &&
+            incoming().learnerId == existing().learnerId &&
+            incoming().totalApplicants == existing().totalApplicants &&
+            incoming().isFeatured == existing().isFeatured &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'title', 'learnerName', 'learnerType', 'studentGender', 'studentSchoolCollege',
+              'classGrade', 'curriculum', 'subjects', 'medium', 'tuitionType', 'division',
+              'district', 'upazila', 'area', 'preferredTutorGender', 'preferredUniversity',
+              'preferredQualifications', 'daysPerWeek', 'preferredTime', 'salaryOfferBDT',
+              'isNegotiable', 'startDate', 'deadline', 'preferredContactMethod',
+              'specialInstructions', 'requirementsDescription', 'status', 'updatedAt'
+            ])
+          ) ||
+          // Action: Atomic +1 totalApplicants increment paired with deterministic application creation
+          (
+            existing().status == 'open' &&
+            existing().learnerId != request.auth.uid &&
+            incoming().learnerId == existing().learnerId &&
+            incoming().totalApplicants == existing().totalApplicants + 1 &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['totalApplicants', 'updatedAt']) &&
+            existsAfter(/databases/$(database)/documents/applications/$(postId + '_' + request.auth.uid))
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(postId) && (existing().learnerId == request.auth.uid || isAdmin());
+
+      match /private/contact {
+        allow get: if isValidId(postId) && isSignedIn() && (
+          existing().learnerId == request.auth.uid ||
+          isAdmin() ||
+          (
+            exists(/databases/$(database)/documents/applications/$(postId + '_' + request.auth.uid)) &&
+            get(/databases/$(database)/documents/applications/$(postId + '_' + request.auth.uid)).data.status in ['shortlisted', 'invited', 'accepted']
+          )
+        );
+        allow list: if false;
+        allow create, update: if isVerifiedUser() &&
+          isValidId(postId) &&
+          isValidTuitionPrivateContact(incoming()) &&
+          incoming().learnerId == request.auth.uid &&
+          incoming().updatedAt == request.time &&
+          get(/databases/$(database)/documents/tuitionPosts/$(postId)).data.learnerId == request.auth.uid;
+        allow delete: if isVerifiedUser() && isValidId(postId) && (
+          get(/databases/$(database)/documents/tuitionPosts/$(postId)).data.learnerId == request.auth.uid || isAdmin()
+        );
+      }
+    }
+
+    // 10. Applications (Deterministic ID ${tuitionPostId}_${tutorId}, Strict Scoped Access)
+    match /applications/{applicationId} {
+      allow get: if isValidId(applicationId) && isSignedIn() && (
+        existing().tutorId == request.auth.uid ||
+        existing().learnerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().tutorId == request.auth.uid ||
+        existing().learnerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isVerifiedUser() &&
+        isValidId(applicationId) &&
+        isValidApplication(incoming()) &&
+        applicationId == (incoming().tuitionPostId + '_' + request.auth.uid) &&
+        incoming().tutorId == request.auth.uid &&
+        incoming().learnerId != request.auth.uid &&
+        incoming().status == 'pending' &&
+        !('guardianWhatsApp' in incoming()) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/tuitionPosts/$(incoming().tuitionPostId)) &&
+        get(/databases/$(database)/documents/tuitionPosts/$(incoming().tuitionPostId)).data.status == 'open' &&
+        get(/databases/$(database)/documents/tuitionPosts/$(incoming().tuitionPostId)).data.learnerId == incoming().learnerId;
+      allow update: if isVerifiedUser() &&
+        isValidId(applicationId) &&
+        isValidApplication(incoming()) &&
+        (
+          isAdmin() ||
+          // Action: Tutor withdraws non-terminal application
+          (
+            existing().tutorId == request.auth.uid &&
+            existing().status in ['pending', 'shortlisted', 'invited'] &&
+            incoming().status == 'withdrawn' &&
+            incoming().tutorId == existing().tutorId &&
+            incoming().learnerId == existing().learnerId &&
+            incoming().tuitionPostId == existing().tuitionPostId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'feedbackNote', 'updatedAt'])
+          ) ||
+          // Action: Guardian shortlists / invites / accepts / rejects & optionally unlocks guardianWhatsApp
+          (
+            existing().learnerId == request.auth.uid &&
+            existing().status in ['pending', 'shortlisted', 'invited'] &&
+            incoming().status in ['shortlisted', 'invited', 'accepted', 'rejected'] &&
+            incoming().tutorId == existing().tutorId &&
+            incoming().learnerId == existing().learnerId &&
+            incoming().tuitionPostId == existing().tuitionPostId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'feedbackNote', 'demoDate', 'guardianWhatsApp', 'updatedAt'])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(applicationId);
+    }
+
+    // 11. Direct Invitations (Strict Scoped Access)
+    match /invitations/{invitationId} {
+      allow get: if isValidId(invitationId) && isSignedIn() && (
+        existing().tutorId == request.auth.uid ||
+        existing().learnerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        existing().tutorId == request.auth.uid ||
+        existing().learnerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isVerifiedUser() &&
+        isValidId(invitationId) &&
+        isValidInvitation(incoming()) &&
+        incoming().learnerId == request.auth.uid &&
+        incoming().tutorId != request.auth.uid &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/tutorProfiles/$(incoming().tutorId));
+      allow update: if isVerifiedUser() &&
+        isValidId(invitationId) &&
+        isValidInvitation(incoming()) &&
+        (
+          isAdmin() ||
+          // Action: Tutor accepts pending invitation (optionally sharing WhatsApp/Facebook) or declines
+          (
+            existing().tutorId == request.auth.uid &&
+            existing().status == 'pending' &&
+            incoming().learnerId == existing().learnerId &&
+            incoming().tutorId == existing().tutorId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            (
+              (
+                incoming().status == 'accepted' &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['status', 'tutorWhatsApp', 'tutorFacebookUrl', 'updatedAt'])
+              ) ||
+              (
+                incoming().status == 'declined' &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+              )
+            )
+          )
+        );
+      allow delete: if isAdmin() && isValidId(invitationId);
+    }
+
+    // 12. Tutor Favourites (Owner Scoped)
+    match /tutorFavourites/{favId} {
+      allow get: if isValidId(favId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(favId) &&
+        isValidTutorFavourite(incoming()) &&
+        favId == (request.auth.uid + '_' + incoming().tutorId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(favId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 13. Saved Tuitions (Owner Scoped)
+    match /savedTuitions/{saveId} {
+      allow get: if isValidId(saveId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(saveId) &&
+        isValidSavedTuition(incoming()) &&
+        saveId == (request.auth.uid + '_' + incoming().tuitionPostId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isVerifiedUser() && isValidId(saveId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 14. Notifications (Scoped to Recipient)
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(notificationId) &&
+        isValidNotification(incoming()) &&
+        incoming().senderId == request.auth.uid &&
+        incoming().read == false &&
+        incoming().createdAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(notificationId) &&
+        isValidNotification(incoming()) &&
+        (
+          isAdmin() ||
+          (
+            existing().userId == request.auth.uid &&
+            incoming().userId == existing().userId &&
+            incoming().senderId == existing().senderId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['read'])
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(notificationId) && (existing().userId == request.auth.uid || isAdmin());
+    }
+
+    // 15. Verification Requests (Tutor Owner & Admin)
+    match /verificationRequests/{requestId} {
+      allow get: if isValidId(requestId) && isSignedIn() && (existing().tutorId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().tutorId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(requestId) &&
+        isValidVerificationRequest(incoming()) &&
+        incoming().tutorId == request.auth.uid &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(requestId) &&
+        isValidVerificationRequest(incoming()) &&
+        isAdmin() &&
+        incoming().tutorId == existing().tutorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rejectionReason', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(requestId);
+    }
+
+    // 16. Safety Reports (Reporter Owner & Admin)
+    match /reports/{reportId} {
+      allow get: if isValidId(reportId) && isSignedIn() && (existing().reportedById == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().reportedById == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(reportId) &&
+        isValidReport(incoming()) &&
+        incoming().reportedById == request.auth.uid &&
+        incoming().status == 'pending' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(reportId) &&
+        isValidReport(incoming()) &&
+        isAdmin() &&
+        incoming().reportedById == existing().reportedById &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt', 'resolvedAt']);
+      allow delete: if isAdmin() && isValidId(reportId);
+    }
+  }
+}
