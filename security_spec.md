@@ -1,4 +1,4 @@
-# Tutorly Firestore Security Specification (Phase 4)
+# FeLoW WebStaR Firestore Security Specification (Phase 4)
 
 ## 1. Data Invariants
 1. **Identity Integrity (Google-Only Auth)**: Every user-owned document (`users`, `learnerProfiles`, `tutorProfiles`, `tuitionPosts`, `applications`, `invitations`, `tutorFavourites`, `savedTuitions`, `verificationRequests`, `reports`, `notifications`) MUST enforce that its author/owner field (`uid`, `learnerId`, `tutorId`, `userId`, `reportedById`, `senderId`) equals `request.auth.uid` on creation and remains immutable on update.
@@ -75,7 +75,7 @@ let testEnv: RulesTestEnvironment;
 
 beforeAll(async () => {
   testEnv = await initializeTestEnvironment({
-    projectId: 'tutorly-security-test',
+    projectId: 'felow-webstar-security-test',
     firestore: { rules: fs.readFileSync('firestore.rules', 'utf8') }
   });
 });
@@ -84,7 +84,7 @@ afterAll(async () => {
   await testEnv.cleanup();
 });
 
-describe('Tutorly Zero-Trust Firestore Rules (Dirty Dozen)', () => {
+describe('FeLoW WebStaR Zero-Trust Firestore Rules (Dirty Dozen)', () => {
   it('1. Rejects shadow fields & self-assigned admin role on users', async () => {
     const db = testEnv.authenticatedContext('user1', { email_verified: true }).firestore();
     await assertFails(setDoc(doc(db, 'users', 'user1'), { uid: 'user1', activeRole: 'admin', isAdmin: true }));

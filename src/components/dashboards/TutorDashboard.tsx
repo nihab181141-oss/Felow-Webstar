@@ -206,7 +206,7 @@ export const TutorDashboard: React.FC = () => {
                 const guardianWa = canContact
                   ? buildWhatsAppUrl(
                       unlockedGuardianPhone,
-                      `Assalamu Alaikum, following up regarding "${app.tuitionTitle}" on Tutorly.`
+                      `Assalamu Alaikum, following up regarding "${app.tuitionTitle}" on FeLoW WebStaR.`
                     )
                   : null;
 
@@ -261,7 +261,7 @@ export const TutorDashboard: React.FC = () => {
                   inv.status === 'accepted'
                     ? buildWhatsAppUrl(
                         inv.learnerWhatsApp,
-                        `Assalamu Alaikum ${inv.learnerName}, I accepted your tuition invitation on Tutorly.`
+                        `Assalamu Alaikum ${inv.learnerName}, I accepted your tuition invitation on FeLoW WebStaR.`
                       )
                     : null;
 

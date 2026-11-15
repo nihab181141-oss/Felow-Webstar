@@ -105,7 +105,7 @@ export const MobileBottomNav: React.FC = () => {
           ) : (
             <div className="ivory-card p-4 space-y-3 bg-[#FFF3EF]/50">
               <div className="text-sm font-bold text-[#252525]">
-                {language === 'bn' ? 'Tutorly-তে যোগ দিন' : 'Sign in with Google'}
+                {language === 'bn' ? 'FeLoW WebStaR-এ যোগ দিন' : 'Sign in with Google'}
               </div>
               <p className="text-xs text-[#858585] leading-relaxed">
                 {language === 'bn'

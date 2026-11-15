@@ -9,7 +9,7 @@ import {
   UserAccount
 } from '../types';
 
-import heroTutorlyBd from '../assets/images/hero_tutorly_bd_1794484005827.jpg';
+import heroFeLoWWebStaRBd from '../assets/images/hero_tutorly_bd_1794484005827.jpg';
 import femaleTutorBuet from '../assets/images/tutor_female_buet_1794484005975.jpg';
 import maleTutorDu from '../assets/images/tutor_male_du_1794484006020.jpg';
 import tuitionSessionImg from '../assets/images/tuition_session_interactive_1794484006336.jpg';
@@ -25,7 +25,7 @@ import femalePortraitDu from '../assets/images/tutor_portrait_female_du_17946452
 import malePortraitMedical from '../assets/images/tutor_portrait_male_medical_1794645269539.jpg';
 import femalePortraitEnglish from '../assets/images/tutor_portrait_female_english_1794645269081.jpg';
 
-export const HERO_IMAGE = heroTutorlyBd;
+export const HERO_IMAGE = heroFeLoWWebStaRBd;
 export const FEMALE_TUTOR_IMAGE = femaleTutorBuet;
 export const MALE_TUTOR_IMAGE = maleTutorDu;
 export const FEMALE_TUTOR_IMAGE_2 = femaleTutorAvatar2;
@@ -92,7 +92,7 @@ export const INITIAL_TUTORS: TutorProfile[] = [
     profileVisibility: 'public',
     contactVisibility: 'authenticated',
     isPublished: true,
-    facebookUrl: 'https://facebook.com/tutorly.sample.tanvir',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.tanvir',
     email: 'tanvir.buet.eee@gmail.com',
     availability: 'Available Now',
     teachingStyleSummary: 'Structured chapter diagnostics, curated practice sheets, weekly board exam simulations, and zero-pressure question answering.',
@@ -175,7 +175,7 @@ export const INITIAL_TUTORS: TutorProfile[] = [
     profileVisibility: 'public',
     contactVisibility: 'authenticated',
     isPublished: true,
-    facebookUrl: 'https://facebook.com/tutorly.sample.nusrat',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.nusrat',
     email: 'nusrat.du.chem@gmail.com',
     availability: 'Available Now',
     teachingStyleSummary: 'Visual reaction pathways, memory mnemonics for biology, regular progress reports sent to parents every fortnight.',
@@ -246,7 +246,7 @@ export const INITIAL_TUTORS: TutorProfile[] = [
     profileVisibility: 'public',
     contactVisibility: 'shortlisted_only',
     isPublished: true,
-    facebookUrl: 'https://facebook.com/tutorly.sample.ariful',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.ariful',
     email: 'dr.ariful.dmc@gmail.com',
     availability: 'Available from Next Month',
     teachingStyleSummary: 'Daily rapid-fire MCQ drills, high-yield biological diagrams, and targeted question bank solutions.',
@@ -304,7 +304,7 @@ export const INITIAL_TUTORS: TutorProfile[] = [
     profileVisibility: 'public',
     contactVisibility: 'authenticated',
     isPublished: true,
-    facebookUrl: 'https://facebook.com/tutorly.sample.sabrina',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.sabrina',
     email: 'sabrina.nsu.econ@gmail.com',
     availability: 'Available Now',
     teachingStyleSummary: 'Past paper solving technique, mark-scheme precision, keyword orientation for British curriculum examiners.',
@@ -361,7 +361,7 @@ export const INITIAL_TUTORS: TutorProfile[] = [
     profileVisibility: 'public',
     contactVisibility: 'authenticated',
     isPublished: true,
-    facebookUrl: 'https://facebook.com/tutorly.sample.fahim',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.fahim',
     email: 'fahim.cu.math@gmail.com',
     availability: 'Available Now',
     teachingStyleSummary: 'Step-by-step theorem derivations, weekly quizzes, special exam preparation batches.',
@@ -2432,8 +2432,8 @@ export const INITIAL_TUTORS: TutorProfile[] = [
       profileVisibility: 'public',
       contactVisibility: 'authenticated',
       isPublished: true,
-      facebookUrl: `https://facebook.com/tutorly.sample.${slug}`,
-      email: `${slug}@tutorly.bd`,
+      facebookUrl: `https://facebook.com/felowwebstar.sample.${slug}`,
+      email: `${slug}@felowwebstar.bd`,
       availability: idx % 5 === 0 ? 'Available from Next Month' : 'Available Now',
       teachingStyleSummary:
         'Concept-first lesson structure, regular chapter quizzes, and fortnightly progress check-ins with parents.',
@@ -2994,7 +2994,7 @@ export const INITIAL_APPLICATIONS: Application[] = [
     tutorRating: 4.95,
     tutorExperienceYears: 4,
     tutorWhatsApp: '+8801712348901',
-    tutorFacebookUrl: 'https://facebook.com/tutorly.sample.tanvir',
+    tutorFacebookUrl: 'https://facebook.com/felowwebstar.sample.tanvir',
     guardianWhatsApp: '+8801711223344',
     proposedSalaryBDT: 10000,
     introduction: 'Assalamu Alaikum Mrs. Farhana. I am a BUET EEE graduate and Notre Dame College alumnus residing near Dhanmondi.',
@@ -3024,7 +3024,7 @@ export const INITIAL_APPLICATIONS: Application[] = [
     tutorRating: 4.9,
     tutorExperienceYears: 3.5,
     tutorWhatsApp: '+8801819876543',
-    tutorFacebookUrl: 'https://facebook.com/tutorly.sample.nusrat',
+    tutorFacebookUrl: 'https://facebook.com/felowwebstar.sample.nusrat',
     proposedSalaryBDT: 9000,
     introduction: 'Hello Rafid! I am an M.Sc. student at University of Dhaka and regularly teach in Uttara Sector 7.',
     coverLetter: 'Hello! I regularly visit Uttara Sector 7 and have specialized experience with English Version curriculum textbooks. I will ensure all chapter concepts are clear before tackling board questions.',
@@ -3207,7 +3207,7 @@ export const PRESET_USERS: UserAccount[] = [
     email: 'tanvir.buet.eee@gmail.com',
     phone: '+880 1712-348901',
     whatsappNumber: '+8801712348901',
-    facebookUrl: 'https://facebook.com/tutorly.sample.tanvir',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.tanvir',
     role: 'tutor',
     availableRoles: ['tutor', 'learner'],
     avatar: MALE_TUTOR_IMAGE,
@@ -3228,7 +3228,7 @@ export const PRESET_USERS: UserAccount[] = [
     email: 'nusrat.du.chem@gmail.com',
     phone: '+880 1819-876543',
     whatsappNumber: '+8801819876543',
-    facebookUrl: 'https://facebook.com/tutorly.sample.nusrat',
+    facebookUrl: 'https://facebook.com/felowwebstar.sample.nusrat',
     role: 'tutor',
     availableRoles: ['tutor'],
     avatar: FEMALE_TUTOR_IMAGE,
@@ -3245,8 +3245,8 @@ export const PRESET_USERS: UserAccount[] = [
   },
   {
     id: 'user-admin',
-    name: 'Tutorly Moderator Admin',
-    email: 'admin@tutorly.com.bd',
+    name: 'FeLoW WebStaR Moderator Admin',
+    email: 'admin@felowwebstar.com.bd',
     phone: '+880 1700-000001',
     role: 'admin',
     availableRoles: ['admin', 'learner', 'tutor'],

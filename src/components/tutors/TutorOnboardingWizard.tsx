@@ -462,7 +462,7 @@ export const TutorOnboardingWizard: React.FC = () => {
                 onChange={(e) => setProfileVisibility(e.target.value as ProfileVisibility)}
                 className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
               >
-                <option value="public">Public (Visible on Tutorly)</option>
+                <option value="public">Public (Visible on FeLoW WebStaR)</option>
                 <option value="hidden">Hidden (Only when I apply)</option>
               </select>
             </div>

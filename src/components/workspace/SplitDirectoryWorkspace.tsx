@@ -735,7 +735,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     activeTuition && activeTuitionCanViewWa && activeTuitionResolvedPhone
       ? buildWhatsAppUrl(
           activeTuitionResolvedPhone,
-          `Assalamu Alaikum ${activeTuition.learnerName}, following up on "${activeTuition.title}" on Tutorly.`
+          `Assalamu Alaikum ${activeTuition.learnerName}, following up on "${activeTuition.title}" on FeLoW WebStaR.`
         )
       : null;
 
@@ -1488,7 +1488,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                         const tutorWa = canShowTutorWa
                           ? buildWhatsAppUrl(
                               app.tutorWhatsApp || matchedTutor?.whatsappNumber || matchedTutor?.phone,
-                              `Hello ${app.tutorName}, regarding "${activeTuition.title}" on Tutorly.`
+                              `Hello ${app.tutorName}, regarding "${activeTuition.title}" on FeLoW WebStaR.`
                             )
                           : null;
 

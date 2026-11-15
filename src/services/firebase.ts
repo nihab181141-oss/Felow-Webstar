@@ -259,7 +259,7 @@ export async function loginWithGooglePopup(
       isNewUser = true;
       await setDoc(userRef, {
         uid: fbUser.uid,
-        name: fbUser.displayName || 'Tutorly User',
+        name: fbUser.displayName || 'FeLoW WebStaR User',
         email: fbUser.email || '',
         phone: fbUser.phoneNumber || '',
         whatsappNumber: fbUser.phoneNumber || '',
@@ -279,7 +279,7 @@ export async function loginWithGooglePopup(
       if (safeRole === 'learner') {
         await setDoc(doc(db, 'learnerProfiles', fbUser.uid), {
           uid: fbUser.uid,
-          name: fbUser.displayName || 'Tutorly User',
+          name: fbUser.displayName || 'FeLoW WebStaR User',
           learnerType: learnerSubtype,
           phone: fbUser.phoneNumber || '',
           whatsappNumber: fbUser.phoneNumber || '',

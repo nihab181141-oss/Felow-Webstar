@@ -225,7 +225,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<UserAccount>(PRESET_USERS[0]);
   const [currentRole, setCurrentRole] = useState<UserRole>('learner');
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile | null>(null);
-  const [activeView, setActiveView] = useState<AppView>('landing');
+  const [activeView, setActiveViewState] = useState<AppView>('landing');
+  const preAuthViewRef = useRef<AppView>('landing');
+  const setActiveView = useCallback((viewOrUpdater: React.SetStateAction<AppView>) => {
+    setActiveViewState(prev => {
+      const next = typeof viewOrUpdater === 'function' ? viewOrUpdater(prev) : viewOrUpdater;
+      if (next === 'login' && prev !== 'login' && prev !== 'dashboard' && prev !== 'admin' && prev !== 'tutor-onboarding') {
+        preAuthViewRef.current = prev;
+      }
+      return next;
+    });
+  }, []);
 
   const [tutors, setTutors] = useState<TutorProfile[]>(INITIAL_TUTORS);
   const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>(INITIAL_TUITION_POSTS);
@@ -248,8 +258,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isPostTuitionOpen, setIsPostTuitionOpen] = useState(false);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [isAuthModalOpen] = useState(false);
+  const setIsAuthModalOpen = useCallback((open: boolean) => {
+    if (open) {
+      setActiveView('login');
+    } else {
+      setActiveViewState(prev => (prev === 'login' ? preAuthViewRef.current : prev));
+    }
+  }, [setActiveView]);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('register');
   const [directoryTab, setDirectoryTab] = useState<'tutors' | 'tuitions'>('tutors');
   const [districtFilter, setDistrictFilter] = useState('All');
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
@@ -319,7 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentUser(prev => ({
           ...prev,
           id: user.uid,
-          name: remoteAccount?.name || user.displayName || 'Tutorly User',
+          name: remoteAccount?.name || user.displayName || 'FeLoW WebStaR User',
           email: user.email || remoteAccount?.email || '',
           phone: remotePrivateContact?.whatsappNumber || remoteAccount?.phone || user.phoneNumber || '',
           whatsappNumber:
@@ -1436,7 +1453,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.warn('submitReportInFirestore warning:', e);
       }
     }
-    showToast('Report submitted to Tutorly safety team.', 'success');
+    showToast('Report submitted to FeLoW WebStaR safety team.', 'success');
   };
 
   const resolveReport = async (id: string) => {
@@ -1605,7 +1622,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(prev => ({
         ...prev,
         id: fbUser.uid,
-        name: remoteAccount?.name || fbUser.displayName || 'Tutorly User',
+        name: remoteAccount?.name || fbUser.displayName || 'FeLoW WebStaR User',
         email: fbUser.email || '',
         phone: remotePrivateContact?.whatsappNumber || remoteAccount?.phone || fbUser.phoneNumber || '',
         whatsappNumber:
@@ -1652,7 +1669,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setReports(INITIAL_REPORTS);
       setSavedTutorIds(['tutor-1']);
       setSavedTuitionIds(['post-1']);
-      showToast('Signed out of Tutorly.', 'info');
+      showToast('Signed out of FeLoW WebStaR.', 'info');
       setActiveView('landing');
     } catch (err: any) {
       showToast(err.message || 'Logout failed.', 'error');

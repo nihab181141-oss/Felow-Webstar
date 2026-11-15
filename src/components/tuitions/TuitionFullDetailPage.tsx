@@ -97,7 +97,7 @@ export const TuitionFullDetailPage: React.FC = () => {
     canViewGuardianWa && resolvedGuardianPhone
       ? buildWhatsAppUrl(
           resolvedGuardianPhone,
-          `Assalamu Alaikum ${post.learnerName}, following up on "${post.title}" on Tutorly.`
+          `Assalamu Alaikum ${post.learnerName}, following up on "${post.title}" on FeLoW WebStaR.`
         )
       : null;
 
@@ -332,7 +332,7 @@ export const TuitionFullDetailPage: React.FC = () => {
                     const tutorWa = canShowTutorWa
                       ? buildWhatsAppUrl(
                           app.tutorWhatsApp || matchedTutor?.whatsappNumber || matchedTutor?.phone,
-                          `Hello ${app.tutorName}, regarding "${post.title}" on Tutorly.`
+                          `Hello ${app.tutorName}, regarding "${post.title}" on FeLoW WebStaR.`
                         )
                       : null;
 

@@ -108,7 +108,7 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
         coverLetter: note.trim(),
         experienceSummary:
           currentTutor?.experienceSummary ||
-          (expYears > 0 ? `${expYears} years teaching experience` : 'University tutor on Tutorly'),
+          (expYears > 0 ? `${expYears} years teaching experience` : 'University tutor on FeLoW WebStaR'),
         suitabilityReason: note.trim(),
         availableSchedule: availableSchedule.trim()
       });

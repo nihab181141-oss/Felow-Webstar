@@ -1,7 +1,7 @@
 // Utilities for external WhatsApp & Facebook contact links and Bangladesh contact normalization
 
 export const DEFAULT_TUTOR_WHATSAPP_MESSAGE =
-  'Hello, I found your tutor profile on Tutorly. I would like to discuss tuition opportunities.';
+  'Hello, I found your tutor profile on FeLoW WebStaR. I would like to discuss tuition opportunities.';
 
 const ALLOWED_FACEBOOK_HOSTS = new Set([
   'facebook.com',

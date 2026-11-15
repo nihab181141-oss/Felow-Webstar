@@ -1,8 +1,8 @@
 export const BRAND_CONFIG = {
-  name: 'Tutorly',
+  name: 'FeLoW WebStaR',
   tagline: 'Bangladesh Tutor & Tuition Directory',
-  domain: 'tutorly.com.bd',
-  supportEmail: 'support@tutorly.com.bd',
+  domain: 'felowwebstar.com.bd',
+  supportEmail: 'support@felowwebstar.com.bd',
   supportPhone: '+880 1700-000000',
   officeAddress: 'Dhaka, Bangladesh',
   whatsappFirstPolicy: 'Direct WhatsApp Contact',

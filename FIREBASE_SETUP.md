@@ -1,4 +1,4 @@
-# Tutorly — Firebase Backend & Security Setup Guide
+# FeLoW WebStaR — Firebase Backend & Security Setup Guide
 
 This project is integrated with **Firebase Authentication**, **Cloud Firestore**, and **Firebase Storage**.
 
@@ -24,7 +24,7 @@ This project is integrated with **Firebase Authentication**, **Cloud Firestore**
   ```
 
 ## 4. Security & WhatsApp-First Architecture Summary
-- **Zero Internal Messaging**: No chat UI, inbox, threads, or `conversations`/`messages` collections exist anywhere in Tutorly. All direct tutor-guardian communication transitions externally to **WhatsApp (`https://wa.me/8801XXXXXXXXX`)** with prefilled inquiry text and optional **Facebook profile links (`https://facebook.com/...`)**.
+- **Zero Internal Messaging**: No chat UI, inbox, threads, or `conversations`/`messages` collections exist anywhere in FeLoW WebStaR. All direct tutor-guardian communication transitions externally to **WhatsApp (`https://wa.me/8801XXXXXXXXX`)** with prefilled inquiry text and optional **Facebook profile links (`https://facebook.com/...`)**.
 - **PII & Anti-Scraping Contact Isolation**:
   - `users/{userId}` and `learnerProfiles/{profileId}` are readable only by the document owner or verified admin.
   - Public `tutorProfiles/{profileId}` excludes `email`, `phone`, `whatsappNumber`, `normalizedWhatsappNumber`, and `facebookUrl`.

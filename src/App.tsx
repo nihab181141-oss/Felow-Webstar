@@ -61,9 +61,15 @@ const MainAppContent: React.FC = () => {
     activeView === 'tutors' ||
     activeView === 'tuitions';
 
+  const isAuthView = activeView === 'login';
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFFFFF] text-[#252525] font-sans pb-16 md:pb-0 overflow-x-clip">
-      <Header />
+    <div
+      className={`min-h-screen flex flex-col bg-[#FFFFFF] text-[#252525] font-sans overflow-x-clip ${
+        isAuthView ? '' : 'pb-16 md:pb-0'
+      }`}
+    >
+      {!isAuthView && <Header />}
 
       <main className="flex-1 min-w-0">
         {isDirectoryView && <SplitDirectoryWorkspace />}
@@ -96,7 +102,11 @@ const MainAppContent: React.FC = () => {
       <AuthModal />
 
       {toast && (
-        <div className="fixed bottom-16 md:bottom-5 right-3 sm:right-5 left-3 sm:left-auto z-50 animate-fade-up flex justify-end pointer-events-none">
+        <div
+          className={`fixed right-3 sm:right-5 left-3 sm:left-auto z-50 animate-fade-up flex justify-end pointer-events-none ${
+            isAuthView ? 'bottom-5' : 'bottom-16 md:bottom-5'
+          }`}
+        >
           <div
             className={`pointer-events-auto px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 text-xs font-semibold max-w-sm bg-white border ${
               toast.type === 'success'
@@ -114,7 +124,7 @@ const MainAppContent: React.FC = () => {
         </div>
       )}
 
-      <MobileBottomNav />
+      {!isAuthView && <MobileBottomNav />}
     </div>
   );
 };
