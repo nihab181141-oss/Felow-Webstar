@@ -34,6 +34,7 @@ import {
   sanitizeFacebookUrl,
   DEFAULT_TUTOR_WHATSAPP_MESSAGE
 } from '../../utils/contactLinks';
+import { TutorReviewsSection } from '../tutors/TutorReviewsSection';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -1091,7 +1092,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                           : 'border-transparent text-[#858585] hover:text-[#252525]'
                       }`}
                     >
-                      Reviews ({activeTutor.reviews?.length || 0})
+                      Reviews ({Math.max(activeTutor.reviewCount || 0, activeTutor.reviews?.length || 0)})
                     </button>
                   </div>
 
@@ -1238,31 +1239,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div className="pt-4 space-y-3">
-                      {!activeTutor.reviews || activeTutor.reviews.length === 0 ? (
-                        <p className="text-sm text-[#858585]">No reviews posted yet.</p>
-                      ) : (
-                        activeTutor.reviews.map(rev => (
-                          <div key={rev.id} className="p-3.5 rounded-2xl bg-[#FFF3EF] space-y-1">
-                            <div className="flex items-center justify-between gap-2">
-                              <div>
-                                <div className="text-sm font-bold text-[#252525]">
-                                  {rev.learnerName}
-                                </div>
-                                <div className="text-xs text-[#858585]">
-                                  {rev.learnerRole} · {rev.classGrade}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-0.5 text-[#252525] text-xs font-mono font-bold tabular-nums">
-                                <Star className="w-3.5 h-3.5 text-[#F5A04E] fill-[#F5A04E]" />
-                                <span>{rev.rating}.0</span>
-                              </div>
-                            </div>
-                            <p className="text-sm text-[#252525] leading-relaxed">{rev.comment}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
+                    <TutorReviewsSection tutor={activeTutor} compact />
                   )}
                 </div>
               </div>

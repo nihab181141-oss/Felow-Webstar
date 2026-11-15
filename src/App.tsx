@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/Header';
 import { MobileBottomNav } from './components/MobileBottomNav';
@@ -6,7 +6,7 @@ import { SplitDirectoryWorkspace } from './components/workspace/SplitDirectoryWo
 import { AuthModal } from './components/auth/AuthModal';
 import { CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
-// Lazy-load secondary full-page views and modals for faster initial directory paint
+// Lazy-load secondary full-page views and modals for fast initial landing paint
 const TutorFullProfilePage = lazy(() =>
   import('./components/tutors/TutorFullProfilePage').then(m => ({ default: m.TutorFullProfilePage }))
 );
@@ -62,6 +62,34 @@ const MainAppContent: React.FC = () => {
     activeView === 'tuitions';
 
   const isAuthView = activeView === 'login';
+  const [hasMountedDirectory, setHasMountedDirectory] = useState(isDirectoryView);
+
+  useEffect(() => {
+    if (isDirectoryView && !hasMountedDirectory) {
+      setHasMountedDirectory(true);
+    }
+  }, [isDirectoryView, hasMountedDirectory]);
+
+  // Warm up secondary route chunks on browser idle for instant tab/page switches
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const prefetch = () => {
+      void import('./components/tutors/TutorFullProfilePage');
+      void import('./components/dashboards/LearnerDashboard');
+      void import('./components/dashboards/TutorDashboard');
+      void import('./components/tuitions/PostTuitionModal');
+    };
+    const w = window as unknown as {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (typeof w.requestIdleCallback === 'function') {
+      const idleId = w.requestIdleCallback(prefetch, { timeout: 2000 });
+      return () => w.cancelIdleCallback?.(idleId);
+    }
+    const timer = window.setTimeout(prefetch, 1200);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   return (
     <div
@@ -72,7 +100,11 @@ const MainAppContent: React.FC = () => {
       {!isAuthView && <Header />}
 
       <main className="flex-1 min-w-0">
-        {isDirectoryView && <SplitDirectoryWorkspace />}
+        {hasMountedDirectory && (
+          <div className={isDirectoryView ? 'block' : 'hidden'}>
+            <SplitDirectoryWorkspace />
+          </div>
+        )}
 
         <Suspense fallback={<ViewFallback />}>
           {activeView === 'tutor-detail' && <TutorFullProfilePage />}
@@ -104,7 +136,7 @@ const MainAppContent: React.FC = () => {
       {toast && (
         <div
           className={`fixed right-3 sm:right-5 left-3 sm:left-auto z-50 animate-fade-up flex justify-end pointer-events-none ${
-            isAuthView ? 'bottom-5' : 'bottom-16 md:bottom-5'
+            isAuthView ? 'bottom-5' : 'bottom-20 md:bottom-5'
           }`}
         >
           <div

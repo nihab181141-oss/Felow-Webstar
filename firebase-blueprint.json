@@ -119,6 +119,26 @@
       },
       "required": ["uid", "whatsappConsent", "contactVisibility"]
     },
+    "TutorReview": {
+      "title": "TutorReview",
+      "description": "Verified student or guardian review and star rating for a tutor (deterministic ID = reviewer UID)",
+      "type": "object",
+      "properties": {
+        "tutorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "learnerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "learnerName": { "type": "string", "maxLength": 128 },
+        "learnerRole": { "type": "string", "maxLength": 64 },
+        "learnerAvatar": { "type": "string", "maxLength": 512 },
+        "rating": { "type": "number" },
+        "comment": { "type": "string", "maxLength": 1000 },
+        "date": { "type": "string", "maxLength": 32 },
+        "classGrade": { "type": "string", "maxLength": 64 },
+        "subjects": { "type": "array" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["tutorId", "learnerId", "learnerName", "learnerRole", "rating", "comment", "date"]
+    },
     "TuitionPost": {
       "title": "TuitionPost",
       "description": "Public tuition requirement posted by student or guardian",
@@ -341,6 +361,10 @@
     "/tutorProfiles/{profileId}/private/contact": {
       "schema": { "$ref": "#/entities/TutorPrivateContact" },
       "description": "Isolated tutor WhatsApp and Facebook contact details"
+    },
+    "/tutorProfiles/{profileId}/reviews/{reviewerId}": {
+      "schema": { "$ref": "#/entities/TutorReview" },
+      "description": "Public student and guardian reviews and star ratings for a tutor"
     },
     "/tuitionPosts/{postId}": {
       "schema": { "$ref": "#/entities/TuitionPost" },

@@ -53,11 +53,14 @@ export interface Review {
   learnerId: string;
   learnerName: string;
   learnerRole: string;
+  learnerAvatar?: string;
   rating: number; // 1 to 5
   comment: string;
   date: string;
   subjects: string[];
   classGrade: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface TutorPrivateContact {

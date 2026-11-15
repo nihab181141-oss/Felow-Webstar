@@ -372,6 +372,31 @@ service cloud.firestore {
         (!('resolvedAt' in data) || data.resolvedAt is timestamp);
     }
 
+    function isValidTutorReview(data) {
+      return data.keys().hasAll([
+          'tutorId', 'learnerId', 'learnerName', 'learnerRole',
+          'rating', 'comment', 'date', 'classGrade', 'subjects',
+          'createdAt', 'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'tutorId', 'learnerId', 'learnerName', 'learnerRole', 'learnerAvatar',
+          'rating', 'comment', 'date', 'classGrade', 'subjects',
+          'createdAt', 'updatedAt'
+        ]) &&
+        isValidId(data.tutorId) &&
+        isValidId(data.learnerId) &&
+        data.learnerName is string && data.learnerName.size() > 0 && data.learnerName.size() <= 128 &&
+        data.learnerRole is string && data.learnerRole.size() > 0 && data.learnerRole.size() <= 64 &&
+        (!('learnerAvatar' in data) || (data.learnerAvatar is string && data.learnerAvatar.size() <= 512)) &&
+        data.rating is int && data.rating >= 1 && data.rating <= 5 &&
+        data.comment is string && data.comment.size() >= 10 && data.comment.size() <= 1000 &&
+        data.date is string && data.date.size() > 0 && data.date.size() <= 32 &&
+        data.classGrade is string && data.classGrade.size() <= 64 &&
+        data.subjects is list && data.subjects.size() <= 10 && (data.subjects.size() == 0 || data.subjects[0] is string) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
     // 4. Connection Health Check (Read-only single document)
     match /test/connection {
       allow get: if true;
@@ -422,7 +447,7 @@ service cloud.firestore {
             ])
           )
         );
-      allow delete: if isAdmin() && isValidId(userId);
+      allow delete: if isVerifiedUser() && isValidId(userId) && (isOwner(userId) || isAdmin());
     }
 
     // 7. Learner Profiles (Strict PII Isolation: Owner or Admin only)
@@ -453,7 +478,7 @@ service cloud.firestore {
             ])
           )
         );
-      allow delete: if isAdmin() && isValidId(profileId);
+      allow delete: if isVerifiedUser() && isValidId(profileId) && (isOwner(profileId) || isAdmin());
     }
 
     // 8. Tutor Profiles (Public Discovery — zero raw PII; WhatsApp/Facebook isolated in /private/contact)
@@ -500,9 +525,35 @@ service cloud.firestore {
               'whatsappPublic', 'whatsappConsent', 'profileVisibility', 'contactVisibility',
               'isPublished', 'availability', 'teachingStyleSummary', 'profileCompletion', 'updatedAt'
             ])
+          ) ||
+          (
+            !isOwner(profileId) &&
+            incoming().uid == existing().uid &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt']) &&
+            incoming().rating is number && incoming().rating >= 0 && incoming().rating <= 5 &&
+            incoming().reviewCount is int && incoming().reviewCount >= 0 && incoming().reviewCount <= 10000 &&
+            (
+              (
+                !exists(/databases/$(database)/documents/tutorProfiles/$(profileId)/reviews/$(request.auth.uid)) &&
+                existsAfter(/databases/$(database)/documents/tutorProfiles/$(profileId)/reviews/$(request.auth.uid)) &&
+                incoming().reviewCount == existing().reviewCount + 1
+              ) ||
+              (
+                exists(/databases/$(database)/documents/tutorProfiles/$(profileId)/reviews/$(request.auth.uid)) &&
+                existsAfter(/databases/$(database)/documents/tutorProfiles/$(profileId)/reviews/$(request.auth.uid)) &&
+                incoming().reviewCount == existing().reviewCount
+              ) ||
+              (
+                exists(/databases/$(database)/documents/tutorProfiles/$(profileId)/reviews/$(request.auth.uid)) &&
+                !existsAfter(/databases/$(database)/documents/tutorProfiles/$(profileId)/reviews/$(request.auth.uid)) &&
+                incoming().reviewCount == existing().reviewCount - 1
+              )
+            )
           )
         );
-      allow delete: if isAdmin() && isValidId(profileId);
+      allow delete: if isVerifiedUser() && isValidId(profileId) && (isOwner(profileId) || isAdmin());
 
       match /private/contact {
         allow get: if isValidId(profileId) && isSignedIn() && (
@@ -517,7 +568,41 @@ service cloud.firestore {
           isValidTutorPrivateContact(incoming()) &&
           incoming().uid == request.auth.uid &&
           incoming().updatedAt == request.time;
-        allow delete: if isAdmin() && isValidId(profileId);
+        allow delete: if isVerifiedUser() && isValidId(profileId) && (isOwner(profileId) || isAdmin());
+      }
+
+      match /reviews/{reviewerId} {
+        allow get: if isValidId(profileId) && isValidId(reviewerId);
+        allow list: if isValidId(profileId);
+        allow create: if isVerifiedUser() &&
+          isValidId(profileId) &&
+          isValidId(reviewerId) &&
+          reviewerId == request.auth.uid &&
+          profileId != request.auth.uid &&
+          isValidTutorReview(incoming()) &&
+          incoming().tutorId == profileId &&
+          incoming().learnerId == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isVerifiedUser() &&
+          isValidId(profileId) &&
+          isValidId(reviewerId) &&
+          isValidTutorReview(incoming()) &&
+          (
+            isAdmin() ||
+            (
+              reviewerId == request.auth.uid &&
+              profileId != request.auth.uid &&
+              incoming().tutorId == existing().tutorId &&
+              incoming().learnerId == existing().learnerId &&
+              incoming().createdAt == existing().createdAt &&
+              incoming().updatedAt == request.time
+            )
+          );
+        allow delete: if isVerifiedUser() &&
+          isValidId(profileId) &&
+          isValidId(reviewerId) &&
+          (reviewerId == request.auth.uid || profileId == request.auth.uid || isAdmin());
       }
     }
 
@@ -588,7 +673,7 @@ service cloud.firestore {
           incoming().updatedAt == request.time &&
           get(/databases/$(database)/documents/tuitionPosts/$(postId)).data.learnerId == request.auth.uid;
         allow delete: if isVerifiedUser() && isValidId(postId) && (
-          get(/databases/$(database)/documents/tuitionPosts/$(postId)).data.learnerId == request.auth.uid || isAdmin()
+          existing().learnerId == request.auth.uid || isAdmin()
         );
       }
     }
@@ -648,7 +733,11 @@ service cloud.firestore {
             incoming().diff(existing()).affectedKeys().hasOnly(['status', 'feedbackNote', 'demoDate', 'guardianWhatsApp', 'updatedAt'])
           )
         );
-      allow delete: if isAdmin() && isValidId(applicationId);
+      allow delete: if isVerifiedUser() && isValidId(applicationId) && (
+        existing().tutorId == request.auth.uid ||
+        existing().learnerId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // 11. Direct Invitations (Strict Scoped Access)
@@ -697,7 +786,11 @@ service cloud.firestore {
             )
           )
         );
-      allow delete: if isAdmin() && isValidId(invitationId);
+      allow delete: if isVerifiedUser() && isValidId(invitationId) && (
+        existing().learnerId == request.auth.uid ||
+        existing().tutorId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // 12. Tutor Favourites (Owner Scoped)
@@ -773,7 +866,7 @@ service cloud.firestore {
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time &&
         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'rejectionReason', 'updatedAt']);
-      allow delete: if isAdmin() && isValidId(requestId);
+      allow delete: if isVerifiedUser() && isValidId(requestId) && (existing().tutorId == request.auth.uid || isAdmin());
     }
 
     // 16. Safety Reports (Reporter Owner & Admin)

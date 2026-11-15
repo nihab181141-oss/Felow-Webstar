@@ -4,6 +4,8 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   signOut,
+  deleteUser,
+  reauthenticateWithPopup,
   User as FirebaseUser
 } from 'firebase/auth';
 import {
@@ -38,6 +40,7 @@ import {
   UserAccount,
   TutorProfile,
   TutorPrivateContact,
+  Review,
   LearnerProfile,
   TuitionPost,
   TuitionPostStatus,
@@ -397,13 +400,40 @@ export async function saveLearnerProfileInFirestore(
   profile: Partial<LearnerProfile>
 ): Promise<void> {
   const path = `learnerProfiles/${uid}`;
-  const completion = calculateLearnerCompleteness(profile);
+  const cleanName = profile.name !== undefined ? profile.name.trim().slice(0, 128) : undefined;
+  const cleanPhone = profile.phone !== undefined ? profile.phone.trim().slice(0, 32) : undefined;
+  const cleanWa = profile.whatsappNumber !== undefined ? profile.whatsappNumber.trim().slice(0, 32) : undefined;
+  const cleanFb =
+    profile.facebookUrl !== undefined
+      ? (profile.facebookUrl.trim() ? sanitizeFacebookUrl(profile.facebookUrl) || '' : '').slice(0, 512)
+      : undefined;
+  const cleanArea = profile.area !== undefined ? profile.area.trim().slice(0, 128) : undefined;
+  const cleanDistrict = profile.district !== undefined ? profile.district.trim().slice(0, 64) : undefined;
+  const cleanDivision = profile.division !== undefined ? profile.division.trim().slice(0, 64) : undefined;
+  const cleanUpazila = profile.upazila !== undefined ? profile.upazila.trim().slice(0, 64) : undefined;
+
+  const sanitizedInput: Partial<LearnerProfile> = {
+    learnerType: profile.learnerType,
+    name: cleanName,
+    phone: cleanPhone,
+    whatsappNumber: cleanWa,
+    facebookUrl: cleanFb,
+    division: cleanDivision,
+    district: cleanDistrict,
+    upazila: cleanUpazila,
+    area: cleanArea,
+    phoneVisibility: profile.phoneVisibility
+  };
+
+  const completion = calculateLearnerCompleteness(sanitizedInput);
   try {
     const lpRef = doc(db, 'learnerProfiles', uid);
     const existingSnap = await getDoc(lpRef);
     const payload = stripUndefined({
-      ...profile,
+      ...sanitizedInput,
       uid,
+      learnerType: sanitizedInput.learnerType || existingSnap.data()?.learnerType || 'guardian',
+      district: sanitizedInput.district || existingSnap.data()?.district || 'Dhaka',
       profileCompletion: completion,
       updatedAt: serverTimestamp(),
       ...(existingSnap.exists() ? {} : { createdAt: serverTimestamp() })
@@ -421,16 +451,16 @@ export async function saveLearnerProfileInFirestore(
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
       await updateDoc(userRef, stripUndefined({
-        name: profile.name,
-        phone: profile.phone,
-        whatsappNumber: profile.whatsappNumber,
-        facebookUrl: profile.facebookUrl,
-        division: profile.division,
-        district: profile.district,
-        upazila: profile.upazila,
-        area: profile.area,
-        learnerSubtype: profile.learnerType,
-        phoneVisibility: profile.phoneVisibility,
+        name: cleanName,
+        phone: cleanPhone,
+        whatsappNumber: cleanWa,
+        facebookUrl: cleanFb,
+        division: cleanDivision,
+        district: cleanDistrict,
+        upazila: cleanUpazila,
+        area: cleanArea,
+        learnerSubtype: sanitizedInput.learnerType,
+        phoneVisibility: sanitizedInput.phoneVisibility,
         updatedAt: serverTimestamp()
       }));
     }
@@ -792,6 +822,220 @@ export function mapTutorProfileDoc(
     isSample: false,
     reviews: Array.isArray(d.reviews) ? d.reviews : []
   };
+}
+
+// -------------------------------------------------------------
+// Tutor Reviews & Ratings Subcollection
+// -------------------------------------------------------------
+
+function mapTutorReviewDoc(
+  tutorId: string,
+  docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
+): Review {
+  const d = docSnap.data() || {};
+  return {
+    id: docSnap.id,
+    tutorId: d.tutorId || tutorId,
+    learnerId: d.learnerId || docSnap.id,
+    learnerName: d.learnerName || 'Verified Student',
+    learnerRole: d.learnerRole || 'Student',
+    learnerAvatar: d.learnerAvatar || '',
+    rating: Number(d.rating) || 5,
+    comment: d.comment || '',
+    date: d.date || toIsoDateString(d.updatedAt || d.createdAt, new Date().toISOString()).split('T')[0],
+    subjects: Array.isArray(d.subjects) ? d.subjects : [],
+    classGrade: d.classGrade || '',
+    createdAt: toIsoDateString(d.createdAt),
+    updatedAt: toIsoDateString(d.updatedAt)
+  };
+}
+
+export async function fetchTutorReviewsFromFirestore(tutorId: string): Promise<Review[]> {
+  if (!tutorId) return [];
+  const path = `tutorProfiles/${tutorId}/reviews`;
+  try {
+    const q = query(collection(db, path), orderBy('updatedAt', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => mapTutorReviewDoc(tutorId, d));
+  } catch (error) {
+    console.warn('fetchTutorReviewsFromFirestore fallback:', error);
+    return [];
+  }
+}
+
+export async function submitTutorReviewInFirestore(
+  tutorId: string,
+  review: Omit<Review, 'id' | 'date' | 'tutorId' | 'createdAt' | 'updatedAt'>
+): Promise<{ reviews: Review[]; rating: number; reviewCount: number }> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('Please sign in with Google to submit a review.');
+  }
+  const reviewerId = user.uid;
+  if (reviewerId === tutorId) {
+    throw new Error('You cannot review your own tutor profile.');
+  }
+
+  const ratingInt = Math.round(Number(review.rating));
+  if (!Number.isInteger(ratingInt) || ratingInt < 1 || ratingInt > 5) {
+    throw new Error('Please choose a star rating between 1 and 5.');
+  }
+  const trimmedComment = (review.comment || '').trim().slice(0, 1000);
+  if (trimmedComment.length < 10) {
+    throw new Error('Please write at least 10 characters of helpful feedback.');
+  }
+
+  const cleanSubjects = Array.isArray(review.subjects)
+    ? review.subjects.map(s => String(s).trim()).filter(Boolean).slice(0, 10)
+    : [];
+  const cleanClassGrade = (review.classGrade || '').trim().slice(0, 64);
+  const cleanLearnerName = (review.learnerName || user.displayName || 'Student').trim().slice(0, 128) || 'Student';
+  const cleanLearnerRole = (review.learnerRole || 'Student / Guardian').trim().slice(0, 64) || 'Student / Guardian';
+  const cleanLearnerAvatar = (review.learnerAvatar || user.photoURL || '').trim().slice(0, 512);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const path = `tutorProfiles/${tutorId}/reviews/${reviewerId}`;
+  try {
+    const tutorRef = doc(db, 'tutorProfiles', tutorId);
+    const reviewRef = doc(db, 'tutorProfiles', tutorId, 'reviews', reviewerId);
+
+    const [tutorSnap, existingReviewSnap, allReviewsSnap] = await Promise.all([
+      getDoc(tutorRef),
+      getDoc(reviewRef),
+      getDocs(query(collection(db, 'tutorProfiles', tutorId, 'reviews'), limit(500)))
+    ]);
+
+    const reviewMap = new Map<string, Review>();
+    allReviewsSnap.docs.forEach(d => {
+      reviewMap.set(d.id, mapTutorReviewDoc(tutorId, d));
+    });
+
+    const nowIso = new Date().toISOString();
+    const isEditing = existingReviewSnap.exists();
+    const optimisticReview: Review = {
+      id: reviewerId,
+      tutorId,
+      learnerId: reviewerId,
+      learnerName: cleanLearnerName,
+      learnerRole: cleanLearnerRole,
+      learnerAvatar: cleanLearnerAvatar,
+      rating: ratingInt,
+      comment: trimmedComment,
+      date: todayStr,
+      subjects: cleanSubjects,
+      classGrade: cleanClassGrade,
+      createdAt: isEditing ? toIsoDateString(existingReviewSnap.data()?.createdAt, nowIso) : nowIso,
+      updatedAt: nowIso
+    };
+    reviewMap.set(reviewerId, optimisticReview);
+
+    const reviewsList = Array.from(reviewMap.values()).sort((a, b) => {
+      const ta = Date.parse(a.updatedAt || a.date || '') || 0;
+      const tb = Date.parse(b.updatedAt || b.date || '') || 0;
+      return tb - ta;
+    });
+
+    const reviewCount = reviewsList.length;
+    const totalStars = reviewsList.reduce((sum, r) => sum + Number(r.rating || 0), 0);
+    const rating = reviewCount > 0 ? Number((totalStars / reviewCount).toFixed(2)) : 0;
+
+    const batch = writeBatch(db);
+    const payload = stripUndefined({
+      tutorId,
+      learnerId: reviewerId,
+      learnerName: cleanLearnerName,
+      learnerRole: cleanLearnerRole,
+      ...(cleanLearnerAvatar ? { learnerAvatar: cleanLearnerAvatar } : {}),
+      rating: ratingInt,
+      comment: trimmedComment,
+      date: todayStr,
+      classGrade: cleanClassGrade,
+      subjects: cleanSubjects,
+      updatedAt: serverTimestamp()
+    });
+
+    if (isEditing) {
+      batch.update(reviewRef, payload);
+    } else {
+      batch.set(reviewRef, {
+        ...payload,
+        createdAt: serverTimestamp()
+      });
+    }
+
+    if (tutorSnap.exists()) {
+      batch.update(tutorRef, {
+        rating,
+        reviewCount,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    await batch.commit();
+
+    if (!isEditing) {
+      await createNotificationInFirestore({
+        userId: tutorId,
+        title: 'New Student Review',
+        message: `${cleanLearnerName} left a ${ratingInt}-star review on your tutor profile.`,
+        type: 'system',
+        actionView: 'tutor-detail',
+        targetId: tutorId
+      });
+    }
+
+    return { reviews: reviewsList, rating, reviewCount };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function deleteTutorReviewInFirestore(
+  tutorId: string,
+  reviewerId: string
+): Promise<{ reviews: Review[]; rating: number; reviewCount: number }> {
+  const path = `tutorProfiles/${tutorId}/reviews/${reviewerId}`;
+  try {
+    const tutorRef = doc(db, 'tutorProfiles', tutorId);
+    const reviewRef = doc(db, 'tutorProfiles', tutorId, 'reviews', reviewerId);
+    const [tutorSnap, existingReviewSnap, allReviewsSnap] = await Promise.all([
+      getDoc(tutorRef),
+      getDoc(reviewRef),
+      getDocs(query(collection(db, 'tutorProfiles', tutorId, 'reviews'), limit(500)))
+    ]);
+
+    const reviewMap = new Map<string, Review>();
+    allReviewsSnap.docs.forEach(d => {
+      if (d.id !== reviewerId) {
+        reviewMap.set(d.id, mapTutorReviewDoc(tutorId, d));
+      }
+    });
+
+    const reviewsList = Array.from(reviewMap.values()).sort((a, b) => {
+      const ta = Date.parse(a.updatedAt || a.date || '') || 0;
+      const tb = Date.parse(b.updatedAt || b.date || '') || 0;
+      return tb - ta;
+    });
+    const reviewCount = reviewsList.length;
+    const totalStars = reviewsList.reduce((sum, r) => sum + Number(r.rating || 0), 0);
+    const rating = reviewCount > 0 ? Number((totalStars / reviewCount).toFixed(2)) : 0;
+
+    const batch = writeBatch(db);
+    if (existingReviewSnap.exists()) {
+      batch.delete(reviewRef);
+    }
+    if (tutorSnap.exists()) {
+      batch.update(tutorRef, {
+        rating,
+        reviewCount,
+        updatedAt: serverTimestamp()
+      });
+    }
+    await batch.commit();
+    return { reviews: reviewsList, rating, reviewCount };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
 }
 
 // -------------------------------------------------------------
@@ -1426,3 +1670,92 @@ export async function uploadAvatarToStorage(userId: string, file: File): Promise
   const uploadResult = await uploadBytes(fileRef, file, { contentType: file.type });
   return await getDownloadURL(uploadResult.ref);
 }
+
+async function deleteDocsFromQuery(q: ReturnType<typeof query>): Promise<void> {
+  try {
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+    const chunks: (typeof snap.docs)[] = [];
+    for (let i = 0; i < snap.docs.length; i += 400) {
+      chunks.push(snap.docs.slice(i, i + 400));
+    }
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+  } catch (err) {
+    console.warn('Non-blocking cleanup step skipped:', err);
+  }
+}
+
+export async function deleteUserAccountFromFirebase(): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error('Please sign in first to delete your account.');
+  }
+
+  const uid = user.uid;
+
+  // Re-authenticate proactively inside the click gesture if session is older than 4 minutes
+  // so the user isn't wiped in Firestore and then blocked by auth/requires-recent-login.
+  const lastSignInMs = user.metadata.lastSignInTime ? Date.parse(user.metadata.lastSignInTime) : 0;
+  const isStaleSession = !lastSignInMs || Date.now() - lastSignInMs > 4 * 60 * 1000;
+  if (isStaleSession) {
+    try {
+      await reauthenticateWithPopup(user, googleProvider);
+    } catch (reauthErr: any) {
+      if (reauthErr?.code === 'auth/popup-closed-by-user' || reauthErr?.code === 'auth/cancelled-popup-request') {
+        throw new Error('Google verification popup was closed. Account deletion was cancelled.');
+      }
+      throw reauthErr;
+    }
+  }
+
+  // 1. Delete user's tuition posts and their private contact subdocs
+  try {
+    const postsSnap = await getDocs(query(collection(db, 'tuitionPosts'), where('learnerId', '==', uid), limit(200)));
+    for (const postDoc of postsSnap.docs) {
+      await deleteDoc(doc(db, 'tuitionPosts', postDoc.id, 'private', 'contact')).catch(() => undefined);
+      await deleteDoc(postDoc.ref).catch(() => undefined);
+    }
+  } catch (err) {
+    console.warn('Tuition post cleanup warning:', err);
+  }
+
+  // 2. Delete user-scoped bookmarks, notifications, applications, invitations, and verifications
+  await Promise.all([
+    deleteDocsFromQuery(query(collection(db, 'tutorFavourites'), where('userId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'savedTuitions'), where('userId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'notifications'), where('userId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'applications'), where('tutorId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'applications'), where('learnerId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'invitations'), where('tutorId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'invitations'), where('learnerId', '==', uid), limit(200))),
+    deleteDocsFromQuery(query(collection(db, 'verificationRequests'), where('tutorId', '==', uid), limit(100))),
+    deleteDocsFromQuery(query(collection(db, 'tutorProfiles', uid, 'reviews'), limit(200)))
+  ]);
+
+  // 3. Delete tutor profile, tutor private contact, learner profile, and root user record
+  await Promise.all([
+    deleteDoc(doc(db, 'tutorProfiles', uid, 'private', 'contact')).catch(() => undefined),
+    deleteDoc(doc(db, 'tutorProfiles', uid)).catch(() => undefined),
+    deleteDoc(doc(db, 'learnerProfiles', uid)).catch(() => undefined),
+    deleteDoc(doc(db, 'users', uid)).catch(() => undefined)
+  ]);
+
+  tutorContactCache.delete(uid);
+
+  // 4. Delete Firebase Auth account
+  try {
+    await deleteUser(user);
+  } catch (err: any) {
+    if (err?.code === 'auth/requires-recent-login') {
+      await reauthenticateWithPopup(user, googleProvider);
+      await deleteUser(user);
+    } else {
+      throw err;
+    }
+  }
+}
+

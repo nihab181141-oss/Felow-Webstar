@@ -28,6 +28,7 @@ import {
   sanitizeFacebookUrl,
   DEFAULT_TUTOR_WHATSAPP_MESSAGE
 } from '../../utils/contactLinks';
+import { TutorReviewsSection } from './TutorReviewsSection';
 
 export const TutorFullProfilePage: React.FC = () => {
   const {
@@ -278,13 +279,17 @@ export const TutorFullProfilePage: React.FC = () => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs sm:text-sm text-[#858585] tabular-nums pt-0.5">
-                  {tutor.rating > 0 && (
-                    <span className="inline-flex items-center gap-1 font-bold text-[#252525]">
-                      <Star className="w-4 h-4 text-[#F5A04E] fill-[#F5A04E] shrink-0" />
-                      <span>{tutor.rating.toFixed(1)}</span>
-                      <span className="font-normal text-[#858585]">({tutor.reviewCount} reviews)</span>
+                  <a
+                    href="#tutor-reviews-heading"
+                    className="inline-flex items-center gap-1 font-bold text-[#252525] hover:text-[#C94A35] transition-colors"
+                  >
+                    <Star className="w-4 h-4 text-[#F5A04E] fill-[#F5A04E] shrink-0" />
+                    <span>{tutor.rating > 0 ? tutor.rating.toFixed(1) : 'New'}</span>
+                    <span className="font-normal text-[#858585]">
+                      ({Math.max(tutor.reviewCount || 0, tutor.reviews?.length || 0)} reviews)
                     </span>
-                  )}
+                  </a>
+                  <span>·</span>
                   <span>
                     {tutor.experienceYears > 0 ? `${tutor.experienceYears} years exp` : 'New Tutor'}
                   </span>
@@ -459,38 +464,8 @@ export const TutorFullProfilePage: React.FC = () => {
               </div>
             </section>
 
-            {/* Student & Parent Reviews */}
-            <section className="ivory-card p-5 sm:p-6 space-y-4">
-              <h2 className="font-display text-lg font-bold text-[#252525]">
-                Student & Parent Reviews ({tutor.reviews?.length || 0})
-              </h2>
-
-              {!tutor.reviews || tutor.reviews.length === 0 ? (
-                <p className="text-sm text-[#858585]">
-                  No written reviews posted yet. Connect via WhatsApp to discuss a trial class.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {tutor.reviews.map(rev => (
-                    <div key={rev.id} className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="text-sm font-bold text-[#252525]">{rev.learnerName}</div>
-                          <div className="text-xs text-[#858585]">
-                            {rev.learnerRole} · {rev.classGrade} · {rev.date}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 text-[#252525] text-xs font-mono font-bold tabular-nums shrink-0">
-                          <Star className="w-3.5 h-3.5 text-[#F5A04E] fill-[#F5A04E]" />
-                          <span>{rev.rating}.0</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-[#252525] leading-relaxed">{rev.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
+            {/* Interactive Student & Guardian Reviews & Star Ratings */}
+            <TutorReviewsSection tutor={tutor} />
           </div>
 
           {/* Right Column: Fee, Areas & Contact Details */}

@@ -4,10 +4,14 @@ import {
   Eye,
   MessageCircle,
   Upload,
-  CheckCircle2
+  CheckCircle2,
+  Globe,
+  Repeat,
+  ShieldCheck
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TuitionPostCard } from '../shared/TuitionPostCard';
+import { DeleteAccountSection } from '../shared/DeleteAccountSection';
 import { buildWhatsAppUrl } from '../../utils/contactLinks';
 import { DEFAULT_PLACEHOLDER_AVATAR } from '../../types';
 
@@ -27,10 +31,14 @@ export const TutorDashboard: React.FC = () => {
     uploadTutorDoc,
     submitNewVerificationDoc,
     getTuitionPrivateContact,
-    isAuthenticated
+    isAuthenticated,
+    switchUserRole,
+    language,
+    setLanguage
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'applications' | 'invitations' | 'saved'>('applications');
+  const isBn = language === 'bn';
+  const [activeTab, setActiveTab] = useState<'applications' | 'invitations' | 'saved' | 'settings'>('applications');
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [guardianContacts, setGuardianContacts] = useState<Record<string, string>>({});
 
@@ -156,9 +164,10 @@ export const TutorDashboard: React.FC = () => {
 
             <div className="border-t border-[#F1E1DC] mt-4 pt-2 flex items-center gap-1.5 overflow-x-auto">
               {[
-                { id: 'applications', label: `My Applications (${myApps.length})` },
-                { id: 'invitations', label: `Invitations (${myInvites.length})` },
-                { id: 'saved', label: `Saved & Verification (${savedTuitions.length})` }
+                { id: 'applications', label: isBn ? `আমার আবেদন (${myApps.length})` : `My Applications (${myApps.length})` },
+                { id: 'invitations', label: isBn ? `আমন্ত্রণ (${myInvites.length})` : `Invitations (${myInvites.length})` },
+                { id: 'saved', label: isBn ? `সেভড ও ভেরিফিকেশন (${savedTuitions.length})` : `Saved & Verification (${savedTuitions.length})` },
+                { id: 'settings', label: isBn ? 'অ্যাকাউন্ট সেটিংস' : 'Account Settings' }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -386,6 +395,63 @@ export const TutorDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-4">
+            <div className="ivory-card p-5 space-y-3.5 text-xs">
+              <h2 className="font-display text-base font-bold text-[#252525] flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-[#F47C68]" />
+                <span>{isBn ? 'টিউটর অ্যাকাউন্ট ও পছন্দসমূহ' : 'Tutor Account & Preferences'}</span>
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-2xl bg-[#FFF3EF] space-y-1">
+                  <div className="text-[#858585]">{isBn ? 'সাইন-ইন ইমেইল' : 'Signed-in Email'}</div>
+                  <div className="font-semibold text-[#252525] break-all">
+                    {currentUser.email || 'Google Account'}
+                  </div>
+                </div>
+                <div className="p-3.5 rounded-2xl bg-[#FFF3EF] space-y-1">
+                  <div className="text-[#858585]">{isBn ? 'প্রোফাইল দৃশ্যমানতা' : 'Profile Status'}</div>
+                  <div className="font-semibold text-[#252525]">
+                    {myTutorProfile?.isPublished ? 'Published in Directory' : 'Draft / Incomplete'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveView('tutor-onboarding')}
+                  className="h-10 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{isBn ? 'টিউটর প্রোফাইল এডিট' : 'Edit Tutor Profile & Contact'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => switchUserRole('learner')}
+                  className="h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Repeat className="w-3.5 h-3.5" />
+                  <span>{isBn ? 'স্টুডেন্ট / গার্জিয়ান মোডে যান' : 'Switch to Student / Guardian'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
+                  className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                >
+                  <Globe className="w-3.5 h-3.5 text-[#F47C68]" />
+                  <span>{language === 'en' ? 'বাংলা ভাষা' : 'English Language'}</span>
+                </button>
+              </div>
+            </div>
+
+            <DeleteAccountSection />
           </div>
         )}
       </div>
