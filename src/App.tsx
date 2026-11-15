@@ -4,6 +4,8 @@ import { Header } from './components/Header';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { SplitDirectoryWorkspace } from './components/workspace/SplitDirectoryWorkspace';
 import { AuthModal } from './components/auth/AuthModal';
+import { SeoHead } from './components/seo/SeoHead';
+import { PublicFooter } from './components/shared/PublicFooter';
 import { CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
 // Lazy-load secondary full-page views and modals for fast initial landing paint
@@ -12,6 +14,15 @@ const TutorFullProfilePage = lazy(() =>
 );
 const TuitionFullDetailPage = lazy(() =>
   import('./components/tuitions/TuitionFullDetailPage').then(m => ({ default: m.TuitionFullDetailPage }))
+);
+const AboutPage = lazy(() =>
+  import('./components/pages/AboutPage').then(m => ({ default: m.AboutPage }))
+);
+const HowItWorksPage = lazy(() =>
+  import('./components/pages/HowItWorksPage').then(m => ({ default: m.HowItWorksPage }))
+);
+const NotFoundPage = lazy(() =>
+  import('./components/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
 );
 const AuthPage = lazy(() =>
   import('./components/auth/AuthPage').then(m => ({ default: m.AuthPage }))
@@ -56,10 +67,15 @@ const MainAppContent: React.FC = () => {
 
   const isDirectoryView =
     activeView === 'landing' ||
-    activeView === 'how-it-works' ||
-    activeView === 'about' ||
     activeView === 'tutors' ||
     activeView === 'tuitions';
+
+  const isPublicFooterVisible =
+    isDirectoryView ||
+    activeView === 'tutor-detail' ||
+    activeView === 'tuition-detail' ||
+    activeView === 'about' ||
+    activeView === 'how-it-works';
 
   const isAuthView = activeView === 'login';
   const [hasMountedDirectory, setHasMountedDirectory] = useState(isDirectoryView);
@@ -97,6 +113,7 @@ const MainAppContent: React.FC = () => {
         isAuthView ? '' : 'pb-16 md:pb-0'
       }`}
     >
+      <SeoHead />
       {!isAuthView && <Header />}
 
       <main className="flex-1 min-w-0">
@@ -109,6 +126,9 @@ const MainAppContent: React.FC = () => {
         <Suspense fallback={<ViewFallback />}>
           {activeView === 'tutor-detail' && <TutorFullProfilePage />}
           {activeView === 'tuition-detail' && <TuitionFullDetailPage />}
+          {activeView === 'about' && <AboutPage />}
+          {activeView === 'how-it-works' && <HowItWorksPage />}
+          {activeView === 'not-found' && <NotFoundPage />}
           {activeView === 'login' && <AuthPage />}
           {activeView === 'tutor-onboarding' && <TutorOnboardingWizard />}
           {activeView === 'admin' && currentRole === 'admin' && <AdminDashboard />}
@@ -121,6 +141,8 @@ const MainAppContent: React.FC = () => {
           )}
         </Suspense>
       </main>
+
+      {isPublicFooterVisible && <PublicFooter />}
 
       <Suspense fallback={null}>
         {isPostTuitionOpen && <PostTuitionModal />}

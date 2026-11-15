@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   TutorProfile,
   TutorPrivateContact,
@@ -56,6 +56,7 @@ import {
   fetchTuitionPrivateContact,
   deleteTuitionPostInFirestore,
   fetchPublicTuitionPostsPage,
+  fetchTuitionPostById,
   mapTuitionPostDoc,
   submitApplicationInFirestore,
   updateApplicationStatusInFirestore,
@@ -75,19 +76,14 @@ import {
 } from '../services/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, onSnapshot, query, where, limit } from 'firebase/firestore';
+import {
+  RouteView,
+  parseAppRoute,
+  buildPathForView,
+  normalizePathname
+} from '../utils/routing';
 
-export type AppView =
-  | 'landing'
-  | 'tutors'
-  | 'tutor-detail'
-  | 'tuitions'
-  | 'tuition-detail'
-  | 'how-it-works'
-  | 'about'
-  | 'login'
-  | 'tutor-onboarding'
-  | 'dashboard'
-  | 'admin';
+export type AppView = RouteView;
 
 interface ToastState {
   id: string;
@@ -237,16 +233,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<UserAccount>(PRESET_USERS[0]);
   const [currentRole, setCurrentRole] = useState<UserRole>('learner');
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile | null>(null);
-  const [activeView, setActiveViewState] = useState<AppView>('landing');
+  const initialParsedRoute = useMemo(
+    () =>
+      typeof window !== 'undefined'
+        ? parseAppRoute(window.location.pathname)
+        : { view: 'landing' as AppView, directoryTab: 'tutors' as const },
+    []
+  );
+  const [activeView, setActiveViewState] = useState<AppView>(initialParsedRoute.view);
+  const [pendingRouteTutorId, setPendingRouteTutorId] = useState<string | null>(
+    initialParsedRoute.tutorId || null
+  );
+  const [pendingRouteTuitionId, setPendingRouteTuitionId] = useState<string | null>(
+    initialParsedRoute.tuitionId || null
+  );
+  const isPoppingHistoryRef = useRef(false);
   const preAuthViewRef = useRef<AppView>('landing');
   const setActiveView = useCallback((viewOrUpdater: React.SetStateAction<AppView>) => {
     setActiveViewState(prev => {
       const next = typeof viewOrUpdater === 'function' ? viewOrUpdater(prev) : viewOrUpdater;
-      if (next === 'login' && prev !== 'login' && prev !== 'dashboard' && prev !== 'admin' && prev !== 'tutor-onboarding') {
+      if (
+        next === 'login' &&
+        prev !== 'login' &&
+        prev !== 'dashboard' &&
+        prev !== 'admin' &&
+        prev !== 'tutor-onboarding' &&
+        prev !== 'not-found'
+      ) {
         preAuthViewRef.current = prev;
       }
       if (next === 'tutors') setDirectoryTab('tutors');
       if (next === 'tuitions') setDirectoryTab('tuitions');
+      if (next !== 'tutor-detail') setPendingRouteTutorId(null);
+      if (next !== 'tuition-detail') setPendingRouteTuitionId(null);
       return next;
     });
   }, []);
@@ -284,8 +303,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [savedTuitionIds, setSavedTuitionIds] = useState<string[]>(['post-1']);
   const [comparisonTutorIds, setComparisonTutorIds] = useState<string[]>([]);
 
-  const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
-  const [selectedTuition, setSelectedTuition] = useState<TuitionPost | null>(null);
+  const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(() =>
+    initialParsedRoute.tutorId
+      ? INITIAL_TUTORS.find(t => t.id === initialParsedRoute.tutorId) || null
+      : null
+  );
+  const [selectedTuition, setSelectedTuition] = useState<TuitionPost | null>(() =>
+    initialParsedRoute.tuitionId
+      ? INITIAL_TUITION_POSTS.find(p => p.id === initialParsedRoute.tuitionId) || null
+      : null
+  );
   const [editingTuition, setEditingTuition] = useState<TuitionPost | null>(null);
 
   const [isPostTuitionOpen, setIsPostTuitionOpen] = useState(false);
@@ -300,7 +327,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [setActiveView]);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('register');
-  const [directoryTab, setDirectoryTab] = useState<'tutors' | 'tuitions'>('tutors');
+  const [directoryTab, setDirectoryTab] = useState<'tutors' | 'tuitions'>(
+    initialParsedRoute.directoryTab
+  );
   const [districtFilter, setDistrictFilter] = useState('All');
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -404,6 +433,94 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => unsubscribeAuth();
   }, []);
+
+  // Sync browser URL with activeView and handle Back/Forward navigation
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (activeView === 'not-found') {
+      isPoppingHistoryRef.current = false;
+      return;
+    }
+    const targetPath = buildPathForView(activeView, {
+      tutorId: selectedTutor?.id || pendingRouteTutorId,
+      tuitionId: selectedTuition?.id || pendingRouteTuitionId
+    });
+    const currentPath = normalizePathname(window.location.pathname);
+    if (isPoppingHistoryRef.current) {
+      isPoppingHistoryRef.current = false;
+    } else if (currentPath !== targetPath) {
+      window.history.pushState(null, '', targetPath);
+    }
+  }, [activeView, selectedTutor?.id, selectedTuition?.id, pendingRouteTutorId, pendingRouteTuitionId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handlePopState = () => {
+      isPoppingHistoryRef.current = true;
+      const parsed = parseAppRoute(window.location.pathname);
+      setDirectoryTab(parsed.directoryTab);
+      setPendingRouteTutorId(parsed.tutorId || null);
+      setPendingRouteTuitionId(parsed.tuitionId || null);
+      if (parsed.tutorId) {
+        const match = tutors.find(t => t.id === parsed.tutorId || t.uid === parsed.tutorId) || null;
+        setSelectedTutor(match);
+      }
+      if (parsed.tuitionId) {
+        const match = tuitionPosts.find(p => p.id === parsed.tuitionId) || null;
+        setSelectedTuition(match);
+      }
+      setActiveViewState(parsed.view);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [tutors, tuitionPosts]);
+
+  // Resolve deep-linked /tutors/:id and /tuitions/:id from loaded state or Firestore
+  useEffect(() => {
+    if (activeView !== 'tutor-detail' || !pendingRouteTutorId) return;
+    const existing = tutors.find(
+      t => t.id === pendingRouteTutorId || t.uid === pendingRouteTutorId
+    );
+    if (existing) {
+      if (selectedTutor?.id !== existing.id) {
+        setSelectedTutor(existing);
+      }
+      return;
+    }
+    let cancelled = false;
+    fetchTutorProfileById(pendingRouteTutorId).then(remoteTutor => {
+      if (cancelled || !remoteTutor) return;
+      setTutors(prev =>
+        prev.some(t => t.id === remoteTutor.id) ? prev : [remoteTutor, ...prev]
+      );
+      setSelectedTutor(remoteTutor);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeView, pendingRouteTutorId, tutors, selectedTutor?.id]);
+
+  useEffect(() => {
+    if (activeView !== 'tuition-detail' || !pendingRouteTuitionId) return;
+    const existing = tuitionPosts.find(p => p.id === pendingRouteTuitionId);
+    if (existing) {
+      if (selectedTuition?.id !== existing.id) {
+        setSelectedTuition(existing);
+      }
+      return;
+    }
+    let cancelled = false;
+    fetchTuitionPostById(pendingRouteTuitionId).then(remotePost => {
+      if (cancelled || !remotePost) return;
+      setTuitionPosts(prev =>
+        prev.some(p => p.id === remotePost.id) ? prev : [remotePost, ...prev]
+      );
+      setSelectedTuition(remotePost);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeView, pendingRouteTuitionId, tuitionPosts, selectedTuition?.id]);
 
   // Route guard for protected & admin-only views
   useEffect(() => {

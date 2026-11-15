@@ -52,7 +52,7 @@ export const TutorFullProfilePage: React.FC = () => {
   } = useApp();
 
   const tutor =
-    tutors.find(t => t.id === selectedTutor?.id) || selectedTutor || tutors[0] || null;
+    tutors.find(t => t.id === selectedTutor?.id) || selectedTutor || null;
 
   const [openingWa, setOpeningWa] = useState(false);
   const [privateContact, setPrivateContact] = useState<TutorPrivateContact | null>(null);

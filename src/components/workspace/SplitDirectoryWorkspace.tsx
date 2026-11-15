@@ -408,6 +408,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     tutors,
     tuitionPosts,
     applications,
+    activeView,
+    setActiveView,
     directoryTab,
     setDirectoryTab,
     districtFilter,
@@ -745,6 +747,20 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row gap-6 items-start">
         {/* MASTER LIST PANE */}
         <section className="w-full max-w-3xl mx-auto xl:mx-0 xl:w-[540px] 2xl:w-[600px] shrink-0 space-y-4">
+          <h1 className="font-display text-lg sm:text-xl font-extrabold text-[#252525] leading-snug px-0.5">
+            {activeView === 'tuitions'
+              ? (language === 'bn'
+                  ? 'বাংলাদেশের খোলা টিউশন বিজ্ঞপ্তিসমূহ'
+                  : 'Open Home & Online Tuition Posts in Bangladesh')
+              : activeView === 'tutors'
+              ? (language === 'bn'
+                  ? 'বাংলাদেশের যাচাইকৃত বিশ্ববিদ্যালয় টিউটর'
+                  : 'Browse Verified University Tutors Across Bangladesh')
+              : (language === 'bn'
+                  ? 'বাংলাদেশে সেরা টিউটর ও টিউশন খুঁজুন'
+                  : 'Find Verified University Tutors & Tuition in Bangladesh')}
+          </h1>
+
           {/* Mobile Full-Width Search + District Filter */}
           <div className="md:hidden space-y-2.5">
             <div className="flex items-center bg-[#FFF3EF] rounded-full border border-[#F3D5CC] focus-within:border-[#F47C68] focus-within:bg-white px-3.5 h-11 transition-colors">
@@ -829,7 +845,10 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             <div className="flex items-center gap-1 bg-[#FFF3EF] p-1 rounded-full self-start sm:self-auto">
               <button
                 type="button"
-                onClick={() => setDirectoryTab('tutors')}
+                onClick={() => {
+                  setDirectoryTab('tutors');
+                  setActiveView('tutors');
+                }}
                 className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
                   directoryTab === 'tutors'
                     ? 'bg-[#DCEBFA] text-[#252525] shadow-xs font-bold'
@@ -843,7 +862,10 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => setDirectoryTab('tuitions')}
+                onClick={() => {
+                  setDirectoryTab('tuitions');
+                  setActiveView('tuitions');
+                }}
                 className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
                   directoryTab === 'tuitions'
                     ? 'bg-[#DCEBFA] text-[#252525] shadow-xs font-bold'

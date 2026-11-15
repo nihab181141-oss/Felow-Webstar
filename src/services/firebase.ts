@@ -755,6 +755,18 @@ export async function fetchPublicTuitionPostsPage(
   }
 }
 
+export async function fetchTuitionPostById(postId: string): Promise<TuitionPost | null> {
+  if (!postId) return null;
+  try {
+    const snap = await getDoc(doc(db, 'tuitionPosts', postId));
+    if (!snap.exists()) return null;
+    return mapTuitionPostDoc(snap);
+  } catch (error) {
+    console.warn('fetchTuitionPostById warning:', error);
+    return null;
+  }
+}
+
 export function mapTutorProfileDoc(
   docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
 ): TutorProfile {
@@ -1154,8 +1166,10 @@ export async function deleteTuitionPostInFirestore(postId: string): Promise<void
   }
 }
 
-export function mapTuitionPostDoc(docSnap: QueryDocumentSnapshot<DocumentData>): TuitionPost {
-  const d = docSnap.data();
+export function mapTuitionPostDoc(
+  docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
+): TuitionPost {
+  const d = docSnap.data() || {};
   return {
     id: docSnap.id,
     title: d.title || '',

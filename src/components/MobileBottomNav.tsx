@@ -52,9 +52,7 @@ export const MobileBottomNav: React.FC = () => {
   const isDirectoryView =
     activeView === 'landing' ||
     activeView === 'tutors' ||
-    activeView === 'tuitions' ||
-    activeView === 'how-it-works' ||
-    activeView === 'about';
+    activeView === 'tuitions';
 
   const activeDockTab: DockTabId = (() => {
     if (isPostTuitionOpen) return 'post';
@@ -87,14 +85,14 @@ export const MobileBottomNav: React.FC = () => {
       setIsAccountOpen(false);
       setMobileDetailOpen(false);
       setDirectoryTab('tutors');
-      setActiveView('landing');
+      setActiveView('tutors');
       return;
     }
     if (tab === 'tuitions') {
       setIsAccountOpen(false);
       setMobileDetailOpen(false);
       setDirectoryTab('tuitions');
-      setActiveView('landing');
+      setActiveView('tuitions');
       return;
     }
     if (tab === 'post') {

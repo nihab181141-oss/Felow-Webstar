@@ -43,7 +43,7 @@ export const TuitionFullDetailPage: React.FC = () => {
   } = useApp();
 
   const post =
-    tuitionPosts.find(p => p.id === selectedTuition?.id) || selectedTuition || tuitionPosts[0] || null;
+    tuitionPosts.find(p => p.id === selectedTuition?.id) || selectedTuition || null;
 
   const [guardianPrivateWa, setGuardianPrivateWa] = useState('');
   const canViewGuardianWa = post ? canViewLearnerWhatsApp(post.learnerId) : false;

@@ -137,8 +137,26 @@ export const AuthPage: React.FC = () => {
       <section className="lg:col-span-6 bg-gradient-to-b from-[#EB624B] via-[#E45A43] to-[#D64B35] text-white px-5 sm:px-10 lg:px-12 pt-5 pb-10 lg:py-12 flex flex-col justify-center lg:rounded-l-[40px] flex-1">
         <div className="max-w-md w-full mx-auto space-y-5">
           <div className="text-center space-y-2">
-            <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white text-balance">
-              {language === 'bn' ? 'FeLoW WebStaR-এ স্বাগতম' : 'Welcome to FeLoW WebStaR'}
+            <h1 className="font-display text-2xl sm:text-3xl lg:text-[32px] font-extrabold tracking-tight text-white flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1.5">
+              {language === 'bn' ? (
+                <>
+                  <img
+                    src="/assets/aistudio/felow-webstar-side-by-side_1__1df0def6.svg"
+                    alt="FeLoW WebStaR"
+                    className="h-[0.95em] w-auto shrink-0 brightness-0 invert select-none"
+                  />
+                  <span>-এ স্বাগতম</span>
+                </>
+              ) : (
+                <>
+                  <span>Welcome to</span>
+                  <img
+                    src="/assets/aistudio/felow-webstar-side-by-side_1__1df0def6.svg"
+                    alt="FeLoW WebStaR"
+                    className="h-[0.95em] w-auto shrink-0 brightness-0 invert select-none"
+                  />
+                </>
+              )}
             </h1>
             <p className="text-sm sm:text-base text-white/95 font-medium leading-relaxed text-balance">
               {language === 'bn'
