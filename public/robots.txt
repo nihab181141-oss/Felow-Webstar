@@ -1,8 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /dashboard
-Disallow: /tutor-onboarding
-Disallow: /login
 
 Sitemap: https://felow-webstar.vercel.app/sitemap.xml

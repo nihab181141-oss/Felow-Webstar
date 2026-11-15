@@ -21,6 +21,12 @@ const AboutPage = lazy(() =>
 const HowItWorksPage = lazy(() =>
   import('./components/pages/HowItWorksPage').then(m => ({ default: m.HowItWorksPage }))
 );
+const ForGuardiansPage = lazy(() =>
+  import('./components/pages/ForGuardiansPage').then(m => ({ default: m.ForGuardiansPage }))
+);
+const BecomeTutorPage = lazy(() =>
+  import('./components/pages/BecomeTutorPage').then(m => ({ default: m.BecomeTutorPage }))
+);
 const NotFoundPage = lazy(() =>
   import('./components/pages/NotFoundPage').then(m => ({ default: m.NotFoundPage }))
 );
@@ -75,7 +81,9 @@ const MainAppContent: React.FC = () => {
     activeView === 'tutor-detail' ||
     activeView === 'tuition-detail' ||
     activeView === 'about' ||
-    activeView === 'how-it-works';
+    activeView === 'how-it-works' ||
+    activeView === 'for-guardians' ||
+    activeView === 'become-a-tutor';
 
   const isAuthView = activeView === 'login';
   const [hasMountedDirectory, setHasMountedDirectory] = useState(isDirectoryView);
@@ -128,6 +136,8 @@ const MainAppContent: React.FC = () => {
           {activeView === 'tuition-detail' && <TuitionFullDetailPage />}
           {activeView === 'about' && <AboutPage />}
           {activeView === 'how-it-works' && <HowItWorksPage />}
+          {activeView === 'for-guardians' && <ForGuardiansPage />}
+          {activeView === 'become-a-tutor' && <BecomeTutorPage />}
           {activeView === 'not-found' && <NotFoundPage />}
           {activeView === 'login' && <AuthPage />}
           {activeView === 'tutor-onboarding' && <TutorOnboardingWizard />}

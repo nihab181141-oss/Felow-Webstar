@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Bookmark,
   CheckCircle2,
+  ChevronRight,
   Edit3,
   MapPin,
   MessageCircle,
@@ -12,6 +13,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { DEFAULT_PLACEHOLDER_AVATAR } from '../../types';
 import { buildWhatsAppUrl } from '../../utils/contactLinks';
+import { trackAnalyticsEvent } from '../../utils/analytics';
 
 export const TuitionFullDetailPage: React.FC = () => {
   const {
@@ -131,6 +133,34 @@ export const TuitionFullDetailPage: React.FC = () => {
             <span>{isSaved ? 'Saved' : 'Save Post'}</span>
           </button>
         </div>
+
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#6B6B6B] flex-wrap">
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              setDirectoryTab('tuitions');
+              setActiveView('landing');
+            }}
+            className="hover:text-[#C94A35] transition-colors"
+          >
+            Home
+          </a>
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <a
+            href="/tuitions"
+            onClick={(e) => {
+              e.preventDefault();
+              setDirectoryTab('tuitions');
+              setActiveView('tuitions');
+            }}
+            className="hover:text-[#C94A35] transition-colors"
+          >
+            Tuitions
+          </a>
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <span className="font-semibold text-[#252525] truncate max-w-[260px]">{post.title}</span>
+        </nav>
 
         <article className="ivory-card p-5 sm:p-7 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -279,6 +309,12 @@ export const TuitionFullDetailPage: React.FC = () => {
                     href={guardianWa}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() =>
+                      trackAnalyticsEvent('whatsapp_contact_click', {
+                        target_type: 'guardian',
+                        district: post.district
+                      })
+                    }
                     className="h-11 px-5 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-sm font-semibold inline-flex items-center gap-2"
                   >
                     <MessageCircle className="w-4 h-4" />

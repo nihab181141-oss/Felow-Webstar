@@ -35,6 +35,8 @@ import {
   DEFAULT_TUTOR_WHATSAPP_MESSAGE
 } from '../../utils/contactLinks';
 import { TutorReviewsSection } from '../tutors/TutorReviewsSection';
+import { trackAnalyticsEvent } from '../../utils/analytics';
+import { getLocationByDistrict } from '../../utils/routing';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -85,9 +87,12 @@ const TutorCardItem = memo<TutorCardItemProps>(({
       <div className="flex items-start gap-3.5 sm:gap-4">
         <img
           src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
-          alt={tutor.name}
+          alt={`${tutor.name} — ${tutor.university || 'University'} tutor in ${tutor.district}`}
+          width={112}
+          height={128}
           referrerPolicy="no-referrer"
           loading={index < 3 ? 'eager' : 'lazy'}
+          fetchPriority={index === 0 ? 'high' : undefined}
           decoding="async"
           className="w-20 h-24 sm:w-28 sm:h-32 rounded-2xl object-cover object-top border border-[#F1E1DC] shrink-0 bg-[#FFF3EF]"
         />
@@ -97,7 +102,17 @@ const TutorCardItem = memo<TutorCardItemProps>(({
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-1.5">
                 <h3 className="font-display text-base sm:text-lg font-bold text-[#252525] leading-snug break-words">
-                  {tutor.name}
+                  <a
+                    href={`/tutors/${encodeURIComponent(tutor.id)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onOpenFullProfile(tutor);
+                    }}
+                    className="hover:text-[#C94A35] transition-colors"
+                  >
+                    {tutor.name}
+                  </a>
                 </h3>
                 {verified && (
                   <BadgeCheck
@@ -245,16 +260,17 @@ const TutorCardItem = memo<TutorCardItemProps>(({
         </div>
 
         <div className="grid grid-cols-2 sm:flex items-center gap-2 shrink-0">
-          <button
-            type="button"
+          <a
+            href={`/tutors/${encodeURIComponent(tutor.id)}`}
             onClick={(e) => {
+              e.preventDefault();
               e.stopPropagation();
               onOpenFullProfile(tutor);
             }}
             className="h-10 px-4 rounded-full bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] text-[#252525] text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
           >
             View Full Profile
-          </button>
+          </a>
 
           <button
             type="button"
@@ -328,7 +344,17 @@ const TuitionCardItem = memo<TuitionCardItemProps>(({
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-display text-sm sm:text-base font-bold text-[#252525] leading-snug break-words">
-              {post.title}
+              <a
+                href={`/tuitions/${encodeURIComponent(post.id)}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenFullDetail(post);
+                }}
+                className="hover:text-[#C94A35] transition-colors"
+              >
+                {post.title}
+              </a>
             </h3>
             <button
               type="button"
@@ -365,16 +391,17 @@ const TuitionCardItem = memo<TuitionCardItemProps>(({
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
+              <a
+                href={`/tuitions/${encodeURIComponent(post.id)}`}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   onOpenFullDetail(post);
                 }}
-                className="h-9 px-3.5 rounded-full bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] text-[#252525] text-xs font-semibold cursor-pointer whitespace-nowrap transition-colors"
+                className="h-9 px-3.5 rounded-full bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] text-[#252525] text-xs font-semibold flex items-center justify-center cursor-pointer whitespace-nowrap transition-colors"
               >
                 Details
-              </button>
+              </a>
 
               {isOwn ? (
                 <span className="text-xs font-semibold text-[#C94A35] whitespace-nowrap tabular-nums px-2">
@@ -515,6 +542,19 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
   useEffect(() => {
     setVisibleCount(10);
+  }, [directoryTab, districtFilter, subjectFilter, q]);
+
+  useEffect(() => {
+    if (!q && districtFilter === 'All' && subjectFilter === 'All') return;
+    const timer = window.setTimeout(() => {
+      trackAnalyticsEvent('tutor_search', {
+        tab: directoryTab,
+        district: districtFilter !== 'All' ? districtFilter : undefined,
+        subject: subjectFilter !== 'All' ? subjectFilter : undefined,
+        has_query: q.length > 0
+      });
+    }, 650);
+    return () => window.clearTimeout(timer);
   }, [directoryTab, districtFilter, subjectFilter, q]);
 
   const activeFeedLength =
@@ -680,6 +720,10 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       `${DEFAULT_TUTOR_WHATSAPP_MESSAGE} (Tutor: ${tutor.name})`
     );
     if (url) {
+      trackAnalyticsEvent('whatsapp_contact_click', {
+        target_type: 'tutor',
+        district: tutor.district
+      });
       const opened = launchWhatsAppUrl(url);
       if (!opened) {
         showToast('Could not open WhatsApp automatically. Please allow popups and try again.', 'info');
@@ -742,24 +786,49 @@ export const SplitDirectoryWorkspace: React.FC = () => {
         )
       : null;
 
+  const activeLocationInfo = getLocationByDistrict(districtFilter);
+
   return (
     <div className="min-h-[calc(100vh-56px)] bg-[#FFFFFF] py-5 px-3 sm:px-5 text-left">
       <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row gap-6 items-start">
         {/* MASTER LIST PANE */}
         <section className="w-full max-w-3xl mx-auto xl:mx-0 xl:w-[540px] 2xl:w-[600px] shrink-0 space-y-4">
-          <h1 className="font-display text-lg sm:text-xl font-extrabold text-[#252525] leading-snug px-0.5">
-            {activeView === 'tuitions'
-              ? (language === 'bn'
-                  ? 'বাংলাদেশের খোলা টিউশন বিজ্ঞপ্তিসমূহ'
-                  : 'Open Home & Online Tuition Posts in Bangladesh')
-              : activeView === 'tutors'
-              ? (language === 'bn'
-                  ? 'বাংলাদেশের যাচাইকৃত বিশ্ববিদ্যালয় টিউটর'
-                  : 'Browse Verified University Tutors Across Bangladesh')
-              : (language === 'bn'
+          <div className="px-0.5 space-y-1">
+            <h1 className="font-display text-lg sm:text-xl font-extrabold text-[#252525] leading-snug">
+              {activeView === 'tuitions'
+                ? activeLocationInfo
+                  ? language === 'bn'
+                    ? `${activeLocationInfo.banglaName}-য় খোলা টিউশন বিজ্ঞপ্তি`
+                    : `Open Home & Online Tuition Jobs in ${activeLocationInfo.displayName}`
+                  : language === 'bn'
+                    ? 'বাংলাদেশের খোলা টিউশন বিজ্ঞপ্তিসমূহ'
+                    : 'Open Home & Online Tuition Opportunities in Bangladesh'
+                : activeView === 'tutors'
+                ? activeLocationInfo
+                  ? language === 'bn'
+                    ? `${activeLocationInfo.banglaName}-য় হোম ও অনলাইন টিউটর`
+                    : `Home & Online Tutors in ${activeLocationInfo.displayName}, Bangladesh`
+                  : language === 'bn'
+                    ? 'বাংলাদেশের যাচাইকৃত বিশ্ববিদ্যালয় টিউটর'
+                    : 'Browse University Tutors Across Bangladesh'
+                : language === 'bn'
                   ? 'বাংলাদেশে সেরা টিউটর ও টিউশন খুঁজুন'
-                  : 'Find Verified University Tutors & Tuition in Bangladesh')}
-          </h1>
+                  : 'Find Tutors & Tuition Opportunities Across Bangladesh'}
+            </h1>
+            {activeLocationInfo ? (
+              <p className="text-xs text-[#6B6B6B] leading-relaxed">
+                {language === 'bn'
+                  ? `কভার করা এলাকা: ${activeLocationInfo.highlights}`
+                  : `Covering ${activeLocationInfo.highlights}.`}
+              </p>
+            ) : (
+              <p className="text-xs text-[#6B6B6B] leading-relaxed">
+                {language === 'bn'
+                  ? 'ঢাকা, রাজশাহী, চট্টগ্রাম, সিলেটসহ সারাদেশে টিউটর প্রোফাইল ও টিউশন খুঁজে সরাসরি WhatsApp-এ যোগাযোগ করুন।'
+                  : 'Discover tutor profiles, explore open home or online tuition listings, and connect directly through WhatsApp.'}
+              </p>
+            )}
+          </div>
 
           {/* Mobile Full-Width Search + District Filter */}
           <div className="md:hidden space-y-2.5">
@@ -933,7 +1002,13 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                       setSelectedTutor(t);
                       setInspectorTab('about');
                     }}
-                    onOpenFullProfile={viewTutorDetail}
+                    onOpenFullProfile={(t) => {
+                      trackAnalyticsEvent('tutor_profile_view', {
+                        district: t.district,
+                        is_sample: Boolean(t.isSample)
+                      });
+                      viewTutorDetail(t);
+                    }}
                     onToggleSave={toggleSaveTutor}
                     onWhatsApp={openTutorWhatsApp}
                   />
@@ -965,7 +1040,14 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   alreadyApplied={hasAppliedToPost(post.id)}
                   isOwn={post.learnerId === currentUser.id}
                   onPreview={setSelectedTuition}
-                  onOpenFullDetail={viewTuitionDetail}
+                  onOpenFullDetail={(p) => {
+                    trackAnalyticsEvent('tuition_view', {
+                      district: p.district,
+                      medium: p.medium,
+                      is_sample: Boolean(p.isSample)
+                    });
+                    viewTuitionDetail(p);
+                  }}
                   onToggleSave={toggleSaveTuition}
                   onApply={(p, e) => {
                     e.stopPropagation();
@@ -1009,14 +1091,21 @@ export const SplitDirectoryWorkspace: React.FC = () => {
               <div className="ivory-card overflow-hidden">
                 {/* Warm Friendly EdTech Cover Header */}
                 <div className="h-24 bg-gradient-to-r from-[#FFF3EF] via-[#FFE2D9] to-[#DCEBFA] px-5 pt-3.5 flex justify-end items-start border-b border-[#F1E1DC]">
-                  <button
-                    type="button"
-                    onClick={() => viewTutorDetail(activeTutor)}
+                  <a
+                    href={`/tutors/${encodeURIComponent(activeTutor.id)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      trackAnalyticsEvent('tutor_profile_view', {
+                        district: activeTutor.district,
+                        is_sample: Boolean(activeTutor.isSample)
+                      });
+                      viewTutorDetail(activeTutor);
+                    }}
                     className="h-8 px-3.5 rounded-full bg-white/90 hover:bg-white text-[#252525] text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                   >
                     <span>Open Full Profile</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
                 </div>
 
                 <div className="px-6 pb-6">
@@ -1028,7 +1117,10 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                           activeTutor.avatar ||
                           DEFAULT_PLACEHOLDER_AVATAR
                         }
-                        alt={activeTutor.name}
+                        alt={`${activeTutor.name} — ${activeTutor.university || 'University'} tutor in ${activeTutor.district}`}
+                        width={112}
+                        height={128}
+                        decoding="async"
                         referrerPolicy="no-referrer"
                         className="w-28 h-32 rounded-2xl object-cover object-top border-4 border-white shadow-sm bg-[#FFF3EF] shrink-0"
                       />
@@ -1300,14 +1392,22 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => viewTuitionDetail(activeTuition)}
+                  <a
+                    href={`/tuitions/${encodeURIComponent(activeTuition.id)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      trackAnalyticsEvent('tuition_view', {
+                        district: activeTuition.district,
+                        medium: activeTuition.medium,
+                        is_sample: Boolean(activeTuition.isSample)
+                      });
+                      viewTuitionDetail(activeTuition);
+                    }}
                     className="h-9 px-3.5 rounded-full bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] text-xs font-semibold text-[#252525] inline-flex items-center gap-1 cursor-pointer"
                   >
                     <span>Full Page</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
+                  </a>
 
                   <button
                     type="button"

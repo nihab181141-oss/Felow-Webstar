@@ -82,29 +82,84 @@ export const Header: React.FC = () => {
   return (
     <header className="sticky top-0 z-40 h-16 sm:h-[72px] bg-white/95 backdrop-blur-sm border-b border-[#F1E1DC]">
       <div className="max-w-[1440px] h-full mx-auto px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-3 md:gap-6">
-        {/* Zone 1: Brand Wordmark */}
-        <button
-          type="button"
-          aria-label="Go to home directory"
-          onClick={() => {
-            setOpenDropdown(null);
-            setMobileDetailOpen(false);
-            setActiveView('landing');
-          }}
-          className="flex items-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F47C68] rounded-xl -ml-2 min-[380px]:-ml-2.5 sm:-ml-3.5 pr-1 py-0.5 transition-all duration-150 hover:opacity-85 active:scale-[0.98]"
-        >
-          <img
-            src="/assets/aistudio/felow-webstar-icon-color_69459cad.svg"
-            alt=""
-            aria-hidden="true"
-            className="h-12 w-12 min-[380px]:h-14 min-[380px]:w-14 sm:h-[72px] sm:w-[72px] object-contain block shrink-0 select-none"
-          />
-          <img
-            src="/assets/aistudio/felow-webstar-wordmark-color_a106cae2.svg"
-            alt="FeLoW WebStaR"
-            className="h-[56px] min-[380px]:h-[62px] sm:h-[78px] w-auto -ml-2 min-[380px]:-ml-2.5 sm:-ml-3 object-contain block select-none"
-          />
-        </button>
+        {/* Zone 1: Brand Wordmark & Top-Level Nav */}
+        <div className="flex items-center gap-5 shrink-0">
+          <a
+            href="/"
+            aria-label="FeLoW WebStaR Home"
+            onClick={(e) => {
+              e.preventDefault();
+              setOpenDropdown(null);
+              setMobileDetailOpen(false);
+              setDistrictFilter('All');
+              setActiveView('landing');
+            }}
+            className="flex items-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F47C68] rounded-xl -ml-2 min-[380px]:-ml-2.5 sm:-ml-3.5 pr-1 py-0.5 transition-all duration-150 hover:opacity-85 active:scale-[0.98]"
+          >
+            <img
+              src="/assets/aistudio/felow-webstar-icon-color_69459cad.svg"
+              alt=""
+              aria-hidden="true"
+              width={72}
+              height={72}
+              className="h-12 w-12 min-[380px]:h-14 min-[380px]:w-14 sm:h-[72px] sm:w-[72px] object-contain block shrink-0 select-none"
+            />
+            <img
+              src="/assets/aistudio/felow-webstar-wordmark-color_a106cae2.svg"
+              alt="FeLoW WebStaR"
+              width={180}
+              height={78}
+              className="h-[56px] min-[380px]:h-[62px] sm:h-[78px] w-auto -ml-2 min-[380px]:-ml-2.5 sm:-ml-3 object-contain block select-none"
+            />
+          </a>
+
+          <nav aria-label="Primary navigation" className="hidden xl:flex items-center gap-5 text-xs font-semibold text-[#252525]">
+            <a
+              href="/tutors"
+              onClick={(e) => {
+                e.preventDefault();
+                setOpenDropdown(null);
+                setMobileDetailOpen(false);
+                setDistrictFilter('All');
+                setActiveView('tutors');
+              }}
+              className={`hover:text-[#C94A35] transition-colors py-1 whitespace-nowrap ${
+                activeView === 'tutors' ? 'text-[#C94A35] underline underline-offset-4' : ''
+              }`}
+            >
+              {language === 'bn' ? 'টিউটর' : 'Find Tutors'}
+            </a>
+            <a
+              href="/tuitions"
+              onClick={(e) => {
+                e.preventDefault();
+                setOpenDropdown(null);
+                setMobileDetailOpen(false);
+                setDistrictFilter('All');
+                setActiveView('tuitions');
+              }}
+              className={`hover:text-[#C94A35] transition-colors py-1 whitespace-nowrap ${
+                activeView === 'tuitions' ? 'text-[#C94A35] underline underline-offset-4' : ''
+              }`}
+            >
+              {language === 'bn' ? 'টিউশন' : 'Tuitions'}
+            </a>
+            <a
+              href="/how-it-works"
+              onClick={(e) => {
+                e.preventDefault();
+                setOpenDropdown(null);
+                setMobileDetailOpen(false);
+                setActiveView('how-it-works');
+              }}
+              className={`hover:text-[#C94A35] transition-colors py-1 whitespace-nowrap ${
+                activeView === 'how-it-works' ? 'text-[#C94A35] underline underline-offset-4' : ''
+              }`}
+            >
+              {language === 'bn' ? 'কিভাবে কাজ করে' : 'How It Works'}
+            </a>
+          </nav>
+        </div>
 
         {/* Zone 2: Desktop / Tablet Search + District Filter */}
         <div className="hidden md:flex flex-1 max-w-xl items-center bg-[#FFF3EF] rounded-full border border-[#F3D5CC]/70 focus-within:border-[#F47C68] focus-within:bg-white transition-colors overflow-hidden">

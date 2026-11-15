@@ -82,6 +82,7 @@ import {
   buildPathForView,
   normalizePathname
 } from '../utils/routing';
+import { trackAnalyticsEvent } from '../utils/analytics';
 
 export type AppView = RouteView;
 
@@ -330,7 +331,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [directoryTab, setDirectoryTab] = useState<'tutors' | 'tuitions'>(
     initialParsedRoute.directoryTab
   );
-  const [districtFilter, setDistrictFilter] = useState('All');
+  const [districtFilter, setDistrictFilter] = useState(
+    initialParsedRoute.locationDistrict || 'All'
+  );
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -443,7 +446,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const targetPath = buildPathForView(activeView, {
       tutorId: selectedTutor?.id || pendingRouteTutorId,
-      tuitionId: selectedTuition?.id || pendingRouteTuitionId
+      tuitionId: selectedTuition?.id || pendingRouteTuitionId,
+      districtFilter
     });
     const currentPath = normalizePathname(window.location.pathname);
     if (isPoppingHistoryRef.current) {
@@ -451,7 +455,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (currentPath !== targetPath) {
       window.history.pushState(null, '', targetPath);
     }
-  }, [activeView, selectedTutor?.id, selectedTuition?.id, pendingRouteTutorId, pendingRouteTuitionId]);
+  }, [activeView, districtFilter, selectedTutor?.id, selectedTuition?.id, pendingRouteTutorId, pendingRouteTuitionId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -459,6 +463,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isPoppingHistoryRef.current = true;
       const parsed = parseAppRoute(window.location.pathname);
       setDirectoryTab(parsed.directoryTab);
+      setDistrictFilter(parsed.locationDistrict || 'All');
       setPendingRouteTutorId(parsed.tutorId || null);
       setPendingRouteTuitionId(parsed.tuitionId || null);
       if (parsed.tutorId) {
@@ -1168,6 +1173,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const firestoreId = await submitApplicationInFirestore(appData);
         if (firestoreId) {
+          trackAnalyticsEvent('tuition_application', {
+            district: targetPost?.district,
+            medium: targetPost?.medium
+          });
           showToast('Proposal submitted and saved!', 'success');
         }
       } catch (err: any) {
@@ -1984,7 +1993,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     learnerSubtype: 'student' | 'guardian' = 'guardian'
   ) => {
     try {
-      const { fbUser, needsTutorOnboarding } = await loginWithGooglePopup(intendedRole, learnerSubtype);
+      const { fbUser, isNewUser, needsTutorOnboarding } = await loginWithGooglePopup(intendedRole, learnerSubtype);
+      trackAnalyticsEvent(isNewUser ? 'sign_up' : 'login', {
+        method: 'google',
+        role: intendedRole
+      });
       setIsDemoSession(false);
       const [isUserAdmin, remoteAccount, remoteLearner, remoteTutor, remotePrivateContact] = await Promise.all([
         isAdminUserInFirestore(fbUser.uid, fbUser.email, fbUser.emailVerified),

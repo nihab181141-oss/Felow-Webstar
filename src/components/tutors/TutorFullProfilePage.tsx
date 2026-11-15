@@ -6,6 +6,7 @@ import {
   Bookmark,
   BookOpen,
   Calendar,
+  ChevronRight,
   Clock,
   ExternalLink,
   GraduationCap,
@@ -16,6 +17,7 @@ import {
   Star,
   UserCheck
 } from 'lucide-react';
+import { trackAnalyticsEvent } from '../../utils/analytics';
 import { useApp } from '../../context/AppContext';
 import {
   TutorPrivateContact,
@@ -176,6 +178,10 @@ export const TutorFullProfilePage: React.FC = () => {
       `${DEFAULT_TUTOR_WHATSAPP_MESSAGE} (Tutor: ${tutor.name})`
     );
     if (url) {
+      trackAnalyticsEvent('whatsapp_contact_click', {
+        target_type: 'tutor',
+        district: tutor.district
+      });
       const opened = launchWhatsAppUrl(url);
       if (!opened) {
         showToast('Could not open WhatsApp automatically. Please allow popups and try again.', 'info');
@@ -239,13 +245,45 @@ export const TutorFullProfilePage: React.FC = () => {
 
       {/* Full-Page Profile Container */}
       <div className="max-w-5xl mx-auto px-3 sm:px-6 -mt-14 sm:-mt-16 space-y-6">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#6B6B6B] flex-wrap pt-2">
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              setDirectoryTab('tutors');
+              setActiveView('landing');
+            }}
+            className="hover:text-[#C94A35] transition-colors"
+          >
+            Home
+          </a>
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <a
+            href="/tutors"
+            onClick={(e) => {
+              e.preventDefault();
+              setDirectoryTab('tutors');
+              setActiveView('tutors');
+            }}
+            className="hover:text-[#C94A35] transition-colors"
+          >
+            Tutors
+          </a>
+          <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+          <span className="font-semibold text-[#252525] truncate max-w-[220px]">{tutor.name}</span>
+        </nav>
+
         {/* Identity & Primary CTA Card */}
         <section className="ivory-card p-5 sm:p-7 space-y-5">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6 min-w-0">
               <img
                 src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
-                alt={tutor.name}
+                alt={`${tutor.name} — ${tutor.university || 'University'} tutor in ${tutor.district}`}
+                width={144}
+                height={176}
+                fetchPriority="high"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-28 h-32 sm:w-36 sm:h-44 rounded-3xl object-cover object-top border-4 border-white shadow-md bg-[#FFF3EF] shrink-0 -mt-10 sm:-mt-14"
               />
