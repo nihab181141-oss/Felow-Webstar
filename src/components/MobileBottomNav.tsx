@@ -87,6 +87,7 @@ export const MobileBottomNav: React.FC = () => {
       setMobileDetailOpen(false);
       setDirectoryTab('tutors');
       setActiveView('tutors');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (tab === 'tuitions') {
@@ -94,6 +95,7 @@ export const MobileBottomNav: React.FC = () => {
       setMobileDetailOpen(false);
       setDirectoryTab('tuitions');
       setActiveView('tuitions');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     if (tab === 'post') {
@@ -142,17 +144,17 @@ export const MobileBottomNav: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-            className="md:hidden fixed inset-x-0 top-16 bottom-16 z-30 bg-[#FFFFFF] overflow-y-auto p-4 space-y-3"
+            className="md:hidden fixed inset-x-0 top-16 bottom-16 z-30 bg-[#FCFBFA] overflow-y-auto p-4 space-y-3.5"
           >
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold text-[#252525]">
+              <h2 className="font-display text-lg font-extrabold text-[#18181B]">
                 {isBn ? 'অ্যাকাউন্ট' : 'Account'}
               </h2>
               <button
                 type="button"
                 onClick={() => setIsAccountOpen(false)}
                 aria-label="Close account sheet"
-                className="w-9 h-9 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] flex items-center justify-center cursor-pointer"
+                className="w-9 h-9 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -165,18 +167,18 @@ export const MobileBottomNav: React.FC = () => {
                   setActiveView('dashboard');
                   setIsAccountOpen(false);
                 }}
-                className="w-full ivory-card p-3.5 flex items-center justify-between gap-3 text-left cursor-pointer"
+                className="w-full ivory-card p-4 flex items-center justify-between gap-3 text-left cursor-pointer bg-gradient-to-r from-[#FFF6F3] via-white to-[#EFEAFF]"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={currentUser.avatar}
                     alt={currentUser.name}
                     referrerPolicy="no-referrer"
-                    className="w-11 h-11 rounded-full object-cover border border-[#F1E1DC] shrink-0"
+                    className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs shrink-0"
                   />
                   <div className="min-w-0">
-                    <div className="text-sm font-bold text-[#252525] truncate">{currentUser.name}</div>
-                    <div className="text-xs text-[#858585]">
+                    <div className="text-sm font-bold text-[#18181B] truncate">{currentUser.name}</div>
+                    <div className="text-xs font-medium text-[#52525B]">
                       {currentRole === 'tutor'
                         ? 'Tutor Page'
                         : currentRole === 'admin'
@@ -185,14 +187,14 @@ export const MobileBottomNav: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <ChevronRight className="w-4 h-4 text-[#858585] shrink-0" />
+                <ChevronRight className="w-4 h-4 text-[#6B6B6B] shrink-0" />
               </button>
             ) : (
-              <div className="ivory-card p-4 space-y-3 bg-[#FFF3EF]/50">
-                <div className="text-sm font-bold text-[#252525]">
+              <div className="ivory-card p-4 space-y-3 bg-[#FFF6F3] border-[#F5E4DF]">
+                <div className="text-sm font-bold text-[#18181B]">
                   {isBn ? <><BrandWordmark />-এ যোগ দিন</> : 'Sign in with Google'}
                 </div>
-                <p className="text-xs text-[#858585] leading-relaxed">
+                <p className="text-xs text-[#52525B] leading-relaxed">
                   {isBn
                     ? 'টিউশন পোস্ট করতে বা টিউটরদের WhatsApp করতে সাইন ইন করুন।'
                     : 'Sign in to message tutors on WhatsApp, save favorites, or post tuitions.'}
@@ -204,43 +206,30 @@ export const MobileBottomNav: React.FC = () => {
                     setAuthModalMode('login');
                     setIsAuthModalOpen(true);
                   }}
-                  className="w-full h-11 bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold rounded-full cursor-pointer transition-all"
+                  className="w-full h-11 bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold rounded-full cursor-pointer transition-all"
                 >
                   {isBn ? 'Google দিয়ে সাইন ইন' : 'Continue with Google'}
                 </button>
               </div>
             )}
 
-            <div className="ivory-card divide-y divide-[#F1E1DC] overflow-hidden">
+            {/* Quick Pastel Bento Action Tiles */}
+            <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => requireAuthOrRun(() => setActiveView('dashboard'))}
-                className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
+                className="p-3.5 rounded-[22px] bg-[#EFEAFF] border border-[#E1D8FF] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
               >
-                <span className="flex items-center gap-3">
-                  <Bookmark className="w-4 h-4 text-[#F47C68] shrink-0" />
-                  <span>{isBn ? 'আমার প্রোফাইল ও সেভ' : 'My Profile & Saved'}</span>
-                </span>
-                {isAuthenticated && savedCount > 0 && (
-                  <span className="text-xs font-mono font-bold text-[#C94A35] tabular-nums">
-                    {savedCount}
-                  </span>
-                )}
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                  <Bookmark className="w-4 h-4 text-[#EB624B]" />
+                </div>
+                <div className="text-xs font-bold text-[#18181B] flex items-center justify-between gap-1">
+                  <span>{isBn ? 'সেভ ও প্রোফাইল' : 'Profile & Saved'}</span>
+                  {isAuthenticated && savedCount > 0 && (
+                    <span className="font-mono text-[#EB624B] tabular-nums">{savedCount}</span>
+                  )}
+                </div>
               </button>
-
-              {isAuthenticated && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveView('dashboard');
-                    setIsAccountOpen(false);
-                  }}
-                  className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
-                >
-                  <Settings className="w-4 h-4 text-[#858585] shrink-0" />
-                  <span>{isBn ? 'অ্যাকাউন্ট সেটিংস ও ডিলিট' : 'Account Settings & Delete'}</span>
-                </button>
-              )}
 
               <button
                 type="button"
@@ -253,14 +242,16 @@ export const MobileBottomNav: React.FC = () => {
                     }
                   })
                 }
-                className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
+                className="p-3.5 rounded-[22px] bg-[#DCEBFA]/75 border border-[#C6DDF5] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
               >
-                <GraduationCap className="w-4 h-4 text-[#F47C68] shrink-0" />
-                <span>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                  <GraduationCap className="w-4 h-4 text-[#18181B]" />
+                </div>
+                <div className="text-xs font-bold text-[#18181B]">
                   {currentRole === 'tutor'
-                    ? (isBn ? 'টিউটর পেজ এডিট' : 'Edit My Tutor Page')
+                    ? (isBn ? 'টিউটর পেজ এডিট' : 'Edit Tutor Page')
                     : (isBn ? 'টিউটর পেজ তৈরি' : 'Create Tutor Page')}
-                </span>
+                </div>
               </button>
 
               {isAuthenticated && currentRole !== 'admin' && (
@@ -271,59 +262,77 @@ export const MobileBottomNav: React.FC = () => {
                     setIsAccountOpen(false);
                     await switchUserRole(nextRole);
                   }}
-                  className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
+                  className="p-3.5 rounded-[22px] bg-[#FFF4D6] border border-[#F8E4AE] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
                 >
-                  <Repeat className="w-4 h-4 text-[#F5A04E] shrink-0" />
-                  <span>
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                    <Repeat className="w-4 h-4 text-[#C94A35]" />
+                  </div>
+                  <div className="text-xs font-bold text-[#18181B]">
                     {currentRole === 'tutor'
-                      ? (isBn ? 'স্টুডেন্ট / গার্জিয়ান মোড' : 'Switch to Student / Guardian')
-                      : (isBn ? 'টিউটর মোড' : 'Switch to Tutor Mode')}
-                  </span>
-                </button>
-              )}
-
-              {isAuthenticated && currentRole === 'admin' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveView('admin');
-                    setIsAccountOpen(false);
-                  }}
-                  className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
-                >
-                  <Shield className="w-4 h-4 text-[#F47C68] shrink-0" />
-                  <span>Admin Moderation</span>
+                      ? (isBn ? 'স্টুডেন্ট মোড' : 'Student Mode')
+                      : (isBn ? 'টিউটর মোড' : 'Tutor Mode')}
+                  </div>
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-                className="w-full px-4 py-3.5 flex items-center justify-between text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
+                className={`p-3.5 rounded-[22px] bg-[#FFF6F3] border border-[#F5E4DF] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform ${
+                  !isAuthenticated || currentRole === 'admin' ? 'col-span-2 sm:col-span-1' : ''
+                }`}
               >
-                <span className="flex items-center gap-3">
-                  <Globe className="w-4 h-4 text-[#858585] shrink-0" />
-                  <span>Language / ভাষা</span>
-                </span>
-                <span className="text-xs font-bold text-[#C94A35]">
-                  {language === 'en' ? 'English' : 'বাংলা'}
-                </span>
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                  <Globe className="w-4 h-4 text-[#18181B]" />
+                </div>
+                <div className="text-xs font-bold text-[#18181B] flex items-center justify-between">
+                  <span>{isBn ? 'ভাষা পরিবর্তন' : 'Language'}</span>
+                  <span className="text-[#EB624B]">{language === 'en' ? 'English' : 'বাংলা'}</span>
+                </div>
               </button>
+            </div>
 
-              {isAuthenticated && (
+            {(isAuthenticated) && (
+              <div className="ivory-card divide-y divide-[#EFEAE7] overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveView('dashboard');
+                    setIsAccountOpen(false);
+                  }}
+                  className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#18181B] hover:bg-[#F6F4F3] cursor-pointer"
+                >
+                  <Settings className="w-4 h-4 text-[#6B6B6B] shrink-0" />
+                  <span>{isBn ? 'অ্যাকাউন্ট সেটিংস ও ডিলিট' : 'Account Settings & Delete'}</span>
+                </button>
+
+                {currentRole === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveView('admin');
+                      setIsAccountOpen(false);
+                    }}
+                    className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#18181B] hover:bg-[#F6F4F3] cursor-pointer"
+                  >
+                    <Shield className="w-4 h-4 text-[#EB624B] shrink-0" />
+                    <span>Admin Moderation</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
                     logoutUser();
                     setIsAccountOpen(false);
                   }}
-                  className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#252525] hover:bg-[#FFF3EF]/60 cursor-pointer"
+                  className="w-full px-4 py-3.5 flex items-center gap-3 text-sm font-medium text-[#18181B] hover:bg-[#FFF6F3] cursor-pointer"
                 >
-                  <LogOut className="w-4 h-4 text-[#858585] shrink-0" />
+                  <LogOut className="w-4 h-4 text-[#6B6B6B] shrink-0" />
                   <span>{isBn ? 'লগ আউট' : 'Log Out'}</span>
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="pt-6 pb-8 flex justify-center">
               <img
@@ -339,7 +348,7 @@ export const MobileBottomNav: React.FC = () => {
       {/* Standard Docked 4-Option Bottom Navigation Bar with Sliding Icon-to-Icon Transition */}
       <nav
         aria-label="Mobile docked navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#F1E1DC] shadow-[0_-4px_24px_rgba(37,37,37,0.06)] pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/92 backdrop-blur-md border-t border-[#EFEAE7] shadow-[0_-4px_24px_rgba(24,24,27,0.05)] pb-[env(safe-area-inset-bottom)]"
       >
         <div className="grid grid-cols-4 h-16 max-w-lg mx-auto px-1.5">
           {dockItems.map(item => {
@@ -354,14 +363,14 @@ export const MobileBottomNav: React.FC = () => {
                 onClick={() => handleDockSelect(item.id)}
                 aria-current={isActive ? 'page' : undefined}
                 aria-expanded={item.id === 'account' ? isAccountOpen : undefined}
-                className="relative flex flex-col items-center justify-center gap-0.5 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F47C68] rounded-xl"
+                className="relative flex flex-col items-center justify-center gap-0.5 cursor-pointer select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#18181B] rounded-xl"
               >
                 {/* Smooth Sliding Top Bar */}
                 {isActive && (
                   <motion.span
                     layoutId="docked-nav-top-bar"
                     transition={{ type: 'spring', stiffness: 580, damping: 38, mass: 0.5 }}
-                    className="absolute top-0 w-9 h-[3px] rounded-b-full bg-[#F47C68]"
+                    className="absolute top-0 w-9 h-[3px] rounded-b-full bg-[#18181B]"
                   />
                 )}
 
@@ -372,7 +381,7 @@ export const MobileBottomNav: React.FC = () => {
                       layoutId="docked-nav-pill"
                       transition={{ type: 'spring', stiffness: 580, damping: 38, mass: 0.5 }}
                       className={`absolute inset-0 rounded-full ${
-                        isPostTab ? 'bg-[#F47C68]/25' : 'bg-[#FFF3EF]'
+                        isPostTab ? 'bg-[#EB624B]/15' : 'bg-[#EFEAFF]'
                       }`}
                     />
                   )}
@@ -384,17 +393,17 @@ export const MobileBottomNav: React.FC = () => {
                     transition={{ duration: 0.14, ease: [0.16, 1, 0.3, 1] }}
                     className={`relative z-10 flex items-center justify-center ${
                       isActive
-                        ? 'text-[#C94A35]'
+                        ? 'text-[#18181B]'
                         : isPostTab
-                        ? 'text-[#F47C68]'
-                        : 'text-[#858585]'
+                        ? 'text-[#EB624B]'
+                        : 'text-[#6B6B6B]'
                     }`}
                   >
                     <Icon className="w-[19px] h-[19px] shrink-0" />
                   </motion.span>
 
                   {item.badge ? (
-                    <span className="absolute -top-0.5 right-1.5 z-20 min-w-[15px] h-[15px] px-1 rounded-full bg-[#F47C68] text-[#252525] text-[9px] font-bold flex items-center justify-center tabular-nums">
+                    <span className="absolute -top-0.5 right-1.5 z-20 min-w-[15px] h-[15px] px-1 rounded-full bg-[#EB624B] text-white text-[9px] font-bold flex items-center justify-center tabular-nums">
                       {item.badge > 9 ? '9+' : item.badge}
                     </span>
                   ) : null}
@@ -403,10 +412,10 @@ export const MobileBottomNav: React.FC = () => {
                 <span
                   className={`text-[11px] leading-none transition-colors duration-150 ${
                     isActive
-                      ? 'font-bold text-[#252525]'
+                      ? 'font-bold text-[#18181B]'
                       : isPostTab
-                      ? 'font-semibold text-[#252525]'
-                      : 'font-medium text-[#858585]'
+                      ? 'font-semibold text-[#18181B]'
+                      : 'font-medium text-[#6B6B6B]'
                   }`}
                 >
                   {item.label}

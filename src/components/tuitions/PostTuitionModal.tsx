@@ -166,21 +166,22 @@ export const PostTuitionModal: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/45 flex items-center justify-center p-3 sm:p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-black/45 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4"
       onClick={closeModal}
     >
       <div
-        className="bg-white rounded-3xl border border-[#F1E1DC] max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl text-left"
+        className="bg-white rounded-[28px] border border-[#EFEAE7] max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl text-left"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white px-5 py-4 border-b border-[#F1E1DC] flex items-center justify-between z-10">
-          <h2 className="font-display text-lg font-bold text-[#252525]">
+        <div className="sticky top-0 bg-white px-5 py-4 border-b border-[#EFEAE7] flex items-center justify-between z-10">
+          <h2 className="font-display text-lg font-extrabold text-[#18181B]">
             {editingTuition ? 'Edit Tuition Post' : 'Create Tuition Post'}
           </h2>
           <button
             type="button"
             onClick={closeModal}
-            className="w-9 h-9 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] flex items-center justify-center text-[#252525] cursor-pointer transition-colors"
+            aria-label="Close modal"
+            className="w-9 h-9 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] flex items-center justify-center text-[#18181B] cursor-pointer transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -188,7 +189,7 @@ export const PostTuitionModal: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs">
           <div>
-            <label className="block font-semibold text-[#252525] mb-1">
+            <label className="block font-semibold text-[#18181B] mb-1">
               Post Title (Optional — auto-created if blank)
             </label>
             <input
@@ -196,17 +197,17 @@ export const PostTuitionModal: React.FC = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Need HSC Physics & Math Tutor in Dhanmondi"
-              className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-sm text-[#252525] placeholder:text-[#858585] focus:bg-white focus:outline-none focus:border-[#F47C68]"
+              className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-sm text-[#18181B] placeholder:text-[#858585] focus:bg-white focus:outline-none focus:border-[#18181B]"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Class *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Class *</label>
               <select
                 value={classGrade}
                 onChange={(e) => setClassGrade(e.target.value)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {CLASS_GRADES.map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -215,11 +216,11 @@ export const PostTuitionModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Medium *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Medium *</label>
               <select
                 value={medium}
                 onChange={(e) => setMedium(e.target.value as CurriculumMedium)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {EDUCATION_MEDIUMS.map(m => (
                   <option key={m} value={m}>{m}</option>
@@ -229,7 +230,7 @@ export const PostTuitionModal: React.FC = () => {
           </div>
 
           <div>
-            <label className="block font-semibold text-[#252525] mb-1.5">Subjects Needed *</label>
+            <label className="block font-semibold text-[#18181B] mb-1.5">Subjects Needed *</label>
             <div className="flex flex-wrap gap-1.5">
               {Array.from(new Set([...POPULAR_SUBJECTS.slice(0, 10), ...selectedSubjects])).map(sub => {
                 const active = selectedSubjects.includes(sub);
@@ -240,8 +241,8 @@ export const PostTuitionModal: React.FC = () => {
                     onClick={() => toggleSubject(sub)}
                     className={`px-3 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
                       active
-                        ? 'bg-[#F47C68] text-[#252525]'
-                        : 'bg-[#FFF3EF] text-[#252525] hover:bg-[#FFE6DD]'
+                        ? 'bg-[#18181B] text-white'
+                        : 'bg-[#F6F4F3] text-[#52525B] hover:bg-[#EFEAFF] hover:text-[#18181B]'
                     }`}
                   >
                     {sub}
@@ -249,18 +250,18 @@ export const PostTuitionModal: React.FC = () => {
                 );
               })}
             </div>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2.5">
               <input
                 type="text"
                 value={customSubject}
                 onChange={(e) => setCustomSubject(e.target.value)}
                 placeholder="Other subject..."
-                className="flex-1 px-3.5 py-2 rounded-full bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="flex-1 h-9 px-3.5 rounded-full bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
               <button
                 type="button"
                 onClick={addCustomSubject}
-                className="px-4 py-2 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                className="h-9 px-4 rounded-full bg-[#EFEAFF] hover:bg-[#E1D8FF] text-[#18181B] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add</span>
@@ -270,7 +271,7 @@ export const PostTuitionModal: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Division</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Division</label>
               <select
                 value={division}
                 onChange={(e) => {
@@ -280,7 +281,7 @@ export const PostTuitionModal: React.FC = () => {
                   setDistrict(nextDist);
                   setArea(getAreasOrUpazilas(nextDist)[0]);
                 }}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {BD_DIVISIONS.map(d => (
                   <option key={d} value={d}>{d}</option>
@@ -288,7 +289,7 @@ export const PostTuitionModal: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">District</label>
+              <label className="block font-semibold text-[#18181B] mb-1">District</label>
               <select
                 value={district}
                 onChange={(e) => {
@@ -296,7 +297,7 @@ export const PostTuitionModal: React.FC = () => {
                   setDistrict(nextDist);
                   setArea(getAreasOrUpazilas(nextDist)[0]);
                 }}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {districtsForDivision.map(d => (
                   <option key={d} value={d}>{d}</option>
@@ -304,11 +305,11 @@ export const PostTuitionModal: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Area</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Area</label>
               <select
                 value={area}
                 onChange={(e) => setArea(e.target.value)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {areasForDistrict.map(a => (
                   <option key={a} value={a}>{a}</option>
@@ -319,7 +320,7 @@ export const PostTuitionModal: React.FC = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Monthly Salary (৳) *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Monthly Salary (৳) *</label>
               <input
                 type="number"
                 required
@@ -327,16 +328,16 @@ export const PostTuitionModal: React.FC = () => {
                 step={500}
                 value={salaryOfferBDT}
                 onChange={(e) => setSalaryOfferBDT(Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] font-mono font-bold outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] font-mono font-bold tabular-nums outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Days / Week</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Days / Week</label>
               <select
                 value={daysPerWeek}
                 onChange={(e) => setDaysPerWeek(Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {[1, 2, 3, 4, 5, 6].map(d => (
                   <option key={d} value={d}>{d} days / week</option>
@@ -345,11 +346,11 @@ export const PostTuitionModal: React.FC = () => {
             </div>
 
             <div className="col-span-2 sm:col-span-1">
-              <label className="block font-semibold text-[#252525] mb-1">Tuition Mode</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Tuition Mode</label>
               <select
                 value={tuitionType}
                 onChange={(e) => setTuitionType(e.target.value as TuitionType)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {TUITION_TYPES.map(t => (
                   <option key={t} value={t}>{t}</option>
@@ -360,11 +361,11 @@ export const PostTuitionModal: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Preferred Tutor</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Preferred Tutor</label>
               <select
                 value={preferredTutorGender}
                 onChange={(e) => setPreferredTutorGender(e.target.value as any)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 <option value="Any">Any Tutor</option>
                 <option value="Male">Male Tutor</option>
@@ -373,7 +374,7 @@ export const PostTuitionModal: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">
+              <label className="block font-semibold text-[#18181B] mb-1">
                 WhatsApp Number (Shared after accept)
               </label>
               <input
@@ -381,28 +382,28 @@ export const PostTuitionModal: React.FC = () => {
                 value={whatsappNumber}
                 onChange={(e) => setWhatsappNumber(e.target.value)}
                 placeholder="017XXXXXXXX"
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#252525] mb-1">Details / Note</label>
+            <label className="block font-semibold text-[#18181B] mb-1">Details / Note</label>
             <textarea
               rows={2}
               value={requirementsDescription}
               onChange={(e) => setRequirementsDescription(e.target.value)}
               placeholder="Write timing, preferred university, or student needs..."
-              className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+              className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
             />
           </div>
 
-          <label className="flex items-center gap-2 text-[#858585] cursor-pointer">
+          <label className="flex items-center gap-2 text-[#52525B] cursor-pointer">
             <input
               type="checkbox"
               checked={isNegotiable}
               onChange={(e) => setIsNegotiable(e.target.checked)}
-              className="accent-[#F47C68]"
+              className="accent-[#EB624B]"
             />
             <span>Salary is negotiable</span>
           </label>
@@ -410,7 +411,7 @@ export const PostTuitionModal: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full h-11 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
+            className="w-full h-11 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
           >
             <CheckCircle2 className="w-4 h-4" />
             <span>{isSubmitting ? 'Posting...' : editingTuition ? 'Save Changes' : 'Post Tuition'}</span>

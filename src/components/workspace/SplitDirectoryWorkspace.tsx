@@ -22,6 +22,8 @@ import {
 import { useApp } from '../../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION, POPULAR_SUBJECTS } from '../../data/bangladeshData';
 import { BrandWordmark } from '../shared/BrandWordmark';
+import { HomeBentoHero } from './HomeBentoHero';
+import { TuitionBentoHero } from './TuitionBentoHero';
 import {
   TutorProfile,
   TutorPrivateContact,
@@ -206,38 +208,38 @@ const TutorCardItem = memo<TutorCardItemProps>(({
         </div>
       )}
 
-      {/* Teaching Spec Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-[#FFF3EF] rounded-2xl p-3.5 text-xs">
-        <div className="min-w-0">
+      {/* Teaching Spec 2x2 Pastel Bento Mini-Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+        <div className="min-w-0 bg-[#FFF6F3] border border-[#F5E4DF] rounded-2xl p-3">
           <div className="text-[11px] font-semibold text-[#858585]">Subjects</div>
-          <div className="font-semibold text-[#252525] mt-0.5 leading-snug break-words">
+          <div className="font-semibold text-[#18181B] mt-0.5 leading-snug break-words">
             {tutor.subjects.slice(0, 4).join(', ')}
             {tutor.subjects.length > 4 ? ` +${tutor.subjects.length - 4} more` : ''}
           </div>
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 bg-[#F4F1FF] border border-[#E6DFFD] rounded-2xl p-3">
           <div className="text-[11px] font-semibold text-[#858585]">Classes & Levels</div>
-          <div className="font-semibold text-[#252525] mt-0.5 leading-snug break-words">
+          <div className="font-semibold text-[#18181B] mt-0.5 leading-snug break-words">
             {tutor.classes.slice(0, 3).join(', ')}
             {tutor.classes.length > 3 ? ` +${tutor.classes.length - 3} more` : ''}
           </div>
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 bg-[#EFF6FF] border border-[#DCEBFA] rounded-2xl p-3">
           <div className="text-[11px] font-semibold text-[#858585]">Medium & Mode</div>
-          <div className="text-[#252525] mt-0.5 leading-snug break-words">
+          <div className="text-[#18181B] font-medium mt-0.5 leading-snug break-words">
             {tutor.mediums.join(', ')} · {tutor.tuitionTypes.join(', ')}
           </div>
         </div>
 
-        <div className="min-w-0">
+        <div className="min-w-0 bg-[#FFF9E6] border border-[#F5E8C0] rounded-2xl p-3">
           <div className="text-[11px] font-semibold text-[#858585]">
             {tutor.achievements && tutor.achievements.length > 0
               ? 'Highlights'
               : 'Schedule & Gender'}
           </div>
-          <div className="text-[#252525] mt-0.5 leading-snug break-words">
+          <div className="text-[#18181B] font-medium mt-0.5 leading-snug break-words">
             {tutor.achievements && tutor.achievements.length > 0
               ? tutor.achievements.slice(0, 2).join(' · ')
               : `${tutor.daysPerWeek.join('–')} days/wk · ${tutor.gender} Tutor`}
@@ -268,7 +270,7 @@ const TutorCardItem = memo<TutorCardItemProps>(({
               e.stopPropagation();
               onOpenFullProfile(tutor);
             }}
-            className="h-10 px-4 rounded-full bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] text-[#252525] text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+            className="h-10 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-semibold flex items-center justify-center transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
           >
             View Full Profile
           </a>
@@ -331,20 +333,20 @@ const TuitionCardItem = memo<TuitionCardItemProps>(({
   return (
     <article
       onClick={handleCardClick}
-      className={`ivory-card ivory-card-hover p-4 cursor-pointer space-y-3 ${
+      className={`ivory-card ivory-card-hover p-4 sm:p-5 cursor-pointer space-y-3 ${
         isSelected
-          ? 'xl:border-[#F47C68] xl:ring-1 xl:ring-[#F47C68] xl:bg-[#DCEBFA]/20'
+          ? 'xl:border-[#18181B] xl:ring-1 xl:ring-[#18181B] xl:bg-[#FCFBFA]'
           : ''
       }`}
     >
       <div className="flex items-start gap-3">
-        <div className="w-11 h-11 rounded-full bg-[#DCEBFA] text-[#252525] font-bold text-xs flex items-center justify-center shrink-0">
+        <div className="w-11 h-11 rounded-full bg-[#EFEAFF] border border-[#E1D8FF] text-[#18181B] font-bold text-xs flex items-center justify-center shrink-0">
           {initials}
         </div>
 
-        <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-display text-sm sm:text-base font-bold text-[#252525] leading-snug break-words">
+            <h3 className="font-display text-sm sm:text-base font-extrabold text-[#18181B] leading-snug break-words">
               <a
                 href={`/tuitions/${encodeURIComponent(post.id)}`}
                 onClick={(e) => {
@@ -352,7 +354,7 @@ const TuitionCardItem = memo<TuitionCardItemProps>(({
                   e.stopPropagation();
                   onOpenFullDetail(post);
                 }}
-                className="hover:text-[#C94A35] transition-colors"
+                className="hover:text-[#EB624B] transition-colors"
               >
                 {post.title}
               </a>
@@ -364,64 +366,63 @@ const TuitionCardItem = memo<TuitionCardItemProps>(({
                 onToggleSave(post.id);
               }}
               aria-label={isSaved ? 'Unsave post' : 'Save post'}
-              className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#FFF3EF] cursor-pointer shrink-0 transition-colors ${
-                isSaved ? 'text-[#C94A35] bg-[#FFF3EF]' : 'text-[#858585]'
+              className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#FFF6F3] cursor-pointer shrink-0 transition-colors ${
+                isSaved ? 'text-[#EB624B] bg-[#FFF6F3]' : 'text-[#6B6B6B]'
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#F47C68]' : ''}`} />
+              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#EB624B]' : ''}`} />
             </button>
           </div>
 
-          <div className="text-xs text-[#858585] leading-relaxed break-words">
-            <span className="font-semibold text-[#252525]">{post.learnerName}</span>
+          <div className="text-xs text-[#6B6B6B] leading-relaxed break-words">
+            <span className="font-semibold text-[#18181B]">{post.learnerName}</span>
             <span> · {post.area}, {post.district}</span>
             <span> · {post.postedDate}</span>
           </div>
 
-          <div className="text-xs text-[#252525] leading-snug break-words">
-            <span className="font-semibold">{post.classGrade}</span>
-            <span className="text-[#858585]"> · {post.subjects.join(', ')}</span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5">
-            <div className="text-xs text-[#858585] tabular-nums">
-              <span className="font-mono text-sm font-bold text-[#252525]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="rounded-xl bg-[#FFF6F3] border border-[#F5E4DF] px-3 py-2 text-[#18181B] leading-snug break-words">
+              <span className="font-bold">{post.classGrade}</span>
+              <span className="text-[#52525B]"> · {post.subjects.slice(0, 3).join(', ')}</span>
+            </div>
+            <div className="rounded-xl bg-[#DCEBFA]/70 border border-[#C6DDF5] px-3 py-2 text-[#52525B] tabular-nums flex flex-wrap items-center gap-x-1.5">
+              <span className="font-mono font-bold text-[#18181B]">
                 ৳{post.salaryOfferBDT.toLocaleString()}/mo
               </span>
-              <span> · {post.daysPerWeek} days/wk · {post.tuitionType}</span>
+              <span>· {post.daysPerWeek}d/wk · {post.tuitionType}</span>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <a
-                href={`/tuitions/${encodeURIComponent(post.id)}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenFullDetail(post);
-                }}
-                className="h-9 px-3.5 rounded-full bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] text-[#252525] text-xs font-semibold flex items-center justify-center cursor-pointer whitespace-nowrap transition-colors"
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+            <a
+              href={`/tuitions/${encodeURIComponent(post.id)}`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenFullDetail(post);
+              }}
+              className="h-9 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-bold flex items-center justify-center cursor-pointer whitespace-nowrap transition-colors"
+            >
+              Details
+            </a>
+
+            {isOwn ? (
+              <span className="text-xs font-semibold text-[#EB624B] whitespace-nowrap tabular-nums px-2">
+                {post.totalApplicants} applicants
+              </span>
+            ) : alreadyApplied ? (
+              <span className="text-xs font-semibold text-[#15803D] whitespace-nowrap px-2">
+                Applied
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => onApply(post, e)}
+                className="h-9 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer whitespace-nowrap transition-all active:scale-[0.98]"
               >
-                Details
-              </a>
-
-              {isOwn ? (
-                <span className="text-xs font-semibold text-[#C94A35] whitespace-nowrap tabular-nums px-2">
-                  {post.totalApplicants} applicants
-                </span>
-              ) : alreadyApplied ? (
-                <span className="text-xs font-semibold text-[#15803D] whitespace-nowrap px-2">
-                  Applied
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => onApply(post, e)}
-                  className="h-9 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer whitespace-nowrap transition-all active:scale-[0.98]"
-                >
-                  Apply
-                </button>
-              )}
-            </div>
+                Apply
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -486,6 +487,11 @@ export const SplitDirectoryWorkspace: React.FC = () => {
   const [activeTuitionPrivateWa, setActiveTuitionPrivateWa] = useState('');
   const [visibleCount, setVisibleCount] = useState(10);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const directorySectionRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToDirectory = () => {
+    directorySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   // Invite modal state for invite-gated tutors
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -785,33 +791,68 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
   const activeLocationInfo = getLocationByDistrict(districtFilter);
 
+  const isTuitionsMode = activeView === 'tuitions' || directoryTab === 'tuitions';
+
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#FFFFFF] py-5 px-3 sm:px-5 text-left">
-      <div className="max-w-[1440px] mx-auto flex flex-col xl:flex-row gap-6 items-start">
+    <div className="min-h-[calc(100vh-56px)] bg-[#FCFBFA] text-left">
+      {isTuitionsMode ? (
+        <TuitionBentoHero
+          tuitionPosts={tuitionPosts}
+          subjectFilter={subjectFilter}
+          setSubjectFilter={setSubjectFilter}
+          savedTuitionIds={savedTuitionIds}
+          onToggleSaveTuition={toggleSaveTuition}
+          onOpenTuitionDetail={(post) => {
+            trackAnalyticsEvent('tuition_view', {
+              district: post.district
+            });
+            viewTuitionDetail(post);
+          }}
+          onScrollToDirectory={scrollToDirectory}
+        />
+      ) : (
+        <HomeBentoHero
+          tutors={tutors}
+          tuitionPosts={tuitionPosts}
+          subjectFilter={subjectFilter}
+          setSubjectFilter={setSubjectFilter}
+          savedTutorIds={savedTutorIds}
+          onToggleSaveTutor={toggleSaveTutor}
+          onOpenTutorProfile={(t) => {
+            trackAnalyticsEvent('tutor_profile_view', {
+              district: t.district
+            });
+            viewTutorDetail(t);
+          }}
+          onScrollToDirectory={scrollToDirectory}
+        />
+      )}
+
+      <div
+        id="directory-feed"
+        ref={directorySectionRef}
+        className="max-w-[1440px] mx-auto py-5 sm:py-6 px-3 sm:px-5 flex flex-col xl:flex-row gap-6 items-start scroll-mt-20"
+      >
         {/* MASTER LIST PANE */}
         <section className="w-full max-w-3xl mx-auto xl:mx-0 xl:w-[540px] 2xl:w-[600px] shrink-0 space-y-4">
           <div className="px-0.5 space-y-1">
-            <h1 className="font-display text-lg sm:text-xl font-extrabold text-[#252525] leading-snug">
-              {activeView === 'tuitions'
+            <h2 className="font-display text-lg sm:text-xl font-extrabold text-[#18181B] leading-snug">
+              {isTuitionsMode
                 ? activeLocationInfo
                   ? language === 'bn'
-                    ? `${activeLocationInfo.banglaName}-য় খোলা টিউশন বিজ্ঞপ্তি`
-                    : `Open Home & Online Tuition Jobs in ${activeLocationInfo.displayName}`
+                    ? `${activeLocationInfo.banglaName}-য় খোলা টিউশন তালিকা`
+                    : `Open Tuitions in ${activeLocationInfo.displayName}`
                   : language === 'bn'
-                    ? 'বাংলাদেশের খোলা টিউশন বিজ্ঞপ্তিসমূহ'
-                    : 'Open Home & Online Tuition Opportunities in Bangladesh'
-                : activeView === 'tutors'
-                ? activeLocationInfo
+                    ? 'সকল খোলা টিউশন তালিকা'
+                    : 'All Open Tuition Listings'
+                : activeLocationInfo
                   ? language === 'bn'
-                    ? `${activeLocationInfo.banglaName}-য় হোম ও অনলাইন টিউটর`
-                    : `Home & Online Tutors in ${activeLocationInfo.displayName}, Bangladesh`
+                    ? `${activeLocationInfo.banglaName}-য় টিউটর তালিকা`
+                    : `Verified Tutors in ${activeLocationInfo.displayName}`
                   : language === 'bn'
-                    ? 'বাংলাদেশের যাচাইকৃত বিশ্ববিদ্যালয় টিউটর'
-                    : 'Browse University Tutors Across Bangladesh'
-                : language === 'bn'
-                  ? 'বাংলাদেশে সেরা টিউটর ও টিউশন খুঁজুন'
-                  : 'Find Tutors & Tuition Opportunities Across Bangladesh'}
-            </h1>
+                    ? 'সকল বিশ্ববিদ্যালয় টিউটর ডিরেক্টরি'
+                    : 'All Verified University Tutors'}
+            </h2>
             {activeLocationInfo ? (
               <p className="text-xs text-[#6B6B6B] leading-relaxed">
                 {language === 'bn'
@@ -827,10 +868,10 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Full-Width Search + District Filter */}
-          <div className="md:hidden space-y-2.5">
-            <div className="flex items-center bg-[#FFF3EF] rounded-full border border-[#F3D5CC] focus-within:border-[#F47C68] focus-within:bg-white px-3.5 h-11 transition-colors">
-              <Search className="w-4 h-4 text-[#858585] shrink-0 pointer-events-none" />
+          {/* Mobile Full-Width Search + District Filter (Hero already includes search above) */}
+          <div className="hidden space-y-2.5">
+            <div className="flex items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white px-3.5 h-11 transition-colors">
+              <Search className="w-4 h-4 text-[#6B6B6B] shrink-0 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
@@ -840,14 +881,14 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                     ? 'টিউটর, বিষয় বা এলাকা খুঁজুন...'
                     : 'Search tutor, subject, area...'
                 }
-                className="flex-1 min-w-0 bg-transparent px-2.5 text-sm text-[#252525] placeholder:text-[#858585] focus:outline-none"
+                className="flex-1 min-w-0 bg-transparent px-2.5 text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
                   aria-label="Clear search"
-                  className="w-7 h-7 rounded-full bg-[#FFE6DD] flex items-center justify-center text-[#252525] cursor-pointer shrink-0"
+                  className="w-7 h-7 rounded-full bg-[#EAE4E1] flex items-center justify-center text-[#18181B] cursor-pointer shrink-0"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -858,7 +899,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
               aria-label="Filter by district"
-              className="w-full h-10 px-4 rounded-full bg-[#FFF3EF] border border-[#F3D5CC] text-xs font-semibold text-[#252525] focus:border-[#F47C68] focus:outline-none"
+              className="w-full h-10 px-4 rounded-full bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-bold text-[#18181B] focus:border-[#18181B] focus:outline-none"
             >
               <option value="All">All Districts in Bangladesh</option>
               {ALL_DISTRICTS.map(d => (
@@ -869,12 +910,12 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
           {/* Quiet Guest / Quick Action Strip */}
           {!isAuthenticated ? (
-            <div className="ivory-card bg-[#FFF3EF]/55 px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+            <div className="ivory-card bg-[#FFF6F3] border-[#F5E4DF] px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
-                <div className="text-xs sm:text-sm font-bold text-[#252525]">
+                <div className="text-xs sm:text-sm font-bold text-[#18181B]">
                   {language === 'bn' ? 'সরাসরি WhatsApp-এ যোগাযোগ করুন' : 'Connect directly on WhatsApp'}
                 </div>
-                <div className="text-xs text-[#858585] leading-snug">
+                <div className="text-xs text-[#6B6B6B] leading-snug">
                   {language === 'bn'
                     ? 'টিউটর পেজ খুলতে বা মেসেজ দিতে সাইন ইন করুন'
                     : 'Sign in with Google to message or post'}
@@ -886,20 +927,20 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   setAuthModalMode('login');
                   setIsAuthModalOpen(true);
                 }}
-                className="h-9 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 transition-all"
+                className="h-9 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 transition-all"
               >
                 {language === 'bn' ? 'সাইন ইন' : 'Sign In'}
               </button>
             </div>
           ) : currentRole !== 'tutor' && currentRole !== 'admin' ? (
-            <div className="ivory-card bg-[#FFF3EF]/55 px-4 py-3 flex items-center justify-between gap-3">
-              <span className="text-xs text-[#858585]">
+            <div className="ivory-card bg-[#EFEAFF]/70 border-[#E1D8FF] px-4 py-3 flex items-center justify-between gap-3">
+              <span className="text-xs text-[#52525B] font-medium">
                 {language === 'bn' ? 'টিউটর হিসেবে পড়াতে চান?' : 'Teach students in your area?'}
               </span>
               <button
                 type="button"
                 onClick={() => activateDualRole('tutor')}
-                className="text-xs font-bold text-[#C94A35] hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                className="text-xs font-bold text-[#18181B] hover:text-[#EB624B] hover:underline cursor-pointer whitespace-nowrap shrink-0"
               >
                 {language === 'bn' ? 'টিউটর পেজ খুলুন →' : 'Create Tutor Page →'}
               </button>
@@ -908,17 +949,20 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
           {/* Instant Tutors | Tuitions Segmented Switch + Subject Filter */}
           <div className="ivory-card p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1 bg-[#FFF3EF] p-1 rounded-full self-start sm:self-auto">
+            <div className="flex items-center gap-1 bg-[#F6F4F3] p-1 rounded-full self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => {
-                  setDirectoryTab('tutors');
-                  setActiveView('tutors');
+                  if (isTuitionsMode) {
+                    setDirectoryTab('tutors');
+                    setActiveView('tutors');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
                 }}
                 className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
-                  directoryTab === 'tutors'
-                    ? 'bg-[#DCEBFA] text-[#252525] shadow-xs font-bold'
-                    : 'text-[#858585] hover:text-[#252525]'
+                  !isTuitionsMode
+                    ? 'bg-[#18181B] text-white shadow-xs font-bold'
+                    : 'text-[#6B6B6B] hover:text-[#18181B]'
                 }`}
               >
                 <Users className="w-3.5 h-3.5 shrink-0" />
@@ -929,13 +973,16 @@ export const SplitDirectoryWorkspace: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setDirectoryTab('tuitions');
-                  setActiveView('tuitions');
+                  if (!isTuitionsMode) {
+                    setDirectoryTab('tuitions');
+                    setActiveView('tuitions');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
                 }}
                 className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
-                  directoryTab === 'tuitions'
-                    ? 'bg-[#DCEBFA] text-[#252525] shadow-xs font-bold'
-                    : 'text-[#858585] hover:text-[#252525]'
+                  isTuitionsMode
+                    ? 'bg-[#18181B] text-white shadow-xs font-bold'
+                    : 'text-[#6B6B6B] hover:text-[#18181B]'
                 }`}
               >
                 <Briefcase className="w-3.5 h-3.5 shrink-0" />
@@ -949,7 +996,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
                 aria-label="Filter by subject"
-                className="flex-1 sm:flex-initial h-9 px-3.5 rounded-full bg-[#FFF3EF] text-xs font-semibold text-[#252525] border border-[#F3D5CC] focus:border-[#F47C68] focus:outline-none cursor-pointer sm:max-w-[200px]"
+                className="flex-1 sm:flex-initial h-9 px-3.5 rounded-full bg-[#F6F4F3] text-xs font-bold text-[#18181B] border border-[#EAE4E1] focus:border-[#18181B] focus:outline-none cursor-pointer sm:max-w-[200px]"
               >
                 <option value="All">{language === 'bn' ? 'সকল বিষয়' : 'All Subjects'}</option>
                 {POPULAR_SUBJECTS.map(s => (
@@ -961,7 +1008,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 <button
                   type="button"
                   onClick={resetAllFilters}
-                  className="h-9 px-3.5 rounded-full bg-[#DCEBFA] text-xs font-semibold text-[#252525] hover:bg-[#CBE0F7] cursor-pointer whitespace-nowrap shrink-0"
+                  className="h-9 px-3.5 rounded-full bg-[#EFEAFF] text-xs font-bold text-[#18181B] hover:bg-[#E1D8FF] cursor-pointer whitespace-nowrap shrink-0 transition-colors"
                 >
                   Reset
                 </button>
@@ -1006,7 +1053,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   <button
                     type="button"
                     onClick={resetAllFilters}
-                    className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                    className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs sm:text-sm font-bold cursor-pointer"
                   >
                     {language === 'bn' ? 'সব টিউটর দেখুন' : 'Show All Tutors'}
                   </button>
@@ -1021,7 +1068,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                       }
                       activateDualRole('tutor');
                     }}
-                    className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                    className="h-10 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold cursor-pointer"
                   >
                     {language === 'bn' ? 'টিউটর পেজ খুলুন' : 'Create Tutor Page'}
                   </button>
@@ -1088,7 +1135,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 <button
                   type="button"
                   onClick={resetAllFilters}
-                  className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                  className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs sm:text-sm font-bold cursor-pointer"
                 >
                   {language === 'bn' ? 'সব টিউশন দেখুন' : 'Show All Tuitions'}
                 </button>
@@ -1103,7 +1150,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                     }
                     openCreateTuitionModal();
                   }}
-                  className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                  className="h-10 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold cursor-pointer"
                 >
                   {language === 'bn' ? 'টিউশন পোস্ট করুন' : 'Post Tuition Need'}
                 </button>
@@ -1168,8 +1215,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
           {directoryTab === 'tutors' ? (
             activeTutor ? (
               <div className="ivory-card overflow-hidden">
-                {/* Warm Friendly EdTech Cover Header */}
-                <div className="h-24 bg-gradient-to-r from-[#FFF3EF] via-[#FFE2D9] to-[#DCEBFA] px-5 pt-3.5 flex justify-end items-start border-b border-[#F1E1DC]">
+                {/* Warm Pastel Bento Cover Header */}
+                <div className="h-24 bg-gradient-to-r from-[#FFF5F2] via-[#F2EEFF] to-[#E2F0FF] px-5 pt-3.5 flex justify-end items-start border-b border-[#EFEAE7]">
                   <a
                     href={`/tutors/${encodeURIComponent(activeTutor.id)}`}
                     onClick={(e) => {
@@ -1179,7 +1226,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                       });
                       viewTutorDetail(activeTutor);
                     }}
-                    className="h-8 px-3.5 rounded-full bg-white/90 hover:bg-white text-[#252525] text-xs font-semibold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                    className="h-8 px-3.5 rounded-full bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B] text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
                   >
                     <span>Open Full Profile</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1200,21 +1247,21 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                         height={128}
                         decoding="async"
                         referrerPolicy="no-referrer"
-                        className="w-28 h-32 rounded-2xl object-cover object-top border-4 border-white shadow-sm bg-[#FFF3EF] shrink-0"
+                        className="w-28 h-32 rounded-2xl object-cover object-top border-4 border-white shadow-sm bg-[#F6F4F3] shrink-0"
                       />
                       <div className="pb-0.5 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <h2 className="font-display text-xl font-bold text-[#252525] leading-snug break-words">
+                          <h2 className="font-display text-xl font-extrabold text-[#18181B] leading-snug break-words">
                             {activeTutor.name}
                           </h2>
                           {activeTutorVerified && (
                             <BadgeCheck
-                              className="w-5 h-5 text-[#F47C68] shrink-0"
+                              className="w-5 h-5 text-[#EB624B] shrink-0"
                               aria-label="Verified Tutor"
                             />
                           )}
                         </div>
-                        <p className="text-xs sm:text-sm text-[#858585] leading-snug break-words mt-0.5">
+                        <p className="text-xs sm:text-sm text-[#6B6B6B] leading-snug break-words mt-0.5">
                           {activeTutor.university}
                           {activeTutor.department ? ` · ${activeTutor.department}` : ''}
                           {activeTutor.academicYear ? ` · ${activeTutor.academicYear}` : ''}
@@ -1239,7 +1286,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => openInviteForTutor(activeTutor)}
-                          className="h-10 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                          className="h-10 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Invite</span>
@@ -1252,11 +1299,11 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                         aria-label={activeTutorSaved ? 'Unsave tutor' : 'Save tutor'}
                         className={`h-10 px-4 rounded-full border text-xs font-semibold flex items-center gap-1.5 cursor-pointer whitespace-nowrap transition-colors ${
                           activeTutorSaved
-                            ? 'bg-[#FFF3EF] border-[#F47C68]/50 text-[#C94A35]'
-                            : 'bg-white border-[#F1E1DC] hover:bg-[#FFF3EF] text-[#252525]'
+                            ? 'bg-[#FFF6F3] border-[#EB624B]/50 text-[#EB624B]'
+                            : 'bg-white border-[#EFEAE7] hover:bg-[#F6F4F3] text-[#18181B]'
                         }`}
                       >
-                        <Bookmark className={`w-4 h-4 ${activeTutorSaved ? 'fill-[#F47C68]' : ''}`} />
+                        <Bookmark className={`w-4 h-4 ${activeTutorSaved ? 'fill-[#EB624B]' : ''}`} />
                         <span>{activeTutorSaved ? 'Saved' : 'Save'}</span>
                       </button>
                     </div>
@@ -1297,33 +1344,33 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                       )}
 
                       <div className="grid grid-cols-3 gap-2.5 text-xs">
-                        <div className="p-3 rounded-2xl bg-[#DCEBFA]/70">
-                          <div className="text-[#252525] flex items-center gap-1 font-medium">
+                        <div className="p-3 rounded-2xl bg-[#DCEBFA]/75 border border-[#C6DDF5]">
+                          <div className="text-[#18181B] flex items-center gap-1 font-medium">
                             <Clock className="w-3.5 h-3.5 shrink-0" />
                             <span>Monthly Fee</span>
                           </div>
-                          <div className="font-mono font-bold text-sm text-[#252525] mt-1 tabular-nums">
+                          <div className="font-mono font-bold text-sm text-[#18181B] mt-1 tabular-nums">
                             ৳{activeTutor.expectedSalaryMin.toLocaleString()}–
                             {activeTutor.expectedSalaryMax.toLocaleString()}
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-2xl bg-[#FFF3EF]">
-                          <div className="text-[#858585] flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#F47C68]" />
+                        <div className="p-3 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF]">
+                          <div className="text-[#52525B] flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 shrink-0 text-[#EB624B]" />
                             <span>Location</span>
                           </div>
-                          <div className="font-semibold text-[#252525] mt-1 leading-snug break-words">
+                          <div className="font-semibold text-[#18181B] mt-1 leading-snug break-words">
                             {activeTutor.district} · {activeTutor.preferredAreas.slice(0, 2).join(', ')}
                           </div>
                         </div>
 
-                        <div className="p-3 rounded-2xl bg-[#FFF3EF]">
-                          <div className="text-[#858585] flex items-center gap-1">
-                            <ShieldCheck className="w-3.5 h-3.5 text-[#F47C68] shrink-0" />
+                        <div className="p-3 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE]">
+                          <div className="text-[#52525B] flex items-center gap-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-[#EB624B] shrink-0" />
                             <span>Status</span>
                           </div>
-                          <div className="font-semibold text-[#252525] mt-1">
+                          <div className="font-semibold text-[#18181B] mt-1">
                             {activeTutorVerified ? 'Verified Tutor' : 'Profile Active'}
                           </div>
                         </div>
@@ -1372,26 +1419,26 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                         activeTutor.hscGpa ||
                         activeTutor.schoolName ||
                         activeTutor.sscGpa) && (
-                        <div className="grid grid-cols-2 gap-2.5 text-xs border-t border-[#F1E1DC] pt-3">
+                        <div className="grid grid-cols-2 gap-2.5 text-xs border-t border-[#EFEAE7] pt-3">
                           {(activeTutor.collegeName || activeTutor.hscGpa) && (
-                            <div className="p-3 rounded-2xl bg-[#FFF3EF]">
-                              <div className="text-[#858585]">College / HSC</div>
-                              <div className="font-bold text-[#252525] mt-0.5">
+                            <div className="p-3 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF]">
+                              <div className="text-[#6B6B6B]">College / HSC</div>
+                              <div className="font-bold text-[#18181B] mt-0.5">
                                 {activeTutor.collegeName || 'Provided'}
                               </div>
                               {activeTutor.hscGpa && (
-                                <div className="text-[#858585] font-mono">GPA: {activeTutor.hscGpa}</div>
+                                <div className="text-[#52525B] font-mono">GPA: {activeTutor.hscGpa}</div>
                               )}
                             </div>
                           )}
                           {(activeTutor.schoolName || activeTutor.sscGpa) && (
-                            <div className="p-3 rounded-2xl bg-[#FFF3EF]">
-                              <div className="text-[#858585]">School / SSC</div>
-                              <div className="font-bold text-[#252525] mt-0.5">
+                            <div className="p-3 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF]">
+                              <div className="text-[#52525B]">School / SSC</div>
+                              <div className="font-bold text-[#18181B] mt-0.5">
                                 {activeTutor.schoolName || 'Provided'}
                               </div>
                               {activeTutor.sscGpa && (
-                                <div className="text-[#858585] font-mono">GPA: {activeTutor.sscGpa}</div>
+                                <div className="text-[#52525B] font-mono">GPA: {activeTutor.sscGpa}</div>
                               )}
                             </div>
                           )}
@@ -1455,7 +1502,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                     }
                     activateDualRole('tutor');
                   }}
-                  className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer"
+                  className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer transition-colors"
                 >
                   {language === 'bn' ? 'টিউটর পেজ খুলুন' : 'Create Tutor Page'}
                 </button>
@@ -1548,23 +1595,23 @@ export const SplitDirectoryWorkspace: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
-                <div className="p-3 rounded-2xl bg-[#FFF3EF]">
+                <div className="p-3 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF]">
                   <div className="text-[#858585]">Class</div>
-                  <div className="font-bold text-[#252525] mt-0.5">{activeTuition.classGrade}</div>
+                  <div className="font-bold text-[#18181B] mt-0.5">{activeTuition.classGrade}</div>
                 </div>
-                <div className="p-3 rounded-2xl bg-[#FFF3EF]">
-                  <div className="text-[#858585]">Medium</div>
-                  <div className="font-bold text-[#252525] mt-0.5">{activeTuition.medium}</div>
+                <div className="p-3 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF]">
+                  <div className="text-[#52525B]">Medium</div>
+                  <div className="font-bold text-[#18181B] mt-0.5">{activeTuition.medium}</div>
                 </div>
-                <div className="p-3 rounded-2xl bg-[#FFF3EF]">
-                  <div className="text-[#858585]">Schedule</div>
-                  <div className="font-bold text-[#252525] mt-0.5">
+                <div className="p-3 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE]">
+                  <div className="text-[#52525B]">Schedule</div>
+                  <div className="font-bold text-[#18181B] mt-0.5 tabular-nums">
                     {activeTuition.daysPerWeek} days/wk
                   </div>
                 </div>
-                <div className="p-3 rounded-2xl bg-[#DCEBFA]/75">
-                  <div className="text-[#252525] font-semibold">Monthly Salary</div>
-                  <div className="font-mono font-bold text-[#252525] mt-0.5 tabular-nums">
+                <div className="p-3 rounded-2xl bg-[#DCEBFA]/75 border border-[#C6DDF5]">
+                  <div className="text-[#18181B] font-semibold">Monthly Salary</div>
+                  <div className="font-mono font-bold text-[#18181B] mt-0.5 tabular-nums">
                     ৳{activeTuition.salaryOfferBDT.toLocaleString()}
                   </div>
                 </div>
@@ -1620,7 +1667,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                           setSelectedTuition(activeTuition);
                           setIsApplyModalOpen(true);
                         }}
-                        className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer"
+                        className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer"
                       >
                         <Send className="w-4 h-4" />
                         <span>Apply for Tuition</span>
@@ -1758,7 +1805,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                                   <button
                                     type="button"
                                     onClick={() => updateApplicationStatus(app.id, 'accepted')}
-                                    className="h-8 px-3.5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer"
+                                    className="h-8 px-3.5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer"
                                   >
                                     Accept
                                   </button>
@@ -1782,8 +1829,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             </div>
           ) : (
             <div className="ivory-card p-10 text-center space-y-3">
-              <div className="text-base font-bold text-[#252525]">No tuition post selected</div>
-              <p className="text-sm text-[#858585]">
+              <div className="text-base font-bold text-[#18181B]">No tuition post selected</div>
+              <p className="text-sm text-[#6B6B6B]">
                 Post your tuition requirement so qualified tutors can apply directly.
               </p>
               <button
@@ -1796,7 +1843,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   }
                   openCreateTuitionModal();
                 }}
-                className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer"
+                className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer"
               >
                 Post Tuition Need
               </button>
@@ -1808,20 +1855,20 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       {/* Invite Modal for Invite-Gated Tutors */}
       {isInviteOpen && activeTutor && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setIsInviteOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl border border-[#F1E1DC] max-w-md w-full p-6 space-y-4 shadow-xl"
+            className="bg-white rounded-[28px] border border-[#EFEAE7] max-w-md w-full p-6 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-display text-lg font-bold text-[#252525]">
+            <h3 className="font-display text-lg font-extrabold text-[#18181B]">
               Invite {activeTutor.name}
             </h3>
             <form onSubmit={handleSendInvite} className="space-y-3 text-xs">
               {openMyPosts.length > 0 && (
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">
+                  <label className="block font-semibold text-[#18181B] mb-1">
                     Tuition Post (Optional)
                   </label>
                   <select
@@ -1835,7 +1882,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                         setInviteOfferBDT(chosen.salaryOfferBDT);
                       }
                     }}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525]"
+                    className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B]"
                   >
                     <option value="">Direct Invitation</option>
                     {openMyPosts.map(p => (
@@ -1847,47 +1894,47 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Class *</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Class *</label>
                   <input
                     type="text"
                     required
                     value={inviteClass}
                     onChange={(e) => setInviteClass(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525]"
+                    className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Offer (৳/mo) *</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Offer (৳/mo) *</label>
                   <input
                     type="number"
                     required
                     min={1000}
                     value={inviteOfferBDT}
                     onChange={(e) => setInviteOfferBDT(Number(e.target.value))}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] font-mono"
+                    className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B] font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">Subjects *</label>
+                <label className="block font-semibold text-[#18181B] mb-1">Subjects *</label>
                 <input
                   type="text"
                   required
                   value={inviteSubject}
                   onChange={(e) => setInviteSubject(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525]"
+                  className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">Message</label>
+                <label className="block font-semibold text-[#18181B] mb-1">Message</label>
                 <textarea
                   rows={2}
                   value={inviteMessage}
                   onChange={(e) => setInviteMessage(e.target.value)}
                   placeholder="Share area, timing, or demo request..."
-                  className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585]"
+                  className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B] placeholder:text-[#858585]"
                 />
               </div>
 
@@ -1895,13 +1942,13 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsInviteOpen(false)}
-                  className="h-10 px-5 rounded-full bg-[#FFF3EF] text-[#252525] font-semibold cursor-pointer"
+                  className="h-10 px-5 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold cursor-pointer"
+                  className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white font-bold cursor-pointer"
                 >
                   Send Invite
                 </button>

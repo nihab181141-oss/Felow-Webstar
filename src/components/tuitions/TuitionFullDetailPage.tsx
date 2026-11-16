@@ -68,16 +68,16 @@ export const TuitionFullDetailPage: React.FC = () => {
 
   if (!post) {
     return (
-      <div className="min-h-[70vh] bg-[#FFFFFF] flex items-center justify-center px-4">
+      <div className="min-h-[70vh] bg-[#FCFBFA] flex items-center justify-center px-4">
         <div className="ivory-card p-8 max-w-md w-full text-center space-y-4">
-          <h1 className="font-display text-xl font-bold text-[#252525]">Tuition post not found</h1>
+          <h1 className="font-display text-xl font-extrabold text-[#18181B]">Tuition post not found</h1>
           <button
             type="button"
             onClick={() => {
               setDirectoryTab('tuitions');
               setActiveView('landing');
             }}
-            className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold cursor-pointer"
+            className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-sm font-bold cursor-pointer"
           >
             Back to Tuition Posts
           </button>
@@ -104,7 +104,7 @@ export const TuitionFullDetailPage: React.FC = () => {
       : null;
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#FFFFFF] py-5 px-3 sm:px-6 pb-14 text-left animate-fade-up">
+    <div className="min-h-[calc(100vh-56px)] bg-[#FCFBFA] py-5 px-3 sm:px-6 pb-14 text-left animate-fade-up">
       <div className="max-w-4xl mx-auto space-y-5">
         <div className="flex items-center justify-between gap-3">
           <button
@@ -114,7 +114,7 @@ export const TuitionFullDetailPage: React.FC = () => {
               setDirectoryTab('tuitions');
               setActiveView('landing');
             }}
-            className="h-10 px-4 rounded-full bg-[#FFF3EF] border border-[#F3D5CC] hover:bg-[#FFE6DD] text-xs sm:text-sm font-semibold text-[#252525] inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+            className="h-10 px-4 rounded-full bg-white border border-[#EFEAE7] hover:bg-[#F6F4F3] text-xs sm:text-sm font-bold text-[#18181B] inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4 shrink-0" />
             <span>Back to Tuition Posts</span>
@@ -123,13 +123,13 @@ export const TuitionFullDetailPage: React.FC = () => {
           <button
             type="button"
             onClick={() => toggleSaveTuition(post.id)}
-            className={`h-10 px-4 rounded-full border text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all cursor-pointer ${
+            className={`h-10 px-4 rounded-full border text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs ${
               isSaved
-                ? 'bg-[#FFF3EF] border-[#F47C68]/50 text-[#C94A35]'
-                : 'bg-white border-[#F1E1DC] hover:bg-[#FFF3EF] text-[#252525]'
+                ? 'bg-[#EB624B] border-[#EB624B] text-white'
+                : 'bg-white border-[#EFEAE7] hover:bg-[#F6F4F3] text-[#18181B]'
             }`}
           >
-            <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-[#F47C68]' : ''}`} />
+            <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
             <span>{isSaved ? 'Saved' : 'Save Post'}</span>
           </button>
         </div>
@@ -213,23 +213,23 @@ export const TuitionFullDetailPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs sm:text-sm">
-            <div className="p-3.5 rounded-2xl bg-[#FFF3EF]">
-              <div className="text-xs text-[#858585]">Class</div>
-              <div className="font-bold text-[#252525] mt-0.5 leading-snug">{post.classGrade}</div>
+            <div className="p-3.5 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF]">
+              <div className="text-xs text-[#6B6B6B]">Class</div>
+              <div className="font-bold text-[#18181B] mt-0.5 leading-snug">{post.classGrade}</div>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#FFF3EF]">
-              <div className="text-xs text-[#858585]">Medium</div>
-              <div className="font-bold text-[#252525] mt-0.5 leading-snug">{post.medium}</div>
+            <div className="p-3.5 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF]">
+              <div className="text-xs text-[#52525B]">Medium</div>
+              <div className="font-bold text-[#18181B] mt-0.5 leading-snug">{post.medium}</div>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#FFF3EF]">
-              <div className="text-xs text-[#858585]">Schedule</div>
-              <div className="font-bold text-[#252525] mt-0.5 tabular-nums">
+            <div className="p-3.5 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE]">
+              <div className="text-xs text-[#52525B]">Schedule</div>
+              <div className="font-bold text-[#18181B] mt-0.5 tabular-nums">
                 {post.daysPerWeek} days/wk
               </div>
             </div>
-            <div className="p-3.5 rounded-2xl bg-[#DCEBFA]/75">
-              <div className="text-xs text-[#252525] font-semibold">Monthly Salary</div>
-              <div className="font-mono font-extrabold text-[#252525] mt-0.5 tabular-nums">
+            <div className="p-3.5 rounded-2xl bg-[#DCEBFA]/75 border border-[#C6DDF5]">
+              <div className="text-xs text-[#18181B] font-semibold">Monthly Salary</div>
+              <div className="font-mono font-extrabold text-[#18181B] mt-0.5 tabular-nums">
                 ৳{post.salaryOfferBDT.toLocaleString()}
               </div>
             </div>
@@ -295,7 +295,7 @@ export const TuitionFullDetailPage: React.FC = () => {
                       setSelectedTuition(post);
                       setIsApplyModalOpen(true);
                     }}
-                    className="h-11 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold inline-flex items-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
+                    className="h-11 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold inline-flex items-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
                     <span>Apply for Tuition</span>
@@ -373,14 +373,14 @@ export const TuitionFullDetailPage: React.FC = () => {
                       : null;
 
                     return (
-                      <div key={app.id} className="p-4 rounded-2xl bg-[#FFF3EF] space-y-2.5">
+                      <div key={app.id} className="p-4 rounded-[22px] bg-[#F8F6F5] border border-[#EFEAE7] space-y-2.5">
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div className="flex items-center gap-3 min-w-0">
                             <img
                               src={app.tutorAvatar || DEFAULT_PLACEHOLDER_AVATAR}
                               alt={app.tutorName}
                               referrerPolicy="no-referrer"
-                              className="w-10 h-10 rounded-full object-cover border border-[#F1E1DC] shrink-0"
+                              className="w-10 h-10 rounded-full object-cover border border-[#EFEAE7] shrink-0"
                             />
                             <div className="min-w-0">
                               <button
@@ -391,21 +391,21 @@ export const TuitionFullDetailPage: React.FC = () => {
                                     setActiveView('tutor-detail');
                                   }
                                 }}
-                                className="text-sm font-bold text-[#252525] hover:text-[#C94A35] hover:underline cursor-pointer text-left"
+                                className="text-sm font-bold text-[#18181B] hover:text-[#EB624B] hover:underline cursor-pointer text-left"
                               >
                                 {app.tutorName}
                               </button>
-                              <div className="text-xs text-[#858585] tabular-nums">
+                              <div className="text-xs text-[#6B6B6B] tabular-nums">
                                 {app.tutorUniversity} · ৳{app.proposedSalaryBDT.toLocaleString()}/mo
                               </div>
                             </div>
                           </div>
-                          <span className="text-xs font-bold uppercase text-[#C94A35]">
+                          <span className="text-xs font-bold uppercase text-[#EB624B]">
                             {app.status}
                           </span>
                         </div>
 
-                        <p className="text-xs sm:text-sm text-[#252525] leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[#18181B] leading-relaxed">
                           {app.coverLetter}
                         </p>
 
@@ -427,7 +427,7 @@ export const TuitionFullDetailPage: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={() => updateApplicationStatus(app.id, 'shortlisted')}
-                                  className="h-9 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] text-xs font-semibold cursor-pointer"
+                                  className="h-9 px-4 rounded-full bg-[#EFEAFF] hover:bg-[#E1D8FF] text-[#18181B] text-xs font-semibold cursor-pointer"
                                 >
                                   Shortlist
                                 </button>
@@ -435,14 +435,14 @@ export const TuitionFullDetailPage: React.FC = () => {
                               <button
                                 type="button"
                                 onClick={() => updateApplicationStatus(app.id, 'accepted')}
-                                className="h-9 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer"
+                                className="h-9 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer"
                               >
                                 Accept
                               </button>
                               <button
                                 type="button"
                                 onClick={() => updateApplicationStatus(app.id, 'rejected')}
-                                className="h-9 px-4 rounded-full bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold cursor-pointer"
+                                className="h-9 px-4 rounded-full bg-white hover:bg-rose-50 border border-[#EFEAE7] text-rose-600 text-xs font-semibold cursor-pointer"
                               >
                                 Decline
                               </button>

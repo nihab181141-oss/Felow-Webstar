@@ -253,7 +253,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
           <button
             type="button"
             onClick={handleOpenComposer}
-            className="h-9 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shrink-0"
+            className="h-9 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shrink-0"
           >
             {myExistingReview ? (
               <>
@@ -270,82 +270,84 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
         )}
       </div>
 
-      {/* Rating Summary & Star Breakdown */}
+      {/* Rating Summary & Star Breakdown Bento */}
       <div
-        className={`rounded-2xl bg-[#FFF3EF] border border-[#F1E1DC] ${
-          compact ? 'p-3.5' : 'p-4 sm:p-5'
+        className={`grid gap-3 ${
+          compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-[175px_1fr]'
         }`}
       >
+        {/* Aggregate Numeric Score */}
         <div
-          className={`grid gap-4 items-center ${
-            compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-[170px_1fr]'
+          className={`rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE] flex sm:flex-col items-center sm:items-start justify-between gap-2 ${
+            compact ? 'p-3.5' : 'p-4'
           }`}
         >
-          {/* Aggregate Numeric Score */}
-          <div className="flex sm:flex-col items-center sm:items-start justify-between gap-2 sm:border-r sm:border-[#F1E1DC] sm:pr-4">
-            <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-display text-3xl sm:text-4xl font-extrabold text-[#252525] tabular-nums leading-none">
-                  {displayRating > 0 ? displayRating.toFixed(1) : '0.0'}
-                </span>
-                <span className="text-xs font-semibold text-[#858585]">/ 5.0</span>
-              </div>
-              <div className="flex items-center gap-0.5 mt-2" aria-label={`Rated ${displayRating.toFixed(1)} out of 5`}>
-                {[1, 2, 3, 4, 5].map(star => (
-                  <Star
-                    key={star}
-                    className={`w-4 h-4 ${
-                      star <= Math.round(displayRating)
-                        ? 'text-[#F5A04E] fill-[#F5A04E]'
-                        : 'text-[#D8CCC8] fill-[#F1E1DC]'
-                    }`}
-                  />
-                ))}
-              </div>
+          <div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="font-display text-3xl sm:text-4xl font-extrabold text-[#18181B] tabular-nums leading-none">
+                {displayRating > 0 ? displayRating.toFixed(1) : '0.0'}
+              </span>
+              <span className="text-xs font-semibold text-[#6B6B6B]">/ 5.0</span>
             </div>
-            <div className="text-xs font-medium text-[#858585] tabular-nums">
-              {displayReviewCount}{' '}
-              {displayReviewCount === 1
-                ? isBn
-                  ? 'টি রিভিউ'
-                  : 'review'
-                : isBn
-                ? 'টি রিভিউ'
-                : 'reviews'}
-            </div>
-          </div>
-
-          {/* Clickable Star Distribution Bars */}
-          <div className="space-y-1.5">
-            {distribution.map(row => {
-              const isSelected = starFilter === row.star;
-              return (
-                <button
-                  key={row.star}
-                  type="button"
-                  onClick={() => setStarFilter(prev => (prev === row.star ? null : row.star))}
-                  className={`w-full flex items-center gap-2.5 text-xs py-0.5 px-1.5 -mx-1.5 rounded-lg transition-colors cursor-pointer ${
-                    isSelected ? 'bg-[#FFE2D9]/80 font-bold' : 'hover:bg-white/60'
+            <div className="flex items-center gap-0.5 mt-2" aria-label={`Rated ${displayRating.toFixed(1)} out of 5`}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <Star
+                  key={star}
+                  className={`w-4 h-4 ${
+                    star <= Math.round(displayRating)
+                      ? 'text-[#F5A04E] fill-[#F5A04E]'
+                      : 'text-[#D8CCC8] fill-white/80'
                   }`}
-                  title={`Filter ${row.star}-star reviews`}
-                >
-                  <span className="w-8 flex items-center gap-0.5 font-mono font-semibold text-[#252525] tabular-nums shrink-0">
-                    <span>{row.star}</span>
-                    <Star className="w-3 h-3 text-[#F5A04E] fill-[#F5A04E]" />
-                  </span>
-                  <span className="flex-1 h-2 rounded-full bg-[#F1E1DC] overflow-hidden">
-                    <span
-                      className="block h-full rounded-full bg-[#F5A04E] transition-all duration-300"
-                      style={{ width: `${row.percent}%` }}
-                    />
-                  </span>
-                  <span className="w-8 text-right font-mono text-[#858585] tabular-nums shrink-0">
-                    {row.count}
-                  </span>
-                </button>
-              );
-            })}
+                />
+              ))}
+            </div>
           </div>
+          <div className="text-xs font-semibold text-[#52525B] tabular-nums">
+            {displayReviewCount}{' '}
+            {displayReviewCount === 1
+              ? isBn
+                ? 'টি রিভিউ'
+                : 'review'
+              : isBn
+              ? 'টি রিভিউ'
+              : 'reviews'}
+          </div>
+        </div>
+
+        {/* Clickable Star Distribution Bars */}
+        <div
+          className={`rounded-2xl bg-[#F8F6F5] border border-[#EFEAE7] space-y-1.5 flex flex-col justify-center ${
+            compact ? 'p-3.5' : 'p-4'
+          }`}
+        >
+          {distribution.map(row => {
+            const isSelected = starFilter === row.star;
+            return (
+              <button
+                key={row.star}
+                type="button"
+                onClick={() => setStarFilter(prev => (prev === row.star ? null : row.star))}
+                className={`w-full flex items-center gap-2.5 text-xs py-0.5 px-2 -mx-1 rounded-lg transition-colors cursor-pointer ${
+                  isSelected ? 'bg-[#EFEAFF] font-bold' : 'hover:bg-white'
+                }`}
+                title={`Filter ${row.star}-star reviews`}
+              >
+                <span className="w-8 flex items-center gap-0.5 font-mono font-semibold text-[#18181B] tabular-nums shrink-0">
+                  <span>{row.star}</span>
+                  <Star className="w-3 h-3 text-[#F5A04E] fill-[#F5A04E]" />
+                </span>
+                <span className="flex-1 h-2 rounded-full bg-[#EAE4E1] overflow-hidden">
+                  <span
+                    className="block h-full rounded-full bg-[#EB624B] transition-all duration-300"
+                    style={{ width: `${row.percent}%` }}
+                  />
+                </span>
+                <span className="w-8 text-right font-mono text-[#6B6B6B] tabular-nums shrink-0">
+                  {row.count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -365,11 +367,11 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
       {isComposerOpen && !isOwnProfile && (
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl bg-white border border-[#F47C68]/50 shadow-2xs p-4 sm:p-5 space-y-4 animate-fade-up"
+          className="rounded-2xl bg-white border border-[#EFEAE7] shadow-sm p-4 sm:p-5 space-y-4 animate-fade-up"
         >
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-[#252525]">
+              <h3 className="text-sm font-bold text-[#18181B]">
                 {myExistingReview
                   ? isBn
                     ? 'আপনার রিভিউ আপডেট করুন'
@@ -378,7 +380,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                   ? `${tutor.name}-কে রেটিং দিন`
                   : `Rate & Review ${tutor.name}`}
               </h3>
-              <p className="text-xs text-[#858585] mt-0.5">
+              <p className="text-xs text-[#6B6B6B] mt-0.5">
                 {isBn
                   ? 'আপনার সৎ অভিজ্ঞতা অন্যান্য অভিভাবক ও শিক্ষার্থীদের সঠিক টিউটর খুঁজে পেতে সাহায্য করবে।'
                   : 'Your honest feedback helps other students and guardians choose the right tutor.'}
@@ -387,7 +389,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
             <button
               type="button"
               onClick={() => setIsComposerOpen(false)}
-              className="text-xs font-semibold text-[#858585] hover:text-[#252525] cursor-pointer px-2 py-1"
+              className="text-xs font-semibold text-[#6B6B6B] hover:text-[#18181B] cursor-pointer px-2 py-1"
             >
               {isBn ? 'বাতিল' : 'Cancel'}
             </button>
@@ -395,14 +397,14 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
 
           {/* Interactive Star Picker */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-[#252525]">
+            <label className="block text-xs font-semibold text-[#18181B]">
               {isBn ? 'আপনার স্টার রেটিং *' : 'Your Star Rating *'}
             </label>
             <div className="flex flex-wrap items-center gap-3">
               <div
                 role="radiogroup"
                 aria-label="Star rating"
-                className="inline-flex items-center gap-1 bg-[#FFF3EF] px-3 py-2 rounded-xl border border-[#F1E1DC]"
+                className="inline-flex items-center gap-1 bg-[#FFF4D6]/60 px-3 py-2 rounded-xl border border-[#F8E4AE]"
                 onMouseLeave={() => setHoverRating(0)}
               >
                 {[1, 2, 3, 4, 5].map(starValue => {
@@ -419,7 +421,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                         setRating(starValue);
                         if (formError) setFormError('');
                       }}
-                      className="p-1 rounded-lg transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F47C68] cursor-pointer"
+                      className="p-1 rounded-lg transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#18181B] cursor-pointer"
                     >
                       <Star
                         className={`w-6 h-6 transition-colors ${
@@ -433,7 +435,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                 })}
               </div>
 
-              <span className="text-xs font-semibold text-[#C94A35]">
+              <span className="text-xs font-semibold text-[#EB624B]">
                 {activeStarValue > 0 ? `${activeStarValue}.0 · ` : ''}
                 {activeRatingLabel}
               </span>
@@ -443,13 +445,13 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
           {/* Context Selectors */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-[#252525] mb-1">
+              <label className="block text-xs font-semibold text-[#18181B] mb-1">
                 {isBn ? 'আপনার পরিচয়' : 'Reviewing as'}
               </label>
               <select
                 value={learnerRole}
                 onChange={e => setLearnerRole(e.target.value)}
-                className="w-full h-10 px-3 rounded-xl border border-[#F1E1DC] bg-[#FFF3EF]/50 text-xs font-medium text-[#252525] focus:outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl border border-[#EAE4E1] bg-[#F6F4F3] text-xs font-medium text-[#18181B] focus:outline-none focus:bg-white focus:border-[#18181B]"
               >
                 <option value="Student">Student</option>
                 <option value="Guardian">Guardian / Parent</option>
@@ -457,7 +459,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#252525] mb-1">
+              <label className="block text-xs font-semibold text-[#18181B] mb-1">
                 {isBn ? 'শ্রেণি / লেভেল' : 'Class / Level'}
               </label>
               <input
@@ -466,19 +468,19 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                 value={classGrade}
                 onChange={e => setClassGrade(e.target.value)}
                 placeholder="e.g. Class 11 - 12 (HSC)"
-                className="w-full h-10 px-3 rounded-xl border border-[#F1E1DC] bg-[#FFF3EF]/50 text-xs text-[#252525] focus:outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl border border-[#EAE4E1] bg-[#F6F4F3] text-xs text-[#18181B] focus:outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#252525] mb-1">
+              <label className="block text-xs font-semibold text-[#18181B] mb-1">
                 {isBn ? 'বিষয়' : 'Subject Studied'}
               </label>
               {tutor.subjects && tutor.subjects.length > 0 ? (
                 <select
                   value={selectedSubject}
                   onChange={e => setSelectedSubject(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl border border-[#F1E1DC] bg-[#FFF3EF]/50 text-xs font-medium text-[#252525] focus:outline-none focus:border-[#F47C68]"
+                  className="w-full h-10 px-3 rounded-xl border border-[#EAE4E1] bg-[#F6F4F3] text-xs font-medium text-[#18181B] focus:outline-none focus:bg-white focus:border-[#18181B]"
                 >
                   {tutor.subjects.map(subj => (
                     <option key={subj} value={subj}>
@@ -494,7 +496,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                   value={selectedSubject}
                   onChange={e => setSelectedSubject(e.target.value)}
                   placeholder="e.g. Physics"
-                  className="w-full h-10 px-3 rounded-xl border border-[#F1E1DC] bg-[#FFF3EF]/50 text-xs text-[#252525] focus:outline-none focus:border-[#F47C68]"
+                  className="w-full h-10 px-3 rounded-xl border border-[#EAE4E1] bg-[#F6F4F3] text-xs text-[#18181B] focus:outline-none focus:bg-white focus:border-[#18181B]"
                 />
               )}
             </div>
@@ -503,10 +505,10 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
           {/* Written Feedback */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label htmlFor={`review-comment-${tutor.id}`} className="text-xs font-semibold text-[#252525]">
+              <label htmlFor={`review-comment-${tutor.id}`} className="text-xs font-semibold text-[#18181B]">
                 {isBn ? 'আপনার মতামত *' : 'Written Feedback *'}
               </label>
-              <span className="text-[11px] font-mono text-[#858585] tabular-nums">
+              <span className="text-[11px] font-mono text-[#6B6B6B] tabular-nums">
                 {comment.length} / 600
               </span>
             </div>
@@ -524,10 +526,10 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                   ? 'টিউটরের বোঝানোর ধরন, সময়ানুবর্তিতা এবং ফলাফলের উন্নতি সম্পর্কে লিখুন...'
                   : 'Share how clearly the tutor explains topics, punctuality, and study progress...'
               }
-              className="w-full p-3 rounded-xl border border-[#F1E1DC] bg-[#FFF3EF]/40 text-sm text-[#252525] leading-relaxed focus:outline-none focus:border-[#F47C68] resize-none"
+              className="w-full p-3 rounded-xl border border-[#EAE4E1] bg-[#F6F4F3] text-sm text-[#18181B] leading-relaxed focus:outline-none focus:bg-white focus:border-[#18181B] resize-none"
             />
             {formError && (
-              <p className="text-xs font-medium text-[#C94A35] mt-1.5">{formError}</p>
+              <p className="text-xs font-medium text-[#EB624B] mt-1.5">{formError}</p>
             )}
           </div>
 
@@ -535,7 +537,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
             {myExistingReview ? (
               confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#C94A35] font-semibold">
+                  <span className="text-xs text-[#EB624B] font-semibold">
                     {isBn ? 'নিশ্চিত মুছবেন?' : 'Delete your review?'}
                   </span>
                   <button
@@ -549,7 +551,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
-                    className="h-8 px-2.5 text-xs text-[#858585] hover:text-[#252525] cursor-pointer"
+                    className="h-8 px-2.5 text-xs text-[#6B6B6B] hover:text-[#18181B] cursor-pointer"
                   >
                     Keep
                   </button>
@@ -558,14 +560,14 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                 <button
                   type="button"
                   onClick={() => setConfirmDelete(true)}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#858585] hover:text-[#C94A35] cursor-pointer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-[#6B6B6B] hover:text-[#EB624B] cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>{isBn ? 'রিভিউ মুছুন' : 'Delete review'}</span>
                 </button>
               )
             ) : (
-              <span className="text-[11px] text-[#858585]">
+              <span className="text-[11px] text-[#6B6B6B]">
                 {isBn
                   ? 'ভেরিফায়েড গুগল অ্যাকাউন্ট থেকে প্রকাশিত হবে।'
                   : <>Published under your verified <BrandWordmark /> account.</>}
@@ -575,7 +577,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] disabled:opacity-60 text-[#252525] text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer ml-auto"
+              className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] disabled:opacity-60 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer ml-auto"
             >
               {isSubmitting ? (
                 <>
@@ -629,8 +631,8 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
           ))}
         </div>
       ) : filteredReviews.length === 0 ? (
-        <div className="p-5 rounded-2xl bg-[#FFF3EF]/60 border border-[#F1E1DC] text-center space-y-2">
-          <p className="text-sm text-[#858585]">
+        <div className="p-5 rounded-2xl bg-[#F8F6F5] border border-[#EFEAE7] text-center space-y-2">
+          <p className="text-sm text-[#6B6B6B]">
             {starFilter
               ? `No ${starFilter}-star written reviews yet.`
               : isBn
@@ -641,7 +643,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
             <button
               type="button"
               onClick={() => setStarFilter(null)}
-              className="text-xs font-semibold text-[#C94A35] hover:underline cursor-pointer"
+              className="text-xs font-semibold text-[#EB624B] hover:underline cursor-pointer"
             >
               View all reviews
             </button>
@@ -651,7 +653,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
               <button
                 type="button"
                 onClick={handleOpenComposer}
-                className="text-xs font-bold text-[#C94A35] hover:underline cursor-pointer"
+                className="text-xs font-bold text-[#EB624B] hover:underline cursor-pointer"
               >
                 {isAuthenticated ? 'Write the first review →' : 'Sign in to leave a review →'}
               </button>
@@ -668,8 +670,8 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
                 key={rev.id}
                 className={`p-4 rounded-2xl border space-y-2 transition-colors ${
                   isMine
-                    ? 'bg-[#FFF3EF] border-[#F47C68]/50'
-                    : 'bg-[#FFF3EF]/60 border-[#F1E1DC]'
+                    ? 'bg-[#FFF6F3] border-[#EB624B]/40'
+                    : 'bg-[#F8F6F5] border-[#EFEAE7]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">

@@ -99,23 +99,35 @@ export const HowItWorksPage: React.FC = () => {
         }
       ];
 
+  const learnerStepPalettes = [
+    'bg-[#FFF6F3] border-[#F5E4DF]',
+    'bg-[#FFF4D6] border-[#F8E4AE]',
+    'bg-[#EFEAFF] border-[#E1D8FF]'
+  ];
+
+  const tutorStepPalettes = [
+    'bg-[#DCEBFA]/75 border-[#C6DDF5]',
+    'bg-[#EFEAFF] border-[#E1D8FF]',
+    'bg-[#FFF6F3] border-[#F5E4DF]'
+  ];
+
   return (
-    <div className="min-h-[calc(100vh-140px)] bg-[#FFFFFF] py-6 sm:py-10 px-4 sm:px-6 text-left">
+    <div className="min-h-[calc(100vh-140px)] bg-[#FCFBFA] py-6 sm:py-10 px-4 sm:px-6 text-left animate-fade-up">
       <div className="max-w-4xl mx-auto space-y-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#6B6B6B] flex-wrap">
-          <a href="/" onClick={(e) => navigate(e, 'landing', 'tutors')} className="hover:text-[#C94A35] transition-colors">
+          <a href="/" onClick={(e) => navigate(e, 'landing', 'tutors')} className="hover:text-[#EB624B] transition-colors">
             {isBn ? 'হোম' : 'Home'}
           </a>
           <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          <span className="font-semibold text-[#252525]">{isBn ? 'কিভাবে কাজ করে' : 'How It Works'}</span>
+          <span className="font-semibold text-[#18181B]">{isBn ? 'কিভাবে কাজ করে' : 'How It Works'}</span>
         </nav>
 
         <article className="ivory-card p-6 sm:p-8 space-y-8">
-          <header className="space-y-2 border-b border-[#F1E1DC] pb-5">
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[#252525] leading-tight">
+          <header className="space-y-2 border-b border-[#EFEAE7] pb-6">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[#18181B] leading-tight text-balance">
               {isBn ? <><BrandWordmark /> কিভাবে কাজ করে</> : <>How <BrandWordmark /> Works</>}
             </h1>
-            <p className="text-sm sm:text-base text-[#555555] leading-relaxed">
+            <p className="text-sm sm:text-base text-[#52525B] leading-relaxed">
               {isBn
                 ? 'শিক্ষার্থী, অভিভাবক এবং টিউটরদের জন্য সহজ, স্বচ্ছ ও নিরাপদ টিউশন ম্যাচিং প্রক্রিয়া।'
                 : 'A straightforward workflow for students, guardians, and university tutors across Bangladesh—connect directly via WhatsApp.'}
@@ -123,17 +135,27 @@ export const HowItWorksPage: React.FC = () => {
           </header>
 
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-[#252525]">
+            <h2 className="font-display text-lg sm:text-xl font-extrabold text-[#18181B]">
               {isBn ? 'শিক্ষার্থী ও অভিভাবকদের জন্য' : 'For Students & Guardians'}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {learnerSteps.map(step => {
+              {learnerSteps.map((step, idx) => {
                 const Icon = step.Icon;
+                const palette = learnerStepPalettes[idx % learnerStepPalettes.length];
                 return (
-                  <div key={step.title} className="bg-[#FFF3EF]/70 rounded-2xl p-4 border border-[#F1E1DC] space-y-2">
-                    <Icon className="w-5 h-5 text-[#F47C68]" />
-                    <h3 className="font-display text-sm font-bold text-[#252525]">{step.title}</h3>
-                    <p className="text-xs text-[#555555] leading-relaxed">{step.body}</p>
+                  <div key={step.title} className={`rounded-[24px] p-5 border space-y-3 ${palette}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="w-10 h-10 rounded-full bg-white text-[#EB624B] flex items-center justify-center shadow-2xs shrink-0">
+                        <Icon className="w-5 h-5" />
+                      </span>
+                      <span className="font-mono text-xs font-bold text-[#52525B] tabular-nums">
+                        0{idx + 1}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-sm sm:text-base font-extrabold text-[#18181B] leading-snug">
+                      {step.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">{step.body}</p>
                   </div>
                 );
               })}
@@ -141,65 +163,77 @@ export const HowItWorksPage: React.FC = () => {
           </section>
 
           <section className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-[#252525]">
+            <h2 className="font-display text-lg sm:text-xl font-extrabold text-[#18181B]">
               {isBn ? 'টিউটরদের জন্য' : 'For University Tutors'}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {tutorSteps.map(step => {
+              {tutorSteps.map((step, idx) => {
                 const Icon = step.Icon;
+                const palette = tutorStepPalettes[idx % tutorStepPalettes.length];
                 return (
-                  <div key={step.title} className="bg-[#DCEBFA]/45 rounded-2xl p-4 border border-[#CBE0F7] space-y-2">
-                    <Icon className="w-5 h-5 text-[#252525]" />
-                    <h3 className="font-display text-sm font-bold text-[#252525]">{step.title}</h3>
-                    <p className="text-xs text-[#555555] leading-relaxed">{step.body}</p>
+                  <div key={step.title} className={`rounded-[24px] p-5 border space-y-3 ${palette}`}>
+                    <div className="flex items-center justify-between">
+                      <span className="w-10 h-10 rounded-full bg-white text-[#18181B] flex items-center justify-center shadow-2xs shrink-0">
+                        <Icon className="w-5 h-5" />
+                      </span>
+                      <span className="font-mono text-xs font-bold text-[#52525B] tabular-nums">
+                        0{idx + 1}
+                      </span>
+                    </div>
+                    <h3 className="font-display text-sm sm:text-base font-extrabold text-[#18181B] leading-snug">
+                      {step.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">{step.body}</p>
                   </div>
                 );
               })}
             </div>
           </section>
 
-          <section className="space-y-4 border-t border-[#F1E1DC] pt-6">
-            <div className="flex items-center gap-2">
-              <HelpCircle className="w-4 h-4 text-[#C94A35] shrink-0" />
-              <h2 className="font-display text-lg font-bold text-[#252525]">
+          <section className="space-y-4 border-t border-[#EFEAE7] pt-6">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-[#FFF6F3] border border-[#F5E4DF] flex items-center justify-center shrink-0">
+                <HelpCircle className="w-4 h-4 text-[#EB624B]" />
+              </span>
+              <h2 className="font-display text-lg font-extrabold text-[#18181B]">
                 {isBn ? 'সাধারণ জিজ্ঞাসা' : 'Common Questions'}
               </h2>
             </div>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
               {commonQuestions.map(item => (
-                <div key={item.id} className="border-b border-[#F1E1DC]/70 pb-4 last:border-none last:pb-0 space-y-1.5">
-                  <h3 className="font-display text-sm sm:text-base font-bold text-[#252525]">{item.q}</h3>
-                  <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">{item.a}</p>
+                <div key={item.id} className="p-4 sm:p-5 rounded-[20px] bg-[#F8F6F5] border border-[#EFEAE7] space-y-1.5">
+                  <h3 className="font-display text-sm sm:text-base font-bold text-[#18181B]">{item.q}</h3>
+                  <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">{item.a}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <div className="flex flex-wrap gap-3 pt-2">
+          <div className="flex flex-wrap gap-3 pt-1">
             <a
               href="/tutors"
               onClick={(e) => navigate(e, 'tutors', 'tutors')}
-              className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
+              className="h-10 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors whitespace-nowrap"
             >
               {isBn ? 'টিউটর খুঁজুন' : 'Find Tutors'}
             </a>
             <a
               href="/tuitions"
               onClick={(e) => navigate(e, 'tuitions', 'tuitions')}
-              className="h-10 px-6 rounded-full bg-[#FFF3EF] border border-[#F3D5CC] hover:bg-[#FFE6DD] text-[#252525] text-xs sm:text-sm font-semibold inline-flex items-center justify-center transition-colors"
+              className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs sm:text-sm font-semibold inline-flex items-center justify-center transition-colors whitespace-nowrap"
             >
               {isBn ? 'টিউশন দেখুন' : 'Browse Tuitions'}
             </a>
           </div>
 
-          <section className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2 border-t border-[#F1E1DC] text-xs font-semibold text-[#C94A35]">
-            <a href="/for-guardians" onClick={(e) => navigate(e, 'for-guardians')} className="hover:underline">
+          <section className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-4 border-t border-[#EFEAE7] text-xs font-bold text-[#18181B]">
+            <a href="/for-guardians" onClick={(e) => navigate(e, 'for-guardians')} className="hover:text-[#EB624B] transition-colors">
               {isBn ? 'শিক্ষার্থী ও অভিভাবক নির্দেশিকা →' : 'Student & Guardian Guide →'}
             </a>
-            <a href="/become-a-tutor" onClick={(e) => navigate(e, 'become-a-tutor')} className="hover:underline">
+            <a href="/become-a-tutor" onClick={(e) => navigate(e, 'become-a-tutor')} className="hover:text-[#EB624B] transition-colors">
               {isBn ? 'টিউটর নিবন্ধন তথ্য →' : 'Tutor Registration Guide →'}
             </a>
-            <a href="/about" onClick={(e) => navigate(e, 'about')} className="hover:underline">
+            <a href="/about" onClick={(e) => navigate(e, 'about')} className="hover:text-[#EB624B] transition-colors">
               {isBn ? 'আমাদের সম্পর্কে →' : <>About <BrandWordmark /> →</>}
             </a>
           </section>

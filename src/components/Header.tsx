@@ -20,6 +20,7 @@ export const Header: React.FC = () => {
   const {
     activeView,
     setActiveView,
+    setDirectoryTab,
     searchQuery,
     setSearchQuery,
     districtFilter,
@@ -80,7 +81,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-16 sm:h-[72px] bg-white/95 backdrop-blur-sm border-b border-[#F1E1DC]">
+    <header className="sticky top-0 z-40 h-16 sm:h-[72px] bg-white/92 backdrop-blur-md border-b border-[#EFEAE7]">
       <div className="max-w-[1440px] h-full mx-auto px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-3 md:gap-6">
         {/* Zone 1: Brand Wordmark & Top-Level Nav */}
         <div className="flex items-center gap-5 shrink-0">
@@ -92,7 +93,9 @@ export const Header: React.FC = () => {
               setOpenDropdown(null);
               setMobileDetailOpen(false);
               setDistrictFilter('All');
+              setDirectoryTab('tutors');
               setActiveView('landing');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className="flex items-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F47C68] rounded-xl -ml-2 min-[380px]:-ml-2.5 sm:-ml-3.5 pr-1 py-0.5 transition-all duration-150 hover:opacity-85 active:scale-[0.98]"
           >
@@ -113,7 +116,7 @@ export const Header: React.FC = () => {
             />
           </a>
 
-          <nav aria-label="Primary navigation" className="hidden xl:flex items-center gap-5 text-xs font-semibold text-[#252525]">
+          <nav aria-label="Primary navigation" className="hidden xl:flex items-center gap-5 text-xs font-semibold text-[#52525B]">
             <a
               href="/tutors"
               onClick={(e) => {
@@ -121,10 +124,12 @@ export const Header: React.FC = () => {
                 setOpenDropdown(null);
                 setMobileDetailOpen(false);
                 setDistrictFilter('All');
+                setDirectoryTab('tutors');
                 setActiveView('tutors');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`hover:text-[#C94A35] transition-colors py-1 whitespace-nowrap ${
-                activeView === 'tutors' ? 'text-[#C94A35] underline underline-offset-4' : ''
+              className={`hover:text-[#18181B] transition-colors py-1 whitespace-nowrap ${
+                activeView === 'tutors' || activeView === 'landing' ? 'text-[#18181B] font-extrabold underline decoration-[#EB624B] decoration-2 underline-offset-4' : ''
               }`}
             >
               {language === 'bn' ? 'টিউটর' : 'Find Tutors'}
@@ -136,10 +141,12 @@ export const Header: React.FC = () => {
                 setOpenDropdown(null);
                 setMobileDetailOpen(false);
                 setDistrictFilter('All');
+                setDirectoryTab('tuitions');
                 setActiveView('tuitions');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
-              className={`hover:text-[#C94A35] transition-colors py-1 whitespace-nowrap ${
-                activeView === 'tuitions' ? 'text-[#C94A35] underline underline-offset-4' : ''
+              className={`hover:text-[#18181B] transition-colors py-1 whitespace-nowrap ${
+                activeView === 'tuitions' ? 'text-[#18181B] font-extrabold underline decoration-[#EB624B] decoration-2 underline-offset-4' : ''
               }`}
             >
               {language === 'bn' ? 'টিউশন' : 'Tuitions'}
@@ -152,8 +159,8 @@ export const Header: React.FC = () => {
                 setMobileDetailOpen(false);
                 setActiveView('how-it-works');
               }}
-              className={`hover:text-[#C94A35] transition-colors py-1 whitespace-nowrap ${
-                activeView === 'how-it-works' ? 'text-[#C94A35] underline underline-offset-4' : ''
+              className={`hover:text-[#18181B] transition-colors py-1 whitespace-nowrap ${
+                activeView === 'how-it-works' ? 'text-[#18181B] font-extrabold underline decoration-[#EB624B] decoration-2 underline-offset-4' : ''
               }`}
             >
               {language === 'bn' ? 'কিভাবে কাজ করে' : 'How It Works'}
@@ -162,9 +169,9 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Zone 2: Desktop / Tablet Search + District Filter */}
-        <div className="hidden md:flex flex-1 max-w-xl items-center bg-[#FFF3EF] rounded-full border border-[#F3D5CC]/70 focus-within:border-[#F47C68] focus-within:bg-white transition-colors overflow-hidden">
+        <div className="hidden md:flex flex-1 max-w-xl items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white transition-all overflow-hidden">
           <div className="relative flex-1 flex items-center min-w-0">
-            <Search className="w-4 h-4 text-[#858585] ml-4 shrink-0 pointer-events-none" />
+            <Search className="w-4 h-4 text-[#6B6B6B] ml-4 shrink-0 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
@@ -175,21 +182,21 @@ export const Header: React.FC = () => {
               placeholder={
                 language === 'bn' ? 'টিউটর, বিষয় বা এলাকা খুঁজুন...' : 'Search tutor, subject, area...'
               }
-              className="w-full h-10 pl-2.5 pr-8 bg-transparent text-sm text-[#252525] placeholder:text-[#858585] focus:outline-none"
+              className="w-full h-10 pl-2.5 pr-8 bg-transparent text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
                 aria-label="Clear search"
-                className="mr-2 w-6 h-6 rounded-full hover:bg-[#FFE6DD] flex items-center justify-center text-[#858585] hover:text-[#252525] cursor-pointer"
+                className="mr-2 w-6 h-6 rounded-full hover:bg-[#EAE4E1] flex items-center justify-center text-[#6B6B6B] hover:text-[#18181B] cursor-pointer"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center border-l border-[#F3D5CC] pl-2.5 pr-3.5 shrink-0">
+          <div className="flex items-center border-l border-[#EAE4E1] pl-2.5 pr-3.5 shrink-0">
             <select
               value={districtFilter}
               onChange={(e) => {
@@ -197,7 +204,7 @@ export const Header: React.FC = () => {
                 ensureDirectoryView();
               }}
               aria-label="Filter by district"
-              className="h-10 bg-transparent text-xs font-semibold text-[#252525] focus:outline-none cursor-pointer"
+              className="h-10 bg-transparent text-xs font-bold text-[#18181B] focus:outline-none cursor-pointer"
             >
               <option value="All">{language === 'bn' ? 'সকল জেলা' : 'All Districts'}</option>
               {ALL_DISTRICTS.map(d => (
@@ -220,7 +227,7 @@ export const Header: React.FC = () => {
               }
               openCreateTuitionModal();
             }}
-            className="hidden sm:inline-flex h-10 px-4 bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold rounded-full items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0 shadow-xs"
+            className="hidden sm:inline-flex h-10 px-4 bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold rounded-full items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0 shadow-xs"
           >
             <Plus className="w-4 h-4 shrink-0" />
             <span>{language === 'bn' ? 'টিউশন পোস্ট' : 'Post Tuition'}</span>
@@ -236,22 +243,22 @@ export const Header: React.FC = () => {
                   aria-expanded={openDropdown === 'notif'}
                   className={`w-10 h-10 rounded-full flex items-center justify-center relative cursor-pointer transition-colors ${
                     openDropdown === 'notif'
-                      ? 'bg-[#DCEBFA] text-[#252525]'
-                      : 'bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525]'
+                      ? 'bg-[#EFEAFF] text-[#18181B]'
+                      : 'bg-[#F6F4F3] hover:bg-[#EFEAFF] text-[#18181B]'
                   }`}
                 >
                   <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#F47C68] text-[#252525] text-[10px] font-bold flex items-center justify-center tabular-nums">
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-[#EB624B] text-white text-[10px] font-bold flex items-center justify-center tabular-nums">
                       {unreadCount}
                     </span>
                   )}
                 </button>
 
                 {openDropdown === 'notif' && (
-                  <div className="absolute right-0 top-12 w-[min(92vw,320px)] bg-white rounded-2xl shadow-xl border border-[#F1E1DC] overflow-hidden z-50">
-                    <div className="px-4 py-3 border-b border-[#F1E1DC] flex items-center justify-between">
-                      <span className="font-bold text-sm text-[#252525]">
+                  <div className="absolute right-0 top-12 w-[min(92vw,320px)] bg-white rounded-[24px] shadow-[0_12px_36px_rgba(24,24,27,0.08)] border border-[#EFEAE7] overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-[#EFEAE7] flex items-center justify-between">
+                      <span className="font-bold text-sm text-[#18181B]">
                         {language === 'bn' ? 'নোটিফিকেশন' : 'Notifications'}
                       </span>
                       {unreadCount > 0 && (
@@ -310,24 +317,24 @@ export const Header: React.FC = () => {
                 </button>
 
                 {openDropdown === 'account' && (
-                  <div className="absolute right-0 top-12 w-[min(90vw,288px)] bg-white rounded-2xl shadow-xl border border-[#F1E1DC] p-2 z-50 space-y-1">
+                  <div className="absolute right-0 top-12 w-[min(90vw,288px)] bg-white rounded-[24px] shadow-[0_12px_36px_rgba(24,24,27,0.08)] border border-[#EFEAE7] p-2 z-50 space-y-1">
                     <button
                       type="button"
                       onClick={() => {
                         setActiveView('dashboard');
                         setOpenDropdown(null);
                       }}
-                      className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-[#FFF3EF] text-left cursor-pointer"
+                      className="w-full flex items-center gap-3 p-2.5 rounded-2xl hover:bg-[#F6F4F3] text-left cursor-pointer"
                     >
                       <img
                         src={currentUser.avatar}
                         alt={currentUser.name}
                         referrerPolicy="no-referrer"
-                        className="w-10 h-10 rounded-full object-cover border border-[#F1E1DC] shrink-0"
+                        className="w-10 h-10 rounded-full object-cover border border-[#EFEAE7] shrink-0"
                       />
                       <div className="min-w-0">
-                        <div className="text-sm font-bold text-[#252525] truncate">{currentUser.name}</div>
-                        <div className="text-xs text-[#858585]">
+                        <div className="text-sm font-bold text-[#18181B] truncate">{currentUser.name}</div>
+                        <div className="text-xs text-[#6B6B6B]">
                           {currentRole === 'tutor'
                             ? 'Tutor Page'
                             : currentRole === 'admin'
@@ -337,7 +344,7 @@ export const Header: React.FC = () => {
                       </div>
                     </button>
 
-                    <div className="border-t border-[#F1E1DC] my-1" />
+                    <div className="border-t border-[#EFEAE7] my-1" />
 
                     <button
                       type="button"
@@ -345,18 +352,18 @@ export const Header: React.FC = () => {
                         setActiveView('dashboard');
                         setOpenDropdown(null);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF3EF] text-sm font-medium text-[#252525] cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF6F3] text-sm font-medium text-[#18181B] cursor-pointer"
                     >
-                      <User className="w-4 h-4 text-[#858585] shrink-0" />
+                      <User className="w-4 h-4 text-[#6B6B6B] shrink-0" />
                       <span>{language === 'bn' ? 'আমার প্রোফাইল ও সেভ' : 'My Profile & Saved'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={handleTutorPageAction}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF3EF] text-sm font-medium text-[#252525] cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EFEAFF]/70 text-sm font-medium text-[#18181B] cursor-pointer"
                     >
-                      <GraduationCap className="w-4 h-4 text-[#F47C68] shrink-0" />
+                      <GraduationCap className="w-4 h-4 text-[#EB624B] shrink-0" />
                       <span>
                         {currentRole === 'tutor'
                           ? (language === 'bn' ? 'টিউটর পেজ এডিট করুন' : 'Edit My Tutor Page')
@@ -372,9 +379,9 @@ export const Header: React.FC = () => {
                           setOpenDropdown(null);
                           await switchUserRole(nextRole);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF3EF] text-sm font-medium text-[#252525] cursor-pointer"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF4D6]/60 text-sm font-medium text-[#18181B] cursor-pointer"
                       >
-                        <Repeat className="w-4 h-4 text-[#F5A04E] shrink-0" />
+                        <Repeat className="w-4 h-4 text-[#C94A35] shrink-0" />
                         <span>
                           {currentRole === 'tutor'
                             ? (language === 'bn' ? 'স্টুডেন্ট মোডে যান' : 'Switch to Student / Parent')
@@ -390,9 +397,9 @@ export const Header: React.FC = () => {
                           setActiveView('admin');
                           setOpenDropdown(null);
                         }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF3EF] text-sm font-medium text-[#252525] cursor-pointer"
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#DCEBFA]/60 text-sm font-medium text-[#18181B] cursor-pointer"
                       >
-                        <Shield className="w-4 h-4 text-[#F47C68] shrink-0" />
+                        <Shield className="w-4 h-4 text-[#EB624B] shrink-0" />
                         <span>Admin Moderation</span>
                       </button>
                     )}
@@ -400,18 +407,18 @@ export const Header: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#FFF3EF] text-sm font-medium text-[#252525] cursor-pointer"
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-[#F6F4F3] text-sm font-medium text-[#18181B] cursor-pointer"
                     >
                       <span className="flex items-center gap-3">
-                        <Globe className="w-4 h-4 text-[#858585] shrink-0" />
+                        <Globe className="w-4 h-4 text-[#6B6B6B] shrink-0" />
                         <span>Language / ভাষা</span>
                       </span>
-                      <span className="text-xs font-bold text-[#C94A35]">
+                      <span className="text-xs font-bold text-[#EB624B]">
                         {language === 'en' ? 'EN' : 'বাংলা'}
                       </span>
                     </button>
 
-                    <div className="border-t border-[#F1E1DC] my-1" />
+                    <div className="border-t border-[#EFEAE7] my-1" />
 
                     <button
                       type="button"
@@ -419,9 +426,9 @@ export const Header: React.FC = () => {
                         logoutUser();
                         setOpenDropdown(null);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF3EF] text-sm font-medium text-[#252525] cursor-pointer"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF6F3] text-sm font-medium text-[#18181B] cursor-pointer"
                     >
-                      <LogOut className="w-4 h-4 text-[#858585] shrink-0" />
+                      <LogOut className="w-4 h-4 text-[#6B6B6B] shrink-0" />
                       <span>{language === 'bn' ? 'লগ আউট' : 'Log Out'}</span>
                     </button>
                   </div>
@@ -433,7 +440,7 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-                className="h-9 px-3.5 rounded-full text-xs font-semibold text-[#252525] bg-[#FFF3EF] hover:bg-[#FFE6DD] cursor-pointer whitespace-nowrap transition-colors"
+                className="h-9 px-3.5 rounded-full text-xs font-semibold text-[#18181B] bg-[#F6F4F3] hover:bg-[#EFEAFF] cursor-pointer whitespace-nowrap transition-colors"
               >
                 {language === 'en' ? 'বাংলা' : 'EN'}
               </button>
@@ -444,7 +451,7 @@ export const Header: React.FC = () => {
                   setAuthModalMode('login');
                   setIsAuthModalOpen(true);
                 }}
-                className="h-9 sm:h-10 px-4 bg-[#FFF3EF] border border-[#F3D5CC] hover:bg-[#FFE6DD] text-[#252525] text-xs sm:text-sm font-semibold rounded-full transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                className="h-9 sm:h-10 px-4 bg-[#18181B] hover:bg-[#27272A] text-white text-xs sm:text-sm font-semibold rounded-full transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
                 {language === 'bn' ? 'সাইন ইন' : 'Sign In'}
               </button>

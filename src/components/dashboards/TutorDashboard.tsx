@@ -110,13 +110,13 @@ export const TutorDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] pb-12 text-left animate-fade-up">
+    <div className="min-h-screen bg-[#FCFBFA] pb-12 text-left animate-fade-up">
       {/* Tutor Profile Manager Header */}
-      <div className="bg-white border-b border-[#F1E1DC]">
+      <div className="bg-white border-b border-[#EFEAE7]">
         <div className="max-w-4xl mx-auto">
-          <div className="h-28 sm:h-36 bg-gradient-to-r from-[#FFF3EF] via-[#FFE2D9] to-[#DCEBFA] border-b border-[#F1E1DC] sm:rounded-b-3xl" />
+          <div className="h-28 sm:h-36 bg-gradient-to-r from-[#FFF5F2] via-[#F2EEFF] to-[#E2F0FF] border-b border-[#EFEAE7] sm:rounded-b-[28px]" />
 
-          <div className="px-4 sm:px-6 pb-4">
+          <div className="px-4 sm:px-6 pb-5">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 -mt-12 sm:-mt-14">
               <div className="flex items-end gap-4 min-w-0">
                 <img
@@ -126,10 +126,10 @@ export const TutorDashboard: React.FC = () => {
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-sm bg-white shrink-0"
                 />
                 <div className="pb-1 min-w-0">
-                  <h1 className="font-display text-xl sm:text-2xl font-bold text-[#252525] leading-snug break-words">
+                  <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[#18181B] leading-snug break-words text-balance">
                     {myTutorProfile?.name || currentUser.name}
                   </h1>
-                  <p className="text-xs sm:text-sm text-[#858585] break-words">
+                  <p className="text-xs sm:text-sm text-[#6B6B6B] break-words">
                     {myTutorProfile?.university || 'Tutor Profile'}
                     {myTutorProfile?.department ? ` · ${myTutorProfile.department}` : ''}
                     {' · '}
@@ -143,24 +143,78 @@ export const TutorDashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => viewTutorDetail(myTutorProfile)}
-                    className="h-10 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+                    className="h-10 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0 shadow-xs"
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5 shrink-0" />
                     <span>View My Profile</span>
                   </button>
                 )}
                 <button
                   type="button"
                   onClick={() => setActiveView('tutor-onboarding')}
-                  className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                  className="h-10 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className="w-3.5 h-3.5 shrink-0" />
                   <span>Edit Profile</span>
                 </button>
               </div>
             </div>
 
-            <div className="border-t border-[#F1E1DC] mt-4 pt-2 flex items-center gap-1.5 overflow-x-auto">
+            {/* Interactive 3-Card Bento Overview Strip */}
+            <div className="grid grid-cols-3 gap-2.5 sm:gap-3 mt-5">
+              <button
+                type="button"
+                onClick={() => setActiveTab('applications')}
+                className={`p-3 sm:p-4 rounded-[20px] border text-left cursor-pointer transition-all duration-150 ${
+                  activeTab === 'applications'
+                    ? 'bg-[#FFF6F3] border-[#EB624B]/60 shadow-xs'
+                    : 'bg-[#FFF6F3]/65 border-[#F5E4DF] hover:bg-[#FFF6F3]'
+                }`}
+              >
+                <div className="text-[11px] font-medium text-[#52525B] truncate">
+                  {isBn ? 'আবেদনসমূহ' : 'Applications'}
+                </div>
+                <div className="font-display text-lg sm:text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-0.5">
+                  {myApps.length}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('invitations')}
+                className={`p-3 sm:p-4 rounded-[20px] border text-left cursor-pointer transition-all duration-150 ${
+                  activeTab === 'invitations'
+                    ? 'bg-[#EFEAFF] border-[#7C5DFA]/50 shadow-xs'
+                    : 'bg-[#EFEAFF]/65 border-[#E1D8FF] hover:bg-[#EFEAFF]'
+                }`}
+              >
+                <div className="text-[11px] font-medium text-[#52525B] truncate">
+                  {isBn ? 'টিউশন আমন্ত্রণ' : 'Invitations'}
+                </div>
+                <div className="font-display text-lg sm:text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-0.5">
+                  {myInvites.length}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab('saved')}
+                className={`p-3 sm:p-4 rounded-[20px] border text-left cursor-pointer transition-all duration-150 ${
+                  activeTab === 'saved'
+                    ? 'bg-[#FFF4D6] border-[#F5A04E]/70 shadow-xs'
+                    : 'bg-[#FFF4D6]/65 border-[#F8E4AE] hover:bg-[#FFF4D6]'
+                }`}
+              >
+                <div className="text-[11px] font-medium text-[#52525B] truncate">
+                  {isBn ? 'সেভড ও যাচাই' : 'Saved & Verify'}
+                </div>
+                <div className="font-display text-lg sm:text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-0.5">
+                  {savedTuitions.length}
+                </div>
+              </button>
+            </div>
+
+            <div className="mt-4 inline-flex max-w-full items-center gap-1 p-1 rounded-full bg-[#F6F4F3] border border-[#EAE4E1] overflow-x-auto no-scrollbar">
               {[
                 { id: 'applications', label: isBn ? `আমার আবেদন (${myApps.length})` : `My Applications (${myApps.length})` },
                 { id: 'invitations', label: isBn ? `আমন্ত্রণ (${myInvites.length})` : `Invitations (${myInvites.length})` },
@@ -171,10 +225,10 @@ export const TutorDashboard: React.FC = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`h-9 px-4 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap cursor-pointer transition-colors ${
+                  className={`h-9 px-4 text-xs sm:text-sm rounded-full whitespace-nowrap shrink-0 cursor-pointer transition-all ${
                     activeTab === tab.id
-                      ? 'bg-[#DCEBFA] text-[#252525]'
-                      : 'text-[#858585] hover:bg-[#FFF3EF] hover:text-[#252525]'
+                      ? 'bg-[#18181B] text-white font-bold shadow-xs'
+                      : 'text-[#52525B] font-semibold hover:text-[#18181B] hover:bg-white/70'
                   }`}
                 >
                   {tab.label}
@@ -186,22 +240,24 @@ export const TutorDashboard: React.FC = () => {
       </div>
 
       {/* Body */}
-      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-5 space-y-4">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-6 space-y-4">
         {activeTab === 'applications' && (
           <>
             {myApps.length === 0 ? (
-              <div className="ivory-card p-8 text-center space-y-3">
-                <div className="text-base font-bold text-[#252525]">No applications sent yet</div>
-                <p className="text-sm text-[#858585]">
-                  Browse Tuition Requests to find matching students in your area.
+              <div className="ivory-card p-8 sm:p-10 text-center space-y-3">
+                <div className="font-display text-lg font-extrabold text-[#18181B]">No applications sent yet</div>
+                <p className="text-sm text-[#6B6B6B] max-w-md mx-auto">
+                  Browse open Tuition Requests to find matching students in your area.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setActiveView('tuitions')}
-                  className="h-10 px-6 bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold rounded-full cursor-pointer transition-colors"
-                >
-                  Browse Tuitions
-                </button>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('tuitions')}
+                    className="h-10 px-6 bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold rounded-full cursor-pointer transition-colors"
+                  >
+                    Browse Tuitions
+                  </button>
+                </div>
               </div>
             ) : (
               myApps.map(app => {
@@ -220,8 +276,10 @@ export const TutorDashboard: React.FC = () => {
                 return (
                   <div key={app.id} className="ivory-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-1 text-xs min-w-0">
-                      <div className="font-bold text-sm text-[#252525] leading-snug break-words">{app.tuitionTitle}</div>
-                      <div className="text-[#858585] tabular-nums">
+                      <div className="font-display font-bold text-sm sm:text-base text-[#18181B] leading-snug break-words">
+                        {app.tuitionTitle}
+                      </div>
+                      <div className="text-[#6B6B6B] tabular-nums">
                         Proposed: ৳{app.proposedSalaryBDT.toLocaleString()}/mo · Applied {app.appliedAt} ·{' '}
                         <span className="font-bold text-[#C94A35] uppercase">{app.status}</span>
                       </div>
@@ -233,9 +291,9 @@ export const TutorDashboard: React.FC = () => {
                           href={guardianWa}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-9 px-4 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                          className="h-9 px-4 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap"
                         >
-                          <MessageCircle className="w-3.5 h-3.5" />
+                          <MessageCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>WhatsApp Guardian</span>
                         </a>
                       )}
@@ -243,7 +301,7 @@ export const TutorDashboard: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => withdrawApplication(app.id)}
-                          className="h-9 px-4 rounded-full bg-[#FFF3EF] hover:bg-rose-50 text-rose-700 text-xs font-semibold cursor-pointer transition-colors"
+                          className="h-9 px-4 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap"
                         >
                           Withdraw
                         </button>
@@ -259,7 +317,7 @@ export const TutorDashboard: React.FC = () => {
         {activeTab === 'invitations' && (
           <>
             {myInvites.length === 0 ? (
-              <div className="ivory-card p-8 text-center text-sm text-[#858585]">
+              <div className="ivory-card p-8 text-center text-sm text-[#6B6B6B]">
                 No direct invitations from parents or students yet.
               </div>
             ) : (
@@ -275,10 +333,10 @@ export const TutorDashboard: React.FC = () => {
                 return (
                   <div key={inv.id} className="ivory-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                     <div className="space-y-1 min-w-0">
-                      <div className="font-bold text-sm text-[#252525] break-words">
+                      <div className="font-display font-bold text-sm sm:text-base text-[#18181B] break-words">
                         {inv.learnerName} invited you for {inv.classGrade}
                       </div>
-                      <div className="text-[#858585] tabular-nums">
+                      <div className="text-[#6B6B6B] tabular-nums">
                         {inv.subjects.join(', ')} · ৳{inv.offerSalaryBDT.toLocaleString()}/mo ·{' '}
                         <span className="font-bold text-[#C94A35] uppercase">{inv.status}</span>
                       </div>
@@ -291,14 +349,14 @@ export const TutorDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => respondToInvitation(inv.id, 'accepted')}
-                            className="h-9 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold cursor-pointer transition-colors"
+                            className="h-9 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white font-bold cursor-pointer transition-colors whitespace-nowrap"
                           >
                             Accept
                           </button>
                           <button
                             type="button"
                             onClick={() => respondToInvitation(inv.id, 'declined')}
-                            className="h-9 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] font-semibold cursor-pointer transition-colors"
+                            className="h-9 px-4 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] font-semibold cursor-pointer transition-colors whitespace-nowrap"
                           >
                             Decline
                           </button>
@@ -308,9 +366,9 @@ export const TutorDashboard: React.FC = () => {
                           href={guardianWa}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="h-9 px-4 rounded-full bg-[#15803D] hover:bg-[#166534] text-white font-semibold flex items-center gap-1.5 transition-colors"
+                          className="h-9 px-4 rounded-full bg-[#15803D] hover:bg-[#166534] text-white font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap"
                         >
-                          <MessageCircle className="w-3.5 h-3.5" />
+                          <MessageCircle className="w-3.5 h-3.5 shrink-0" />
                           <span>WhatsApp</span>
                         </a>
                       ) : null}
@@ -324,16 +382,18 @@ export const TutorDashboard: React.FC = () => {
 
         {activeTab === 'saved' && (
           <div className="space-y-4">
-            <div className="ivory-card p-5 space-y-3 text-xs">
-              <h2 className="font-display text-base font-bold text-[#252525]">
-                Verify Your Tutor Profile (Optional Badge)
-              </h2>
-              <p className="text-[#858585]">
-                Upload your University Student ID or NID to receive the verified checkmark on your Tutor Profile.
-              </p>
+            <div className="ivory-card p-5 sm:p-6 space-y-4 text-xs">
+              <div>
+                <h2 className="font-display text-base sm:text-lg font-extrabold text-[#18181B]">
+                  Verify Your Tutor Profile (Optional Badge)
+                </h2>
+                <p className="text-[#6B6B6B] mt-1">
+                  Upload your University Student ID or NID to receive the verified checkmark on your Tutor Profile.
+                </p>
+              </div>
               <div className="flex flex-wrap gap-3">
-                <label className="h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
-                  <Upload className="w-4 h-4" />
+                <label className="h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#18181B] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
+                  <Upload className="w-4 h-4 shrink-0" />
                   <span>{uploadingDoc ? 'Uploading...' : 'Upload University ID'}</span>
                   <input
                     type="file"
@@ -344,8 +404,8 @@ export const TutorDashboard: React.FC = () => {
                   />
                 </label>
 
-                <label className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
-                  <CheckCircle2 className="w-4 h-4 text-[#F47C68]" />
+                <label className="h-10 px-4 rounded-full bg-[#FFF6F3] hover:bg-[#FFEBE6] border border-[#F5E4DF] text-[#18181B] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors">
+                  <CheckCircle2 className="w-4 h-4 text-[#EB624B] shrink-0" />
                   <span>{uploadingDoc ? 'Uploading...' : 'Upload NID'}</span>
                   <input
                     type="file"
@@ -358,21 +418,28 @@ export const TutorDashboard: React.FC = () => {
               </div>
 
               {(myTutorProfile || myVerificationItems.length > 0) && (
-                <div className="pt-2 border-t border-[#F1E1DC] space-y-2">
-                  <div className="flex flex-wrap gap-2 text-[11px]">
-                    <span className="px-2.5 py-1 rounded-full bg-[#FFF3EF] text-[#252525] font-semibold">
-                      University ID: {myTutorProfile?.verification?.institution?.status || 'unverified'}
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full bg-[#FFF3EF] text-[#252525] font-semibold">
-                      NID / Identity: {myTutorProfile?.verification?.identity?.status || 'unverified'}
-                    </span>
+                <div className="pt-3 border-t border-[#EFEAE7] space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="p-3.5 rounded-[16px] bg-[#EFEAFF]/70 border border-[#E1D8FF]">
+                      <div className="text-[11px] font-medium text-[#52525B]">University ID Status</div>
+                      <div className="font-display text-sm font-bold text-[#18181B] capitalize mt-0.5">
+                        {myTutorProfile?.verification?.institution?.status || 'unverified'}
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-[16px] bg-[#DCEBFA]/65 border border-[#C6DDF5]">
+                      <div className="text-[11px] font-medium text-[#52525B]">NID / Identity Status</div>
+                      <div className="font-display text-sm font-bold text-[#18181B] capitalize mt-0.5">
+                        {myTutorProfile?.verification?.identity?.status || 'unverified'}
+                      </div>
+                    </div>
                   </div>
+
                   {myVerificationItems.slice(0, 3).map(v => (
                     <div
                       key={v.id}
-                      className="p-2.5 rounded-xl bg-[#FFF3EF] flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]"
+                      className="p-3 rounded-[14px] bg-[#F8F6F5] border border-[#EFEAE7] flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs"
                     >
-                      <div className="text-[#252525] font-medium break-words">
+                      <div className="text-[#18181B] font-medium break-words">
                         {v.verificationType} · {v.documentName}
                       </div>
                       <div className="font-bold uppercase text-[#C94A35]">
@@ -387,7 +454,9 @@ export const TutorDashboard: React.FC = () => {
 
             {savedTuitions.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-sm font-bold text-[#252525] px-1">Saved Tuition Posts</h3>
+                <h3 className="font-display text-sm sm:text-base font-extrabold text-[#18181B] px-1">
+                  Saved Tuition Posts
+                </h3>
                 {savedTuitions.map(post => (
                   <TuitionPostCard key={post.id} post={post} />
                 ))}
@@ -398,22 +467,24 @@ export const TutorDashboard: React.FC = () => {
 
         {activeTab === 'settings' && (
           <div className="space-y-4">
-            <div className="ivory-card p-5 space-y-3.5 text-xs">
-              <h2 className="font-display text-base font-bold text-[#252525] flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#F47C68]" />
+            <div className="ivory-card p-5 sm:p-6 space-y-4 text-xs">
+              <h2 className="font-display text-base font-extrabold text-[#18181B] flex items-center gap-2">
+                <span className="w-8 h-8 rounded-full bg-[#EFEAFF] border border-[#E1D8FF] flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-[#18181B]" />
+                </span>
                 <span>{isBn ? 'টিউটর অ্যাকাউন্ট ও পছন্দসমূহ' : 'Tutor Account & Preferences'}</span>
               </h2>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="p-3.5 rounded-2xl bg-[#FFF3EF] space-y-1">
-                  <div className="text-[#858585]">{isBn ? 'সাইন-ইন ইমেইল' : 'Signed-in Email'}</div>
-                  <div className="font-semibold text-[#252525] break-all">
+                <div className="p-4 rounded-[18px] bg-[#FFF6F3] border border-[#F5E4DF] space-y-1">
+                  <div className="text-[#52525B]">{isBn ? 'সাইন-ইন ইমেইল' : 'Signed-in Email'}</div>
+                  <div className="font-semibold text-[#18181B] break-all">
                     {currentUser.email || 'Google Account'}
                   </div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-[#FFF3EF] space-y-1">
-                  <div className="text-[#858585]">{isBn ? 'প্রোফাইল দৃশ্যমানতা' : 'Profile Status'}</div>
-                  <div className="font-semibold text-[#252525]">
+                <div className="p-4 rounded-[18px] bg-[#EFEAFF]/70 border border-[#E1D8FF] space-y-1">
+                  <div className="text-[#52525B]">{isBn ? 'প্রোফাইল দৃশ্যমানতা' : 'Profile Status'}</div>
+                  <div className="font-semibold text-[#18181B]">
                     {myTutorProfile?.isPublished ? 'Published in Directory' : 'Draft / Incomplete'}
                   </div>
                 </div>
@@ -423,27 +494,27 @@ export const TutorDashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setActiveView('tutor-onboarding')}
-                  className="h-10 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  className="h-10 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                 >
-                  <Edit3 className="w-3.5 h-3.5" />
+                  <Edit3 className="w-3.5 h-3.5 shrink-0" />
                   <span>{isBn ? 'টিউটর প্রোফাইল এডিট' : 'Edit Tutor Profile & Contact'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => switchUserRole('learner')}
-                  className="h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  className="h-10 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                 >
-                  <Repeat className="w-3.5 h-3.5" />
+                  <Repeat className="w-3.5 h-3.5 shrink-0" />
                   <span>{isBn ? 'স্টুডেন্ট / গার্জিয়ান মোডে যান' : 'Switch to Student / Guardian'}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-                  className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+                  className="h-10 px-4 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                 >
-                  <Globe className="w-3.5 h-3.5 text-[#F47C68]" />
+                  <Globe className="w-3.5 h-3.5 text-[#EB624B] shrink-0" />
                   <span>{language === 'en' ? 'বাংলা ভাষা' : 'English Language'}</span>
                 </button>
               </div>

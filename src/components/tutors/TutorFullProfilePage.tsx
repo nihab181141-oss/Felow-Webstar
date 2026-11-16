@@ -94,10 +94,10 @@ export const TutorFullProfilePage: React.FC = () => {
 
   if (!tutor) {
     return (
-      <div className="min-h-[70vh] bg-[#FFFFFF] flex items-center justify-center px-4">
+      <div className="min-h-[70vh] bg-[#FCFBFA] flex items-center justify-center px-4">
         <div className="ivory-card p-8 max-w-md w-full text-center space-y-4">
-          <h1 className="font-display text-xl font-bold text-[#252525]">Tutor not found</h1>
-          <p className="text-sm text-[#858585]">
+          <h1 className="font-display text-xl font-extrabold text-[#18181B]">Tutor not found</h1>
+          <p className="text-sm text-[#6B6B6B]">
             This tutor profile may have been unpublished or removed.
           </p>
           <button
@@ -106,7 +106,7 @@ export const TutorFullProfilePage: React.FC = () => {
               setDirectoryTab('tutors');
               setActiveView('landing');
             }}
-            className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold cursor-pointer transition-all"
+            className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-sm font-bold cursor-pointer transition-all"
           >
             Back to Tutors
           </button>
@@ -209,9 +209,9 @@ export const TutorFullProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#FFFFFF] pb-14 text-left animate-fade-up">
-      {/* Full-Width Warm EdTech Profile Cover */}
-      <div className="bg-gradient-to-r from-[#FFF3EF] via-[#FFE2D9] to-[#DCEBFA] border-b border-[#F1E1DC]">
+    <div className="min-h-[calc(100vh-56px)] bg-[#FCFBFA] pb-14 text-left animate-fade-up">
+      {/* Full-Width Dribbble Pastel Bento Profile Cover */}
+      <div className="bg-gradient-to-r from-[#FFF5F2] via-[#F2EEFF] to-[#E2F0FF] border-b border-[#EFEAE7]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-20 sm:pb-24 flex items-center justify-between gap-3">
           <button
             type="button"
@@ -220,7 +220,7 @@ export const TutorFullProfilePage: React.FC = () => {
               setDirectoryTab('tutors');
               setActiveView('landing');
             }}
-            className="h-10 px-4 rounded-full bg-white/90 hover:bg-white text-[#252525] text-xs sm:text-sm font-semibold inline-flex items-center gap-2 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
+            className="h-10 px-4 rounded-full bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B] text-xs sm:text-sm font-bold inline-flex items-center gap-2 shadow-2xs transition-all active:scale-[0.98] cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4 shrink-0" />
             <span>Back to Tutors</span>
@@ -229,13 +229,13 @@ export const TutorFullProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => toggleSaveTutor(tutor.id)}
-            className={`h-10 px-4 rounded-full text-xs sm:text-sm font-semibold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
+            className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
               isSaved
-                ? 'bg-[#F47C68] text-[#252525] font-bold'
-                : 'bg-white/90 hover:bg-white text-[#252525]'
+                ? 'bg-[#EB624B] text-white'
+                : 'bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B]'
             }`}
           >
-            <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-[#252525]' : ''}`} />
+            <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
             <span>{isSaved ? 'Saved' : 'Save Tutor'}</span>
           </button>
         </div>
@@ -288,22 +288,22 @@ export const TutorFullProfilePage: React.FC = () => {
 
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[#252525] leading-tight break-words">
+                  <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[#18181B] leading-tight tracking-tight break-words">
                     {tutor.name}
                   </h1>
                   {verified && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#C94A35]">
-                      <BadgeCheck className="w-5 h-5 text-[#F47C68] shrink-0" />
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[#EB624B]">
+                      <BadgeCheck className="w-5 h-5 text-[#EB624B] shrink-0" />
                       <span>Verified Tutor</span>
                     </span>
                   )}
                 </div>
 
-                <p className="text-sm sm:text-base font-semibold text-[#C94A35] leading-snug break-words">
+                <p className="text-sm sm:text-base font-semibold text-[#EB624B] leading-snug break-words">
                   {tutor.university}
                 </p>
 
-                <div className="text-xs sm:text-sm text-[#252525] leading-relaxed">
+                <div className="text-xs sm:text-sm text-[#18181B] leading-relaxed">
                   {[
                     tutor.department,
                     tutor.degree,
@@ -314,14 +314,14 @@ export const TutorFullProfilePage: React.FC = () => {
                     .join(' · ')}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs sm:text-sm text-[#858585] tabular-nums pt-0.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs sm:text-sm text-[#6B6B6B] tabular-nums pt-0.5">
                   <a
                     href="#tutor-reviews-heading"
-                    className="inline-flex items-center gap-1 font-bold text-[#252525] hover:text-[#C94A35] transition-colors"
+                    className="inline-flex items-center gap-1 font-bold text-[#18181B] hover:text-[#EB624B] transition-colors"
                   >
                     <Star className="w-4 h-4 text-[#F5A04E] fill-[#F5A04E] shrink-0" />
                     <span>{tutor.rating > 0 ? tutor.rating.toFixed(1) : 'New'}</span>
-                    <span className="font-normal text-[#858585]">
+                    <span className="font-normal text-[#6B6B6B]">
                       ({Math.max(tutor.reviewCount || 0, tutor.reviews?.length || 0)} reviews)
                     </span>
                   </a>
@@ -352,7 +352,7 @@ export const TutorFullProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={openInviteModal}
-                  className="h-11 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                  className="h-11 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
                 >
                   <Send className="w-4 h-4 shrink-0" />
                   <span>Send Invite</span>
@@ -397,36 +397,36 @@ export const TutorFullProfilePage: React.FC = () => {
 
             {/* Subjects & Classes Taught */}
             <section className="ivory-card p-5 sm:p-6 space-y-4">
-              <h2 className="font-display text-lg font-bold text-[#252525] flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#F47C68]" />
+              <h2 className="font-display text-lg font-extrabold text-[#18181B] flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-[#EB624B]" />
                 <span>Subjects, Classes & Curriculum</span>
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1.5">
-                  <div className="text-xs font-semibold text-[#858585]">Subjects Taught</div>
-                  <div className="font-semibold text-[#252525] leading-relaxed">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-sm">
+                <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF] space-y-1.5">
+                  <div className="text-xs font-semibold text-[#6B6B6B]">Subjects Taught</div>
+                  <div className="font-semibold text-[#18181B] leading-relaxed">
                     {tutor.subjects.join(', ')}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1.5">
-                  <div className="text-xs font-semibold text-[#858585]">Classes & Levels</div>
-                  <div className="font-semibold text-[#252525] leading-relaxed">
+                <div className="p-4 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF] space-y-1.5">
+                  <div className="text-xs font-semibold text-[#52525B]">Classes & Levels</div>
+                  <div className="font-semibold text-[#18181B] leading-relaxed">
                     {tutor.classes.join(', ')}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1.5">
-                  <div className="text-xs font-semibold text-[#858585]">Education Mediums</div>
-                  <div className="font-semibold text-[#252525] leading-relaxed">
+                <div className="p-4 rounded-2xl bg-[#EFF6FF] border border-[#DCEBFA] space-y-1.5">
+                  <div className="text-xs font-semibold text-[#52525B]">Education Mediums</div>
+                  <div className="font-semibold text-[#18181B] leading-relaxed">
                     {tutor.mediums.join(', ')}
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1.5">
-                  <div className="text-xs font-semibold text-[#858585]">Tuition Modes</div>
-                  <div className="font-semibold text-[#252525] leading-relaxed">
+                <div className="p-4 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE] space-y-1.5">
+                  <div className="text-xs font-semibold text-[#52525B]">Tuition Modes</div>
+                  <div className="font-semibold text-[#18181B] leading-relaxed">
                     {tutor.tuitionTypes.join(', ')}
                   </div>
                 </div>
@@ -435,35 +435,35 @@ export const TutorFullProfilePage: React.FC = () => {
 
             {/* Full Educational Background */}
             <section className="ivory-card p-5 sm:p-6 space-y-4">
-              <h2 className="font-display text-lg font-bold text-[#252525] flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-[#F47C68]" />
+              <h2 className="font-display text-lg font-extrabold text-[#18181B] flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-[#EB624B]" />
                 <span>Educational Background</span>
               </h2>
 
               <div className="space-y-3 text-sm">
-                <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1">
-                  <div className="text-xs font-semibold text-[#C94A35]">University</div>
-                  <div className="font-bold text-[#252525]">{tutor.university}</div>
-                  <div className="text-xs sm:text-sm text-[#858585]">
+                <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF] space-y-1">
+                  <div className="text-xs font-bold text-[#EB624B]">University</div>
+                  <div className="font-bold text-[#18181B]">{tutor.university}</div>
+                  <div className="text-xs sm:text-sm text-[#52525B]">
                     {[tutor.degree, tutor.department, tutor.academicYear, tutor.semester]
                       .filter(Boolean)
                       .join(' · ')}
                   </div>
                   {tutor.gpa && (
-                    <div className="text-xs font-mono font-semibold text-[#252525] pt-0.5">
+                    <div className="text-xs font-mono font-semibold text-[#18181B] pt-0.5">
                       CGPA: {tutor.gpa}
                     </div>
                   )}
                 </div>
 
                 {(tutor.collegeName || tutor.hscGpa) && (
-                  <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1">
-                    <div className="text-xs font-semibold text-[#858585]">College / HSC</div>
-                    <div className="font-bold text-[#252525]">
+                  <div className="p-4 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF] space-y-1">
+                    <div className="text-xs font-semibold text-[#52525B]">College / HSC</div>
+                    <div className="font-bold text-[#18181B]">
                       {tutor.collegeName || 'Higher Secondary'}
                     </div>
                     {tutor.hscGpa && (
-                      <div className="text-xs font-mono font-semibold text-[#858585]">
+                      <div className="text-xs font-mono font-semibold text-[#52525B]">
                         HSC GPA: {tutor.hscGpa}
                       </div>
                     )}
@@ -471,13 +471,13 @@ export const TutorFullProfilePage: React.FC = () => {
                 )}
 
                 {(tutor.schoolName || tutor.sscGpa) && (
-                  <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-1">
-                    <div className="text-xs font-semibold text-[#858585]">School / SSC</div>
-                    <div className="font-bold text-[#252525]">
+                  <div className="p-4 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE] space-y-1">
+                    <div className="text-xs font-semibold text-[#52525B]">School / SSC</div>
+                    <div className="font-bold text-[#18181B]">
                       {tutor.schoolName || 'Secondary School'}
                     </div>
                     {tutor.sscGpa && (
-                      <div className="text-xs font-mono font-semibold text-[#858585]">
+                      <div className="text-xs font-mono font-semibold text-[#52525B]">
                         SSC GPA: {tutor.sscGpa}
                       </div>
                     )}
@@ -485,12 +485,12 @@ export const TutorFullProfilePage: React.FC = () => {
                 )}
 
                 {tutor.achievements && tutor.achievements.length > 0 && (
-                  <div className="p-4 rounded-2xl bg-[#DCEBFA]/70 space-y-1.5">
-                    <div className="text-xs font-semibold text-[#252525] flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-[#F5A04E]" />
+                  <div className="p-4 rounded-2xl bg-[#DCEBFA]/75 border border-[#C6DDF5] space-y-1.5">
+                    <div className="text-xs font-bold text-[#18181B] flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-[#EB624B]" />
                       <span>Academic Honors & Achievements</span>
                     </div>
-                    <ul className="text-xs sm:text-sm text-[#252525] space-y-1">
+                    <ul className="text-xs sm:text-sm text-[#18181B] space-y-1">
                       {tutor.achievements.map(item => (
                         <li key={item}>· {item}</li>
                       ))}
@@ -505,14 +505,14 @@ export const TutorFullProfilePage: React.FC = () => {
           </div>
 
           {/* Right Column: Fee, Areas & Contact Details */}
-          <aside className="space-y-4 lg:sticky lg:top-[72px]">
+          <aside className="space-y-4 lg:sticky lg:top-[84px]">
             <div className="ivory-card p-5 sm:p-6 space-y-4 text-sm">
-              <div className="p-4 rounded-2xl bg-[#DCEBFA]/70">
-                <div className="text-xs font-semibold text-[#252525]">Expected Monthly Fee</div>
-                <div className="font-mono text-2xl font-extrabold text-[#252525] mt-1 tabular-nums">
+              <div className="p-4 rounded-2xl bg-[#DCEBFA]/75 border border-[#C6DDF5]">
+                <div className="text-xs font-bold text-[#18181B]">Expected Monthly Fee</div>
+                <div className="font-mono text-2xl font-extrabold text-[#18181B] mt-1 tabular-nums">
                   ৳{tutor.expectedSalaryMin.toLocaleString()}–
                   {tutor.expectedSalaryMax.toLocaleString()}
-                  <span className="text-xs font-sans font-normal text-[#858585]"> /month</span>
+                  <span className="text-xs font-sans font-normal text-[#52525B]"> /month</span>
                 </div>
               </div>
 
@@ -616,20 +616,20 @@ export const TutorFullProfilePage: React.FC = () => {
       {/* Invite Modal */}
       {isInviteOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setIsInviteOpen(false)}
         >
           <div
-            className="bg-white rounded-3xl border border-[#F1E1DC] max-w-md w-full p-6 space-y-4 shadow-xl"
+            className="bg-white rounded-[28px] border border-[#EFEAE7] max-w-md w-full p-6 space-y-4 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-display text-lg font-bold text-[#252525]">
+            <h3 className="font-display text-lg font-extrabold text-[#18181B]">
               Invite {tutor.name}
             </h3>
             <form onSubmit={handleSendInvite} className="space-y-3 text-xs">
               {openMyPosts.length > 0 && (
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">
+                  <label className="block font-semibold text-[#18181B] mb-1">
                     Tuition Post (Optional)
                   </label>
                   <select
@@ -643,7 +643,7 @@ export const TutorFullProfilePage: React.FC = () => {
                         setInviteOfferBDT(chosen.salaryOfferBDT);
                       }
                     }}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525]"
+                    className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B]"
                   >
                     <option value="">Direct Invitation</option>
                     {openMyPosts.map(p => (
@@ -655,47 +655,47 @@ export const TutorFullProfilePage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Class *</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Class *</label>
                   <input
                     type="text"
                     required
                     value={inviteClass}
                     onChange={(e) => setInviteClass(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525]"
+                    className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Offer (৳/mo) *</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Offer (৳/mo) *</label>
                   <input
                     type="number"
                     required
                     min={1000}
                     value={inviteOfferBDT}
                     onChange={(e) => setInviteOfferBDT(Number(e.target.value))}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] font-mono"
+                    className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B] font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">Subjects *</label>
+                <label className="block font-semibold text-[#18181B] mb-1">Subjects *</label>
                 <input
                   type="text"
                   required
                   value={inviteSubject}
                   onChange={(e) => setInviteSubject(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525]"
+                  className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B]"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">Message</label>
+                <label className="block font-semibold text-[#18181B] mb-1">Message</label>
                 <textarea
                   rows={2}
                   value={inviteMessage}
                   onChange={(e) => setInviteMessage(e.target.value)}
                   placeholder="Share area, timing, or demo request..."
-                  className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585]"
+                  className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] focus:bg-white focus:border-[#18181B] focus:outline-none text-[#18181B] placeholder:text-[#858585]"
                 />
               </div>
 
@@ -703,13 +703,13 @@ export const TutorFullProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsInviteOpen(false)}
-                  className="h-10 px-5 rounded-full bg-[#FFF3EF] text-[#252525] font-semibold cursor-pointer"
+                  className="h-10 px-5 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold cursor-pointer"
+                  className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white font-bold cursor-pointer"
                 >
                   Send Invite
                 </button>

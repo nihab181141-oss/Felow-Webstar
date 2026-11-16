@@ -88,21 +88,21 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
             referrerPolicy="no-referrer"
             loading="lazy"
             decoding="async"
-            className="w-20 h-24 sm:w-28 sm:h-32 rounded-2xl object-cover object-top border border-[#F1E1DC] shrink-0 bg-[#FFF3EF]"
+            className="w-20 h-24 sm:w-28 sm:h-32 rounded-2xl object-cover object-top border border-[#EFEAE7] shrink-0 bg-[#F6F4F3]"
           />
           <div className="min-w-0 flex-1 space-y-1.5">
             <div className="flex flex-wrap items-center gap-1.5">
-              <h3 className="font-display text-base sm:text-lg font-bold text-[#252525] hover:underline leading-snug break-words">
+              <h3 className="font-display text-base sm:text-lg font-extrabold text-[#18181B] hover:underline leading-snug break-words">
                 {tutor.name}
               </h3>
               {verified && (
-                <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#F47C68] shrink-0" aria-label="Verified Tutor" />
+                <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#EB624B] shrink-0" aria-label="Verified Tutor" />
               )}
             </div>
-            <div className="text-xs sm:text-[13px] font-semibold text-[#C94A35] leading-snug break-words">
+            <div className="text-xs sm:text-[13px] font-semibold text-[#EB624B] leading-snug break-words">
               {tutor.university || 'University Tutor'}
             </div>
-            <div className="text-xs text-[#252525] leading-relaxed break-words">
+            <div className="text-xs text-[#18181B] leading-relaxed break-words">
               {[
                 tutor.department,
                 tutor.academicYear,
@@ -112,7 +112,7 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
                 .join(' · ')}
             </div>
             {(tutor.collegeName || tutor.hscGpa || tutor.sscGpa) && (
-              <div className="text-xs text-[#858585] leading-relaxed break-words">
+              <div className="text-xs text-[#6B6B6B] leading-relaxed break-words">
                 {[
                   tutor.collegeName,
                   tutor.hscGpa ? `HSC ${tutor.hscGpa}` : '',
@@ -122,17 +122,17 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
                   .join(' · ')}
               </div>
             )}
-            <div className="text-xs text-[#858585] flex items-start gap-1 pt-0.5 leading-snug">
-              <MapPin className="w-3.5 h-3.5 text-[#F47C68] shrink-0 mt-0.5" />
+            <div className="text-xs text-[#6B6B6B] flex items-start gap-1 pt-0.5 leading-snug">
+              <MapPin className="w-3.5 h-3.5 text-[#EB624B] shrink-0 mt-0.5" />
               <span className="break-words">
                 {tutor.preferredAreas.slice(0, 3).join(', ') || tutor.district}
                 {extraAreas > 0 ? ` (+${extraAreas})` : ''}, {tutor.district}
               </span>
             </div>
-            <div className="text-xs text-[#858585] tabular-nums">
+            <div className="text-xs text-[#6B6B6B] tabular-nums">
               {tutor.experienceYears > 0 ? `${tutor.experienceYears} yrs exp` : 'New Tutor'}
               <span aria-hidden="true"> · </span>
-              <span className="font-medium text-[#15803D]">{tutor.availability}</span>
+              <span className="font-semibold text-[#15803D]">{tutor.availability}</span>
             </div>
           </div>
         </div>
@@ -141,56 +141,56 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
           type="button"
           onClick={() => toggleSaveTutor(tutor.id)}
           aria-label={isSaved ? 'Remove from saved tutors' : 'Save tutor'}
-          className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#FFF3EF] transition-colors cursor-pointer shrink-0 ${
-            isSaved ? 'text-[#C94A35] bg-[#FFF3EF]' : 'text-[#858585]'
+          className={`w-9 h-9 rounded-full flex items-center justify-center hover:bg-[#FFF6F3] transition-colors cursor-pointer shrink-0 ${
+            isSaved ? 'text-[#EB624B] bg-[#FFF6F3]' : 'text-[#6B6B6B]'
           }`}
         >
-          <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#F47C68]' : ''}`} />
+          <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-[#EB624B]' : ''}`} />
         </button>
       </div>
 
       {(tutor.headline || tutor.bio) && (
         <div
           onClick={() => viewTutorDetail(tutor)}
-          className="border-t border-[#F1E1DC] pt-3 space-y-1 cursor-pointer"
+          className="border-t border-[#EFEAE7] pt-3 space-y-1 cursor-pointer"
         >
           {tutor.headline && (
-            <p className="text-xs sm:text-[13px] font-semibold text-[#252525] leading-snug break-words">
+            <p className="text-xs sm:text-[13px] font-semibold text-[#18181B] leading-snug break-words">
               {tutor.headline}
             </p>
           )}
           {tutor.bio && (
-            <p className="text-xs text-[#858585] leading-relaxed line-clamp-2 break-words">{tutor.bio}</p>
+            <p className="text-xs text-[#6B6B6B] leading-relaxed line-clamp-2 break-words">{tutor.bio}</p>
           )}
         </div>
       )}
 
       <div
         onClick={() => viewTutorDetail(tutor)}
-        className="bg-[#FFF3EF] rounded-2xl p-3.5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#252525] cursor-pointer"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-[#18181B] cursor-pointer"
       >
-        <div className="min-w-0">
-          <div className="text-[11px] font-semibold text-[#858585]">Subjects</div>
-          <div className="font-semibold text-[#252525] mt-0.5 flex items-start gap-1.5 leading-snug">
-            <GraduationCap className="w-3.5 h-3.5 text-[#F47C68] shrink-0 mt-0.5" />
+        <div className="min-w-0 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF] p-3">
+          <div className="text-[11px] font-semibold text-[#6B6B6B]">Subjects</div>
+          <div className="font-semibold text-[#18181B] mt-0.5 flex items-start gap-1.5 leading-snug">
+            <GraduationCap className="w-3.5 h-3.5 text-[#EB624B] shrink-0 mt-0.5" />
             <span className="break-words">{tutor.subjects.slice(0, 4).join(', ')}</span>
           </div>
         </div>
-        <div className="min-w-0">
-          <div className="text-[11px] font-semibold text-[#858585]">Classes</div>
-          <div className="font-semibold text-[#252525] mt-0.5 leading-snug break-words">
+        <div className="min-w-0 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF] p-3">
+          <div className="text-[11px] font-semibold text-[#52525B]">Classes</div>
+          <div className="font-semibold text-[#18181B] mt-0.5 leading-snug break-words">
             {tutor.classes.slice(0, 3).join(', ')}
           </div>
         </div>
-        <div className="min-w-0">
-          <div className="text-[11px] font-semibold text-[#858585]">Medium & Mode</div>
-          <div className="text-[#252525] mt-0.5 leading-snug break-words">
+        <div className="min-w-0 rounded-2xl bg-[#EFF6FF] border border-[#DCEBFA] p-3">
+          <div className="text-[11px] font-semibold text-[#52525B]">Medium & Mode</div>
+          <div className="text-[#18181B] font-medium mt-0.5 leading-snug break-words">
             {tutor.mediums.join(', ')} · {tutor.tuitionTypes.join(', ')}
           </div>
         </div>
-        <div className="min-w-0">
-          <div className="text-[11px] font-semibold text-[#858585]">Monthly Fee</div>
-          <div className="font-mono font-bold text-[#252525] mt-0.5 tabular-nums">
+        <div className="min-w-0 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE] p-3">
+          <div className="text-[11px] font-semibold text-[#52525B]">Monthly Fee</div>
+          <div className="font-mono font-bold text-[#18181B] mt-0.5 tabular-nums">
             ৳{tutor.expectedSalaryMin.toLocaleString()}–{tutor.expectedSalaryMax.toLocaleString()}/mo
           </div>
         </div>
@@ -200,7 +200,7 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
         <button
           type="button"
           onClick={() => viewTutorDetail(tutor)}
-          className="h-10 px-4 rounded-full text-xs font-semibold text-[#252525] bg-[#DCEBFA]/70 hover:bg-[#DCEBFA] transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+          className="h-10 px-4 rounded-full text-xs font-bold text-white bg-[#18181B] hover:bg-[#27272A] transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
         >
           View Full Profile
         </button>

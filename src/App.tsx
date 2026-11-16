@@ -54,9 +54,9 @@ const ApplyProposalModal = lazy(() =>
 
 const ViewFallback: React.FC = () => (
   <div className="max-w-4xl mx-auto px-4 py-10 space-y-4 animate-pulse">
-    <div className="h-36 rounded-3xl bg-[#FFF3EF]" />
-    <div className="h-24 rounded-2xl bg-[#FFF3EF]/80" />
-    <div className="h-24 rounded-2xl bg-[#DCEBFA]/50" />
+    <div className="h-36 rounded-[24px] bg-[#EFEAFF]/70 border border-[#E1D8FF]/60" />
+    <div className="h-24 rounded-[20px] bg-[#FFF6F3] border border-[#F5E4DF]/70" />
+    <div className="h-24 rounded-[20px] bg-[#DCEBFA]/60 border border-[#C6DDF5]/60" />
   </div>
 );
 
@@ -117,7 +117,7 @@ const MainAppContent: React.FC = () => {
 
   return (
     <div
-      className={`min-h-screen flex flex-col bg-[#FFFFFF] text-[#252525] font-sans overflow-x-clip ${
+      className={`min-h-screen flex flex-col bg-[#FCFBFA] text-[#18181B] font-sans overflow-x-clip ${
         isAuthView ? '' : 'pb-16 md:pb-0'
       }`}
     >
@@ -172,17 +172,17 @@ const MainAppContent: React.FC = () => {
           }`}
         >
           <div
-            className={`pointer-events-auto px-4 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 text-xs font-semibold max-w-sm bg-white border ${
+            className={`pointer-events-auto px-4 py-3 rounded-[20px] shadow-[0_12px_32px_rgba(24,24,27,0.12)] flex items-center gap-2.5 text-xs font-semibold max-w-sm bg-white border ${
               toast.type === 'success'
-                ? 'text-[#252525] border-[#15803D]/35'
+                ? 'text-[#18181B] border-[#15803D]/35'
                 : toast.type === 'error'
                 ? 'text-rose-800 border-rose-200'
-                : 'text-[#252525] border-[#F1E1DC]'
+                : 'text-[#18181B] border-[#EFEAE7]'
             }`}
           >
             {toast.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0" />}
             {toast.type === 'error' && <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />}
-            {toast.type === 'info' && <Info className="w-4 h-4 text-[#F47C68] shrink-0" />}
+            {toast.type === 'info' && <Info className="w-4 h-4 text-[#EB624B] shrink-0" />}
             <span>{toast.text}</span>
           </div>
         </div>

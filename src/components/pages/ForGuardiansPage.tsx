@@ -62,26 +62,26 @@ export const ForGuardiansPage: React.FC = () => {
       ];
 
   return (
-    <div className="min-h-[calc(100vh-140px)] bg-[#FFFFFF] py-6 sm:py-10 px-4 sm:px-6 text-left">
+    <div className="min-h-[calc(100vh-140px)] bg-[#FCFBFA] py-6 sm:py-10 px-4 sm:px-6 text-left animate-fade-up">
       <div className="max-w-4xl mx-auto space-y-6">
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#6B6B6B] flex-wrap">
-          <a href="/" onClick={(e) => navigate(e, 'landing', 'tutors')} className="hover:text-[#C94A35] transition-colors">
+          <a href="/" onClick={(e) => navigate(e, 'landing', 'tutors')} className="hover:text-[#EB624B] transition-colors">
             {isBn ? 'হোম' : 'Home'}
           </a>
           <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          <span className="font-semibold text-[#252525]">
+          <span className="font-semibold text-[#18181B]">
             {isBn ? 'শিক্ষার্থী ও অভিভাবক নির্দেশিকা' : 'For Students & Guardians'}
           </span>
         </nav>
 
         <article className="ivory-card p-6 sm:p-8 space-y-8">
-          <header className="space-y-3 border-b border-[#F1E1DC] pb-6">
-            <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[#252525] leading-tight">
+          <header className="space-y-3 border-b border-[#EFEAE7] pb-6">
+            <h1 className="font-display text-2xl sm:text-3xl font-extrabold tracking-tight text-[#18181B] leading-tight text-balance">
               {isBn
                 ? 'বাংলাদেশে বাসায় বা অনলাইন টিউটর খুঁজুন — শিক্ষার্থী ও অভিভাবক নির্দেশিকা'
                 : 'Find a Home or Online Tutor in Bangladesh — Student & Guardian Guide'}
             </h1>
-            <p className="text-sm sm:text-base text-[#555555] leading-relaxed">
+            <p className="text-sm sm:text-base text-[#52525B] leading-relaxed">
               {isBn
                 ? 'ঢাকা, রাজশাহী, চট্টগ্রাম, সিলেট, খুলনা ও সারাদেশে স্কুল-কলেজ, O/A Level এবং ভর্তি পরীক্ষার জন্য যাচাইকৃত বিশ্ববিদ্যালয় টিউটর খুঁজুন এবং সরাসরি WhatsApp-এ কথা বলুন।'
                 : <><BrandWordmark /> helps students, parents, and guardians across Bangladesh discover university tutors for Bangla Medium, English Version, English Medium (O/A Level), and admission preparation—without third-party middlemen.</>}
@@ -90,7 +90,7 @@ export const ForGuardiansPage: React.FC = () => {
               <a
                 href="/tutors"
                 onClick={(e) => navigate(e, 'tutors', 'tutors')}
-                className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors"
+                className="h-10 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold inline-flex items-center justify-center transition-colors whitespace-nowrap"
               >
                 {isBn ? 'টিউটর ডিরেক্টরি দেখুন' : 'Browse Verified Tutors'}
               </a>
@@ -104,7 +104,7 @@ export const ForGuardiansPage: React.FC = () => {
                   }
                   openCreateTuitionModal();
                 }}
-                className="h-10 px-6 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] text-xs sm:text-sm font-semibold inline-flex items-center justify-center cursor-pointer transition-colors"
+                className="h-10 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs sm:text-sm font-semibold inline-flex items-center justify-center cursor-pointer transition-colors whitespace-nowrap"
               >
                 {isBn ? 'বিনা খরচে টিউশন পোস্ট করুন' : 'Post a Free Tuition Request'}
               </button>
@@ -112,48 +112,56 @@ export const ForGuardiansPage: React.FC = () => {
           </header>
 
           <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-[#FFF3EF]/70 rounded-2xl p-5 border border-[#F1E1DC] space-y-2">
-              <div className="flex items-center gap-2 font-display font-bold text-[#252525]">
-                <Search className="w-5 h-5 text-[#F47C68] shrink-0" />
+            <div className="bg-[#FFF6F3] rounded-[24px] p-5 sm:p-6 border border-[#F5E4DF] space-y-3">
+              <div className="flex items-center gap-3 font-display font-extrabold text-[#18181B]">
+                <span className="w-10 h-10 rounded-full bg-white text-[#EB624B] flex items-center justify-center shadow-2xs shrink-0">
+                  <Search className="w-5 h-5" />
+                </span>
                 <h2>{isBn ? '১. বিষয় ও এলাকা ভিত্তিক অনুসন্ধান' : '1. Filter by District, Medium & Subject'}</h2>
               </div>
-              <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">
                 {isBn
                   ? 'আপনার জেলা ও পছন্দের এলাকা, শ্রেণি এবং বিষয় নির্বাচন করে BUET, DU, RU, CU, SUST, BRACU বা NSU-এর মতো বিশ্ববিদ্যালয়ের টিউটরদের প্রোফাইল দেখুন।'
                   : 'Filter by any of Bangladesh’s 64 districts and compare tutors’ university, department, academic credentials, expected monthly honorarium in BDT, and weekly schedule.'}
               </p>
             </div>
 
-            <div className="bg-[#FFF3EF]/70 rounded-2xl p-5 border border-[#F1E1DC] space-y-2">
-              <div className="flex items-center gap-2 font-display font-bold text-[#252525]">
-                <FileText className="w-5 h-5 text-[#F47C68] shrink-0" />
+            <div className="bg-[#FFF4D6] rounded-[24px] p-5 sm:p-6 border border-[#F8E4AE] space-y-3">
+              <div className="flex items-center gap-3 font-display font-extrabold text-[#18181B]">
+                <span className="w-10 h-10 rounded-full bg-white text-[#18181B] flex items-center justify-center shadow-2xs shrink-0">
+                  <FileText className="w-5 h-5" />
+                </span>
                 <h2>{isBn ? '২. সহজ টিউশন পোস্ট ও আমন্ত্রণ' : '2. Post Tuition Requirements or Send Invites'}</h2>
               </div>
-              <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">
                 {isBn
                   ? 'ক্লাস, বিষয়, সপ্তাহে কত দিন পড়াবেন এবং মাসিক বাজেট উল্লেখ করে টিউশন পোস্ট করুন অথবা সরাসরি পছন্দের টিউটরকে আমন্ত্রণ পাঠান।'
                   : 'Publish your learning goals, class grade, preferred days per week, and salary offer in minutes—or invite specific tutors directly from their public profile.'}
               </p>
             </div>
 
-            <div className="bg-[#FFF3EF]/70 rounded-2xl p-5 border border-[#F1E1DC] space-y-2">
-              <div className="flex items-center gap-2 font-display font-bold text-[#252525]">
-                <ShieldCheck className="w-5 h-5 text-[#15803D] shrink-0" />
+            <div className="bg-[#EFEAFF] rounded-[24px] p-5 sm:p-6 border border-[#E1D8FF] space-y-3">
+              <div className="flex items-center gap-3 font-display font-extrabold text-[#18181B]">
+                <span className="w-10 h-10 rounded-full bg-white text-[#15803D] flex items-center justify-center shadow-2xs shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </span>
                 <h2>{isBn ? '৩. প্রাইভেসি ও ভেরিফিকেশন সুরক্ষা' : '3. Verification & Contact Privacy'}</h2>
               </div>
-              <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">
                 {isBn
                   ? 'অভিভাবকদের ব্যক্তিগত নম্বর গোপন থাকে এবং টিউটরদের প্রাতিষ্ঠানিক পরিচয়পত্র ও যোগ্যতার ডকুমেন্ট যাচাই করার ব্যবস্থা রয়েছে।'
                   : 'Identity, university ID, and qualification verification badges help families evaluate trust, while private guardian phone numbers stay hidden from public pages.'}
               </p>
             </div>
 
-            <div className="bg-[#FFF3EF]/70 rounded-2xl p-5 border border-[#F1E1DC] space-y-2">
-              <div className="flex items-center gap-2 font-display font-bold text-[#252525]">
-                <MessageCircle className="w-5 h-5 text-[#15803D] shrink-0" />
+            <div className="bg-[#DCEBFA]/75 rounded-[24px] p-5 sm:p-6 border border-[#C6DDF5] space-y-3">
+              <div className="flex items-center gap-3 font-display font-extrabold text-[#18181B]">
+                <span className="w-10 h-10 rounded-full bg-white text-[#15803D] flex items-center justify-center shadow-2xs shrink-0">
+                  <MessageCircle className="w-5 h-5" />
+                </span>
                 <h2>{isBn ? '৪. সরাসরি WhatsApp-এ যোগাযোগ' : '4. Direct WhatsApp Coordination'}</h2>
               </div>
-              <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">
                 {isBn
                   ? 'কোনো জটিল ইন-অ্যাপ চ্যাট ছাড়াই অনুমোদিত টিউটরের সাথে সরাসরি WhatsApp-এ কথা বলে ডেমো ক্লাসের সময় ঠিক করুন।'
                   : 'No internal messaging bottleneck—once connected or shortlisted, coordinate trial classes, curriculum goals, and timings directly on WhatsApp.'}
@@ -161,31 +169,33 @@ export const ForGuardiansPage: React.FC = () => {
             </div>
           </section>
 
-          <section className="space-y-4 border-t border-[#F1E1DC] pt-6">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-[#C94A35] shrink-0" />
-              <h2 className="font-display text-lg font-bold text-[#252525]">
+          <section className="space-y-4 border-t border-[#EFEAE7] pt-6">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-[#FFF6F3] border border-[#F5E4DF] flex items-center justify-center shrink-0">
+                <MapPin className="w-4 h-4 text-[#EB624B]" />
+              </span>
+              <h2 className="font-display text-lg font-extrabold text-[#18181B]">
                 {isBn ? 'সাধারণ প্রশ্নোত্তর (অভিভাবক ও শিক্ষার্থী)' : 'Frequently Asked Questions for Students & Guardians'}
               </h2>
             </div>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
               {faqs.map(item => (
-                <div key={item.id} className="border-b border-[#F1E1DC]/70 pb-4 last:border-none last:pb-0 space-y-1.5">
-                  <h3 className="font-display text-sm sm:text-base font-bold text-[#252525]">{item.q}</h3>
-                  <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">{item.a}</p>
+                <div key={item.id} className="p-4 sm:p-5 rounded-[20px] bg-[#F8F6F5] border border-[#EFEAE7] space-y-1.5">
+                  <h3 className="font-display text-sm sm:text-base font-bold text-[#18181B]">{item.q}</h3>
+                  <p className="text-xs sm:text-sm text-[#52525B] leading-relaxed">{item.a}</p>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2 border-t border-[#F1E1DC] text-xs font-semibold text-[#C94A35]">
-            <a href="/how-it-works" onClick={(e) => navigate(e, 'how-it-works')} className="hover:underline">
+          <section className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-4 border-t border-[#EFEAE7] text-xs font-bold text-[#18181B]">
+            <a href="/how-it-works" onClick={(e) => navigate(e, 'how-it-works')} className="hover:text-[#EB624B] transition-colors">
               {isBn ? 'প্ল্যাটফর্ম কীভাবে কাজ করে →' : <>See How <BrandWordmark /> Works →</>}
             </a>
-            <a href="/become-a-tutor" onClick={(e) => navigate(e, 'become-a-tutor')} className="hover:underline">
+            <a href="/become-a-tutor" onClick={(e) => navigate(e, 'become-a-tutor')} className="hover:text-[#EB624B] transition-colors">
               {isBn ? 'টিউটর হিসেবে যোগ দিতে চান? →' : 'Looking to teach as a tutor? →'}
             </a>
-            <a href="/tuitions" onClick={(e) => navigate(e, 'tuitions', 'tuitions')} className="hover:underline">
+            <a href="/tuitions" onClick={(e) => navigate(e, 'tuitions', 'tuitions')} className="hover:text-[#EB624B] transition-colors">
               {isBn ? 'খোলা টিউশন বিজ্ঞপ্তি দেখুন →' : 'View Open Tuition Board →'}
             </a>
           </section>

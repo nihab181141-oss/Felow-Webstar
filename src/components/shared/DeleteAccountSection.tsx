@@ -46,18 +46,20 @@ export const DeleteAccountSection: React.FC = () => {
   return (
     <section
       aria-labelledby="delete-account-heading"
-      className="ivory-card p-5 border-rose-200/90 bg-rose-50/35 space-y-3 text-xs"
+      className="rounded-[24px] p-5 sm:p-6 border border-rose-200 bg-[#FFF5F5] shadow-[0_4px_22px_rgba(24,24,27,0.03)] space-y-3 text-xs"
     >
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="space-y-1">
           <h2
             id="delete-account-heading"
-            className="font-display text-base font-bold text-rose-800 flex items-center gap-2"
+            className="font-display text-base font-extrabold text-rose-800 flex items-center gap-2"
           >
-            <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span className="w-8 h-8 rounded-full bg-white border border-rose-200 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 text-rose-600" />
+            </span>
             <span>{isBn ? 'অ্যাকাউন্ট ডিলিট করুন' : 'Delete Account'}</span>
           </h2>
-          <p className="text-[#858585] leading-relaxed max-w-xl">
+          <p className="text-[#52525B] leading-relaxed max-w-xl">
             {isBn ? (
               <>
                 আপনার <BrandWordmark /> অ্যাকাউন্ট, প্রোফাইল, সংরক্ষিত তথ্য এবং সংশ্লিষ্ট সব ডেটা স্থায়ীভাবে মুছে ফেলুন। এই কাজটি আর ফিরিয়ে আনা যাবে না।
@@ -79,9 +81,9 @@ export const DeleteAccountSection: React.FC = () => {
               setErrorMsg('');
               setConfirmText('');
             }}
-            className="h-10 px-4 rounded-full border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0"
+            className="h-10 px-4 rounded-full border border-rose-300 bg-white hover:bg-rose-50 text-rose-700 font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0 whitespace-nowrap"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5 shrink-0" />
             <span>{isBn ? 'অ্যাকাউন্ট মুছুন' : 'Delete My Account'}</span>
           </button>
         )}
@@ -90,14 +92,14 @@ export const DeleteAccountSection: React.FC = () => {
       {isConfirmOpen && (
         <form
           onSubmit={handleConfirmDelete}
-          className="p-4 rounded-2xl bg-white border border-rose-200 space-y-3 animate-fade-up"
+          className="p-4 sm:p-5 rounded-[20px] bg-white border border-rose-200 space-y-3 animate-fade-up"
         >
-          <div className="text-xs font-semibold text-[#252525]">
+          <div className="text-xs font-bold text-[#18181B]">
             {isBn
               ? 'সতর্কতা: অ্যাকাউন্ট ডিলিট করলে নিচের তথ্যগুলো চিরতরে মুছে যাবে:'
               : 'Permanent removal includes:'}
           </div>
-          <ul className="text-xs text-[#858585] space-y-1 list-disc pl-4">
+          <ul className="text-xs text-[#6B6B6B] space-y-1 list-disc pl-4">
             <li>
               {isBn
                 ? 'আপনার স্টুডেন্ট/গার্জিয়ান এবং টিউটর প্রোফাইল ও যোগাযোগ নম্বর'
@@ -118,7 +120,7 @@ export const DeleteAccountSection: React.FC = () => {
           <div className="space-y-1.5 pt-1">
             <label
               htmlFor="delete-account-confirm-input"
-              className="block text-xs font-semibold text-[#252525]"
+              className="block text-xs font-semibold text-[#18181B]"
             >
               {isBn ? 'নিশ্চিত করতে DELETE লিখুন' : 'Type DELETE to confirm'}
             </label>
@@ -132,7 +134,7 @@ export const DeleteAccountSection: React.FC = () => {
                 if (errorMsg) setErrorMsg('');
               }}
               placeholder="DELETE"
-              className="w-full sm:max-w-xs h-10 px-3 rounded-xl border border-rose-200 bg-rose-50/30 text-sm font-mono text-[#252525] focus:outline-none focus:border-rose-500"
+              className="w-full sm:max-w-xs h-10 px-3 rounded-xl border border-rose-200 bg-[#F6F4F3] text-sm font-mono text-[#18181B] focus:bg-white focus:outline-none focus:border-rose-600"
             />
           </div>
 
@@ -144,7 +146,7 @@ export const DeleteAccountSection: React.FC = () => {
             <button
               type="submit"
               disabled={isDeleting || !isConfirmed}
-              className="h-10 px-5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-10 px-5 rounded-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
             >
               {isDeleting ? (
                 <>
@@ -153,7 +155,7 @@ export const DeleteAccountSection: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
                   <span>{isBn ? 'স্থায়ীভাবে ডিলিট করুন' : 'Permanently Delete Account'}</span>
                 </>
               )}
@@ -167,7 +169,7 @@ export const DeleteAccountSection: React.FC = () => {
                 setConfirmText('');
                 setErrorMsg('');
               }}
-              className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] text-xs font-semibold cursor-pointer transition-colors"
+              className="h-10 px-4 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap"
             >
               {isBn ? 'বাতিল করুন' : 'Cancel'}
             </button>

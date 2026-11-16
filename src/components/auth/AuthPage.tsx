@@ -70,15 +70,15 @@ export const AuthPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen w-full bg-[#FFFFFF] flex flex-col lg:grid lg:grid-cols-12 overflow-x-clip">
+    <div className="min-h-screen w-full bg-[#FCFBFA] flex flex-col lg:grid lg:grid-cols-12 overflow-x-clip">
       {/* Top / Left Editorial Brand Section */}
-      <section className="lg:col-span-6 bg-[#FFFFFF] flex flex-col justify-between relative">
+      <section className="lg:col-span-6 bg-[#FCFBFA] flex flex-col justify-between relative">
         {/* Top Navigation Utility Bar */}
         <div className="px-4 sm:px-8 pt-4 sm:pt-6 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => setIsAuthModalOpen(false)}
-            className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] border border-[#F1E1DC] text-xs font-semibold text-[#252525] inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+            className="h-10 px-4 rounded-full bg-white hover:bg-[#F6F4F3] border border-[#EFEAE7] text-xs font-semibold text-[#18181B] inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0 shadow-2xs"
           >
             <ArrowLeft className="w-4 h-4 shrink-0" />
             <span>{language === 'bn' ? 'ডিরেক্টরিতে ফিরুন' : 'Back to Directory'}</span>
@@ -87,9 +87,9 @@ export const AuthPage: React.FC = () => {
           <button
             type="button"
             onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-            className="h-10 px-4 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] border border-[#F1E1DC] text-xs font-semibold text-[#252525] inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+            className="h-10 px-4 rounded-full bg-white hover:bg-[#F6F4F3] border border-[#EFEAE7] text-xs font-semibold text-[#18181B] inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0 shadow-2xs"
           >
-            <Globe className="w-3.5 h-3.5 text-[#858585] shrink-0" />
+            <Globe className="w-3.5 h-3.5 text-[#52525B] shrink-0" />
             <span>{language === 'en' ? 'বাংলা' : 'EN'}</span>
           </button>
         </div>
@@ -185,17 +185,17 @@ export const AuthPage: React.FC = () => {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-[#FFF3EF] text-[#C94A35]'
-                        : 'bg-[#FFF7F4] text-[#858585]'
+                        ? 'bg-[#FFF6F3] text-[#EB624B]'
+                        : 'bg-[#F6F4F3] text-[#52525B]'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
                   </div>
 
-                  <span className="w-px h-8 bg-[#F1E1DC] shrink-0" aria-hidden="true" />
+                  <span className="w-px h-8 bg-[#EFEAE7] shrink-0" aria-hidden="true" />
 
                   <div className="flex-1 min-w-0">
-                    <div className="font-display text-base font-bold text-[#252525] leading-tight truncate">
+                    <div className="font-display text-base font-extrabold text-[#18181B] leading-tight truncate">
                       {language === 'bn' ? option.labelBn : option.labelEn}
                     </div>
                     <div className="text-xs text-[#6B6B6B] leading-snug truncate mt-0.5">
@@ -206,8 +206,8 @@ export const AuthPage: React.FC = () => {
                   <div
                     className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                       isSelected
-                        ? 'bg-[#174E3E] text-white'
-                        : 'bg-[#FFF3EF] text-transparent border border-[#F1E1DC]'
+                        ? 'bg-[#18181B] text-white'
+                        : 'bg-[#F6F4F3] text-transparent border border-[#EAE4E1]'
                     }`}
                   >
                     <Check className="w-4 h-4" />
@@ -230,7 +230,7 @@ export const AuthPage: React.FC = () => {
               type="button"
               disabled={isSubmitting}
               onClick={handleGoogleLogin}
-              className="w-full h-13 px-6 rounded-full bg-white hover:bg-[#FFFBF9] text-[#174E3E] font-display text-base font-extrabold shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
+              className="w-full h-13 px-6 rounded-full bg-white hover:bg-[#FCFBFA] text-[#18181B] font-display text-base font-extrabold shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -287,17 +287,17 @@ export const AuthPage: React.FC = () => {
       {/* Terms & Privacy Policy Modal */}
       {showPolicyModal && (
         <div
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
           onClick={() => setShowPolicyModal(false)}
         >
           <div
-            className="bg-white rounded-3xl border border-[#F1E1DC] max-w-md w-full p-6 space-y-4 shadow-xl text-left text-[#252525]"
+            className="bg-white rounded-[28px] border border-[#EFEAE7] max-w-md w-full p-6 space-y-4 shadow-2xl text-left text-[#18181B]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#F1E1DC]">
+            <div className="flex items-center justify-between gap-3 pb-3 border-b border-[#EFEAE7]">
               <div className="flex items-center gap-2.5">
-                <ShieldCheck className="w-5 h-5 text-[#174E3E] shrink-0" />
-                <h2 className="font-display text-base font-bold">
+                <ShieldCheck className="w-5 h-5 text-[#15803D] shrink-0" />
+                <h2 className="font-display text-base font-extrabold">
                   {language === 'bn' ? 'শর্তাবলী ও প্রাইভেসি নীতি' : <><BrandWordmark /> Terms &amp; Privacy</>}
                 </h2>
               </div>
@@ -305,28 +305,28 @@ export const AuthPage: React.FC = () => {
                 type="button"
                 onClick={() => setShowPolicyModal(false)}
                 aria-label="Close policy dialog"
-                className="w-9 h-9 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] flex items-center justify-center cursor-pointer transition-colors"
+                className="w-9 h-9 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] flex items-center justify-center cursor-pointer transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-2.5 text-xs text-[#555555] leading-relaxed">
+            <div className="space-y-2.5 text-xs text-[#52525B] leading-relaxed">
               <p>
-                <strong className="text-[#252525]">Google-Only Authentication:</strong> Your account uses verified Google Sign-In so passwords are never stored on our servers.
+                <strong className="text-[#18181B]">Google-Only Authentication:</strong> Your account uses verified Google Sign-In so passwords are never stored on our servers.
               </p>
               <p>
-                <strong className="text-[#252525]">Contact Privacy:</strong> Tutors and guardians control when their WhatsApp number is visible. Private contact numbers are protected by Firestore security rules and shared only when permitted.
+                <strong className="text-[#18181B]">Contact Privacy:</strong> Tutors and guardians control when their WhatsApp number is visible. Private contact numbers are protected by Firestore security rules and shared only when permitted.
               </p>
               <p>
-                <strong className="text-[#252525]">Community Safety:</strong> All tuition postings and tutor profiles must follow accurate academic representation and respectful communication standards.
+                <strong className="text-[#18181B]">Community Safety:</strong> All tuition postings and tutor profiles must follow accurate academic representation and respectful communication standards.
               </p>
             </div>
 
             <button
               type="button"
               onClick={() => setShowPolicyModal(false)}
-              className="w-full h-11 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-sm font-bold cursor-pointer transition-colors"
+              className="w-full h-11 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold cursor-pointer transition-colors"
             >
               {language === 'bn' ? 'বুঝেছি' : 'Got it'}
             </button>

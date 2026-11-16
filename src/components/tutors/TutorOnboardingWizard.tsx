@@ -326,31 +326,45 @@ export const TutorOnboardingWizard: React.FC = () => {
   const availableAreas = getAreasOrUpazilas(district);
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF] py-5 px-3 sm:px-6 text-left">
+    <div className="min-h-screen bg-[#FCFBFA] py-6 px-3 sm:px-6 text-left animate-fade-up">
       <div className="max-w-2xl mx-auto space-y-4">
         {/* Header Card */}
-        <div className="ivory-card p-5 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="font-display text-xl font-bold text-[#252525]">
-              Set Up Your Tutor Profile
-            </h1>
-            <p className="text-xs text-[#858585] mt-0.5">
-              Fill out your basic details so students and parents can find and message you on WhatsApp.
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-xs text-[#858585]">Profile</div>
-            <div className="font-display text-xl font-bold text-[#C94A35] tabular-nums">
-              {completenessScore}%
+        <div className="ivory-card p-5 sm:p-6 space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[#18181B]">
+                Set Up Your Tutor Profile
+              </h1>
+              <p className="text-xs sm:text-sm text-[#6B6B6B] mt-1">
+                Fill out your basic details so students and parents can find and message you on WhatsApp.
+              </p>
             </div>
+            <div className="px-4 py-2.5 rounded-[18px] bg-[#EFEAFF] border border-[#E1D8FF] text-right shrink-0">
+              <div className="text-[11px] font-medium text-[#52525B]">Completeness</div>
+              <div className="font-display text-xl font-extrabold text-[#18181B] font-mono tabular-nums">
+                {completenessScore}%
+              </div>
+            </div>
+          </div>
+
+          <div className="h-2 w-full rounded-full bg-[#F6F4F3] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#EB624B] transition-all duration-300"
+              style={{ width: `${Math.min(100, Math.max(4, completenessScore))}%` }}
+            />
           </div>
         </div>
 
         {/* Section 1: Photo & Contact */}
-        <div className="ivory-card p-5 space-y-4 text-xs">
-          <h2 className="font-display text-base font-bold text-[#252525] border-b border-[#F1E1DC] pb-2">
-            1. Photo & WhatsApp Contact (Required)
-          </h2>
+        <div className="ivory-card p-5 sm:p-6 space-y-4 text-xs">
+          <div className="flex items-center gap-2.5 border-b border-[#EFEAE7] pb-3">
+            <span className="w-7 h-7 rounded-full bg-[#FFE4A0] text-[#18181B] font-mono text-[11px] font-bold flex items-center justify-center shrink-0">
+              01
+            </span>
+            <h2 className="font-display text-base font-extrabold text-[#18181B]">
+              Photo &amp; WhatsApp Contact (Required)
+            </h2>
+          </div>
 
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
@@ -358,18 +372,18 @@ export const TutorOnboardingWizard: React.FC = () => {
                 src={photoUrl || DEFAULT_PLACEHOLDER_AVATAR}
                 alt={fullName || 'Tutor'}
                 referrerPolicy="no-referrer"
-                className="w-20 h-20 rounded-full object-cover border-2 border-[#F1E1DC]"
+                className="w-20 h-20 rounded-full object-cover border-2 border-[#EFEAE7]"
               />
               {hasRealPhoto && (
                 <CheckCircle2 className="w-5 h-5 text-[#15803D] bg-white rounded-full absolute bottom-0 right-0" />
               )}
             </div>
             <div className="space-y-1.5">
-              <div className="font-semibold text-[#252525]">
+              <div className="font-semibold text-[#18181B]">
                 Profile Photo * {!hasRealPhoto && <span className="text-rose-700">(Upload required)</span>}
               </div>
-              <label className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#252525] font-semibold cursor-pointer transition-colors">
-                <Camera className="w-4 h-4" />
+              <label className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#18181B] font-semibold cursor-pointer transition-colors">
+                <Camera className="w-4 h-4 shrink-0" />
                 <span>{uploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
                 <input
                   type="file"
@@ -384,21 +398,21 @@ export const TutorOnboardingWizard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Full Name *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Full Name *</label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Gender *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Gender *</label>
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value as 'Male' | 'Female')}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -406,7 +420,7 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">
+              <label className="block font-semibold text-[#18181B] mb-1">
                 Bangladeshi WhatsApp Number *
               </label>
               <input
@@ -414,7 +428,7 @@ export const TutorOnboardingWizard: React.FC = () => {
                 value={whatsappInput}
                 onChange={(e) => setWhatsappInput(e.target.value)}
                 placeholder="017XXXXXXXX"
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
               {whatsappInput && !validWa && (
                 <p className="text-[11px] text-rose-700 mt-1">
@@ -424,7 +438,7 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">
+              <label className="block font-semibold text-[#18181B] mb-1">
                 Facebook Profile Link *
               </label>
               <input
@@ -432,7 +446,7 @@ export const TutorOnboardingWizard: React.FC = () => {
                 value={facebookInput}
                 onChange={(e) => setFacebookInput(e.target.value)}
                 placeholder="https://facebook.com/your.profile"
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
               {facebookInput && !cleanFb && (
                 <p className="text-[11px] text-rose-700 mt-1">
@@ -442,12 +456,12 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
           </div>
 
-          <label className="flex items-start gap-2 text-[#858585] cursor-pointer">
+          <label className="flex items-start gap-2.5 p-3 rounded-xl bg-[#F8F6F5] border border-[#EFEAE7] text-[#52525B] cursor-pointer">
             <input
               type="checkbox"
               checked={whatsappConsent}
               onChange={(e) => setWhatsappConsent(e.target.checked)}
-              className="mt-0.5 accent-[#F47C68]"
+              className="mt-0.5 accent-[#EB624B]"
             />
             <span>
               I agree to let signed-in students and parents contact me on WhatsApp for tuition.
@@ -456,22 +470,22 @@ export const TutorOnboardingWizard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Profile Visibility</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Profile Visibility</label>
               <select
                 value={profileVisibility}
                 onChange={(e) => setProfileVisibility(e.target.value as ProfileVisibility)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 <option value="public">Public (Visible on FeLoW WebStaR)</option>
                 <option value="hidden">Hidden (Only when I apply)</option>
               </select>
             </div>
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">WhatsApp Privacy</label>
+              <label className="block font-semibold text-[#18181B] mb-1">WhatsApp Privacy</label>
               <select
                 value={contactVisibility}
                 onChange={(e) => setContactVisibility(e.target.value as ContactVisibility)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 <option value="authenticated">Signed-in Users (Recommended)</option>
                 <option value="shortlisted_only">Shortlisted / Invited Only</option>
@@ -482,14 +496,19 @@ export const TutorOnboardingWizard: React.FC = () => {
         </div>
 
         {/* Section 2: University & Academics */}
-        <div className="ivory-card p-5 space-y-4 text-xs">
-          <h2 className="font-display text-base font-bold text-[#252525] border-b border-[#F1E1DC] pb-2">
-            2. Education Details (Required)
-          </h2>
+        <div className="ivory-card p-5 sm:p-6 space-y-4 text-xs">
+          <div className="flex items-center gap-2.5 border-b border-[#EFEAE7] pb-3">
+            <span className="w-7 h-7 rounded-full bg-[#EDE9FE] text-[#18181B] font-mono text-[11px] font-bold flex items-center justify-center shrink-0">
+              02
+            </span>
+            <h2 className="font-display text-base font-extrabold text-[#18181B]">
+              Education Details (Required)
+            </h2>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">
+              <label className="block font-semibold text-[#18181B] mb-1">
                 University / Institution *
               </label>
               <input
@@ -497,27 +516,27 @@ export const TutorOnboardingWizard: React.FC = () => {
                 value={university}
                 onChange={(e) => setUniversity(e.target.value)}
                 placeholder="e.g. BUET, Dhaka University, NSU"
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Department / Major *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Department / Major *</label>
               <input
                 type="text"
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
                 placeholder="e.g. CSE, EEE, Economics"
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Academic Year *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Academic Year *</label>
               <select
                 value={academicYear}
                 onChange={(e) => setAcademicYear(e.target.value)}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {ACADEMIC_YEARS.map(yr => (
                   <option key={yr} value={yr}>{yr}</option>
@@ -526,7 +545,7 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">
+              <label className="block font-semibold text-[#18181B] mb-1">
                 Current Semester / Status *
               </label>
               <input
@@ -534,7 +553,7 @@ export const TutorOnboardingWizard: React.FC = () => {
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}
                 placeholder="e.g. 6th Semester, Completed"
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
           </div>
@@ -542,108 +561,108 @@ export const TutorOnboardingWizard: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowOptional(prev => !prev)}
-            className="text-xs font-semibold text-[#C94A35] hover:underline cursor-pointer"
+            className="text-xs font-bold text-[#EB624B] hover:underline cursor-pointer"
           >
             {showOptional ? 'Hide Optional Details' : '+ Add Optional School, College, GPA & Bio'}
           </button>
 
           {showOptional && (
-            <div className="p-4 rounded-2xl bg-[#FFF3EF] space-y-3">
+            <div className="p-4 rounded-[20px] bg-[#F8F6F5] border border-[#EFEAE7] space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Degree (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Degree (Optional)</label>
                   <input
                     type="text"
                     value={degree}
                     onChange={(e) => setDegree(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">University CGPA (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">University CGPA (Optional)</label>
                   <input
                     type="text"
                     value={gpa}
                     onChange={(e) => setGpa(e.target.value)}
                     placeholder="e.g. 3.85"
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">School Name (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">School Name (Optional)</label>
                   <input
                     type="text"
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">SSC GPA (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">SSC GPA (Optional)</label>
                   <input
                     type="text"
                     value={sscGpa}
                     onChange={(e) => setSscGpa(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">College Name (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">College Name (Optional)</label>
                   <input
                     type="text"
                     value={collegeName}
                     onChange={(e) => setCollegeName(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">HSC GPA (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">HSC GPA (Optional)</label>
                   <input
                     type="text"
                     value={hscGpa}
                     onChange={(e) => setHscGpa(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Teaching Years (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Teaching Years (Optional)</label>
                   <input
                     type="number"
                     min={0}
                     value={experienceYears}
                     onChange={(e) => setExperienceYears(Number(e.target.value))}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] font-mono tabular-nums outline-none focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">Experience Summary (Optional)</label>
+                  <label className="block font-semibold text-[#18181B] mb-1">Experience Summary (Optional)</label>
                   <input
                     type="text"
                     value={experienceSummary}
                     onChange={(e) => setExperienceSummary(e.target.value)}
-                    className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                   />
                 </div>
               </div>
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">Profile Headline (Optional)</label>
+                <label className="block font-semibold text-[#18181B] mb-1">Profile Headline (Optional)</label>
                 <input
                   type="text"
                   value={headline}
                   onChange={(e) => setHeadline(e.target.value)}
                   placeholder="e.g. BUET CSE Tutor · HSC Physics & Higher Math Specialist"
-                  className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] placeholder:text-[#858585] outline-none focus:border-[#F47C68]"
+                  className="w-full h-9 px-3 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:border-[#18181B]"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">Short Bio (Optional)</label>
+                <label className="block font-semibold text-[#18181B] mb-1">Short Bio (Optional)</label>
                 <textarea
                   rows={2}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
-                  className="w-full p-2 rounded-xl bg-white border border-[#F1E1DC] text-[#252525] outline-none focus:border-[#F47C68]"
+                  className="w-full p-2.5 rounded-xl bg-white border border-[#EAE4E1] text-[#18181B] outline-none focus:border-[#18181B]"
                 />
               </div>
             </div>
@@ -651,14 +670,19 @@ export const TutorOnboardingWizard: React.FC = () => {
         </div>
 
         {/* Section 3: Subjects, Locations & Fee */}
-        <div className="ivory-card p-5 space-y-4 text-xs">
-          <h2 className="font-display text-base font-bold text-[#252525] border-b border-[#F1E1DC] pb-2">
-            3. What & Where You Teach (Required)
-          </h2>
+        <div className="ivory-card p-5 sm:p-6 space-y-4 text-xs">
+          <div className="flex items-center gap-2.5 border-b border-[#EFEAE7] pb-3">
+            <span className="w-7 h-7 rounded-full bg-[#DBEAFE] text-[#18181B] font-mono text-[11px] font-bold flex items-center justify-center shrink-0">
+              03
+            </span>
+            <h2 className="font-display text-base font-extrabold text-[#18181B]">
+              What &amp; Where You Teach (Required)
+            </h2>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Division</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Division</label>
               <select
                 value={division}
                 onChange={(e) => {
@@ -668,7 +692,7 @@ export const TutorOnboardingWizard: React.FC = () => {
                   setDistrict(nextDist);
                   setSelectedAreas([getAreasOrUpazilas(nextDist)[0]]);
                 }}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {BD_DIVISIONS.map(d => (
                   <option key={d} value={d}>{d}</option>
@@ -677,7 +701,7 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">District *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">District *</label>
               <select
                 value={district}
                 onChange={(e) => {
@@ -685,7 +709,7 @@ export const TutorOnboardingWizard: React.FC = () => {
                   setDistrict(nextDist);
                   setSelectedAreas([getAreasOrUpazilas(nextDist)[0]]);
                 }}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
               >
                 {(BD_DISTRICTS_BY_DIVISION[division] || ['Dhaka']).map(d => (
                   <option key={d} value={d}>{d}</option>
@@ -694,32 +718,32 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Expected Salary Min (৳/mo) *</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Expected Salary Min (৳/mo) *</label>
               <input
                 type="number"
                 min={1000}
                 step={500}
                 value={expectedMin}
                 onChange={(e) => setExpectedMin(Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] font-mono tabular-nums outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] font-mono tabular-nums outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1">Expected Salary Max (৳/mo)</label>
+              <label className="block font-semibold text-[#18181B] mb-1">Expected Salary Max (৳/mo)</label>
               <input
                 type="number"
                 min={1000}
                 step={500}
                 value={expectedMax}
                 onChange={(e) => setExpectedMax(Number(e.target.value))}
-                className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] font-mono tabular-nums outline-none focus:border-[#F47C68]"
+                className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] font-mono tabular-nums outline-none focus:bg-white focus:border-[#18181B]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block font-semibold text-[#252525] mb-1.5">Preferred Areas in {district}</label>
+            <label className="block font-semibold text-[#18181B] mb-1.5">Preferred Areas in {district}</label>
             <div className="flex flex-wrap gap-1.5">
               {availableAreas.map(area => {
                 const active = selectedAreas.includes(area);
@@ -728,8 +752,8 @@ export const TutorOnboardingWizard: React.FC = () => {
                     key={area}
                     type="button"
                     onClick={() => toggleItem(selectedAreas, area, setSelectedAreas)}
-                    className={`px-2.5 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
-                      active ? 'bg-[#F47C68] text-[#252525]' : 'bg-[#FFF3EF] text-[#252525] hover:bg-[#FFE6DD]'
+                    className={`px-3 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
+                      active ? 'bg-[#18181B] text-white' : 'bg-[#F6F4F3] text-[#52525B] hover:bg-[#EFEAFF] hover:text-[#18181B]'
                     }`}
                   >
                     {area}
@@ -740,7 +764,7 @@ export const TutorOnboardingWizard: React.FC = () => {
           </div>
 
           <div>
-            <label className="block font-semibold text-[#252525] mb-1.5">Subjects *</label>
+            <label className="block font-semibold text-[#18181B] mb-1.5">Subjects *</label>
             <div className="flex flex-wrap gap-1.5">
               {Array.from(new Set([...POPULAR_SUBJECTS, ...selectedSubjects])).map(sub => {
                 const active = selectedSubjects.includes(sub);
@@ -749,8 +773,8 @@ export const TutorOnboardingWizard: React.FC = () => {
                     key={sub}
                     type="button"
                     onClick={() => toggleItem(selectedSubjects, sub, setSelectedSubjects)}
-                    className={`px-2.5 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
-                      active ? 'bg-[#F47C68] text-[#252525]' : 'bg-[#FFF3EF] text-[#252525] hover:bg-[#FFE6DD]'
+                    className={`px-3 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
+                      active ? 'bg-[#18181B] text-white' : 'bg-[#F6F4F3] text-[#52525B] hover:bg-[#EFEAFF] hover:text-[#18181B]'
                     }`}
                   >
                     {sub}
@@ -761,7 +785,7 @@ export const TutorOnboardingWizard: React.FC = () => {
           </div>
 
           <div>
-            <label className="block font-semibold text-[#252525] mb-1.5">Classes *</label>
+            <label className="block font-semibold text-[#18181B] mb-1.5">Classes *</label>
             <div className="flex flex-wrap gap-1.5">
               {CLASS_GRADES.map(cls => {
                 const active = selectedClasses.includes(cls);
@@ -770,8 +794,8 @@ export const TutorOnboardingWizard: React.FC = () => {
                     key={cls}
                     type="button"
                     onClick={() => toggleItem(selectedClasses, cls, setSelectedClasses)}
-                    className={`px-2.5 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
-                      active ? 'bg-[#F47C68] text-[#252525]' : 'bg-[#FFF3EF] text-[#252525] hover:bg-[#FFE6DD]'
+                    className={`px-3 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
+                      active ? 'bg-[#18181B] text-white' : 'bg-[#F6F4F3] text-[#52525B] hover:bg-[#EFEAFF] hover:text-[#18181B]'
                     }`}
                   >
                     {cls}
@@ -783,7 +807,7 @@ export const TutorOnboardingWizard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block font-semibold text-[#252525] mb-1.5">Mediums</label>
+              <label className="block font-semibold text-[#18181B] mb-1.5">Mediums</label>
               <div className="flex flex-wrap gap-1.5">
                 {EDUCATION_MEDIUMS.map(med => {
                   const active = selectedMediums.includes(med);
@@ -792,8 +816,8 @@ export const TutorOnboardingWizard: React.FC = () => {
                       key={med}
                       type="button"
                       onClick={() => toggleItem(selectedMediums, med, setSelectedMediums)}
-                      className={`px-2.5 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
-                        active ? 'bg-[#F47C68] text-[#252525]' : 'bg-[#FFF3EF] text-[#252525] hover:bg-[#FFE6DD]'
+                      className={`px-3 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
+                        active ? 'bg-[#18181B] text-white' : 'bg-[#F6F4F3] text-[#52525B] hover:bg-[#EFEAFF] hover:text-[#18181B]'
                       }`}
                     >
                       {med}
@@ -804,7 +828,7 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
 
             <div>
-              <label className="block font-semibold text-[#252525] mb-1.5">Tuition Modes</label>
+              <label className="block font-semibold text-[#18181B] mb-1.5">Tuition Modes</label>
               <div className="flex flex-wrap gap-1.5">
                 {TUITION_TYPES.map(mode => {
                   const active = selectedTuitionTypes.includes(mode);
@@ -813,8 +837,8 @@ export const TutorOnboardingWizard: React.FC = () => {
                       key={mode}
                       type="button"
                       onClick={() => toggleItem(selectedTuitionTypes, mode, setSelectedTuitionTypes)}
-                      className={`px-2.5 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
-                        active ? 'bg-[#F47C68] text-[#252525]' : 'bg-[#FFF3EF] text-[#252525] hover:bg-[#FFE6DD]'
+                      className={`px-3 py-1.5 rounded-full font-semibold cursor-pointer transition-colors ${
+                        active ? 'bg-[#18181B] text-white' : 'bg-[#F6F4F3] text-[#52525B] hover:bg-[#EFEAFF] hover:text-[#18181B]'
                       }`}
                     >
                       {mode}
@@ -827,10 +851,10 @@ export const TutorOnboardingWizard: React.FC = () => {
         </div>
 
         {/* Publish Bar */}
-        <div className="ivory-card p-4 space-y-3">
+        <div className="ivory-card p-5 space-y-3">
           {!isReadyToPublish && (
-            <div className="p-3 rounded-xl bg-[#FFF3EF] border border-[#F5A04E] text-[#252525] text-xs flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-[#F5A04E] shrink-0 mt-0.5" />
+            <div className="p-3.5 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE] text-[#18181B] text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-[#B45309] shrink-0 mt-0.5" />
               <div>
                 <span className="font-bold">Still needed to publish: </span>
                 <span>{missingFields.join(', ')}</span>
@@ -843,7 +867,7 @@ export const TutorOnboardingWizard: React.FC = () => {
               type="button"
               disabled={isSaving}
               onClick={() => handleSave(false)}
-              className="h-10 px-5 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] text-xs font-semibold cursor-pointer transition-colors"
+              className="h-10 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-bold cursor-pointer transition-colors whitespace-nowrap"
             >
               Save Draft
             </button>
@@ -852,7 +876,7 @@ export const TutorOnboardingWizard: React.FC = () => {
               type="button"
               disabled={isSaving || !isReadyToPublish}
               onClick={() => handleSave(true)}
-              className="h-11 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] disabled:opacity-50 text-[#252525] text-sm font-bold cursor-pointer transition-all active:scale-[0.98]"
+              className="h-11 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] disabled:opacity-50 text-white text-sm font-bold cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap"
             >
               {isSaving ? 'Publishing...' : 'Publish Tutor Profile'}
             </button>

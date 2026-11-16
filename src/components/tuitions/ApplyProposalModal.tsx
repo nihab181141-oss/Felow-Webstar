@@ -118,48 +118,49 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/45 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-3xl border border-[#F1E1DC] max-w-md w-full shadow-xl overflow-hidden text-left"
+        className="bg-white rounded-[28px] border border-[#EFEAE7] max-w-md w-full shadow-2xl overflow-hidden text-left"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-5 py-4 border-b border-[#F1E1DC] flex items-center justify-between">
-          <h3 className="font-display text-base font-bold text-[#252525]">Apply for Tuition</h3>
+        <div className="px-5 py-4 border-b border-[#EFEAE7] flex items-center justify-between">
+          <h3 className="font-display text-base font-extrabold text-[#18181B]">Apply for Tuition</h3>
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] flex items-center justify-center cursor-pointer transition-colors"
+            aria-label="Close modal"
+            className="w-9 h-9 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] flex items-center justify-center cursor-pointer transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-5 space-y-4 text-xs">
-          <div className="p-3.5 rounded-2xl bg-[#FFF3EF]">
-            <div className="font-bold text-sm text-[#252525] leading-snug">{post.title}</div>
-            <div className="text-[#858585] mt-0.5">
+          <div className="p-3.5 rounded-[18px] bg-[#EFEAFF]/75 border border-[#E1D8FF]">
+            <div className="font-display font-bold text-sm text-[#18181B] leading-snug">{post.title}</div>
+            <div className="text-[#52525B] mt-0.5 tabular-nums">
               {post.area}, {post.district} · Offer: ৳{post.salaryOfferBDT.toLocaleString()}/mo
             </div>
           </div>
 
           {isOwnPost ? (
-            <div className="p-3 rounded-2xl bg-[#FFF3EF] text-[#252525] border border-[#F5A04E] font-semibold">
+            <div className="p-3.5 rounded-[16px] bg-[#FFF4D6] text-[#18181B] border border-[#F8E4AE] font-semibold">
               You cannot apply to your own tuition post.
             </div>
           ) : existingApp ? (
-            <div className="p-3 rounded-2xl bg-[#DCEBFA] text-[#252525] font-semibold">
+            <div className="p-3.5 rounded-[16px] bg-[#DCEBFA] text-[#18181B] border border-[#C6DDF5] font-semibold">
               You already applied ({existingApp.status}).
             </div>
           ) : isPostClosed ? (
-            <div className="p-3 rounded-2xl bg-rose-50 text-rose-700 font-semibold">
+            <div className="p-3.5 rounded-[16px] bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
               This tuition post is closed.
             </div>
           ) : needsPublishedTutorProfile ? (
-            <div className="p-3.5 rounded-2xl bg-[#FFF3EF] text-[#252525] border border-[#F5A04E] space-y-3">
-              <div className="font-semibold">Complete & publish your Tutor Profile first.</div>
-              <p className="text-[#858585]">
+            <div className="p-4 rounded-[18px] bg-[#FFF4D6] text-[#18181B] border border-[#F8E4AE] space-y-3">
+              <div className="font-bold">Complete &amp; publish your Tutor Profile first.</div>
+              <p className="text-[#52525B]">
                 Students and guardians review your university, photo, and subjects before accepting applications.
               </p>
               <button
@@ -168,7 +169,7 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
                   onClose();
                   setActiveView('tutor-onboarding');
                 }}
-                className="h-9 px-4 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold cursor-pointer"
+                className="h-9 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white font-bold cursor-pointer transition-colors"
               >
                 Complete Tutor Profile
               </button>
@@ -177,7 +178,7 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">
+                  <label className="block font-semibold text-[#18181B] mb-1">
                     Expected Salary (৳/mo)
                   </label>
                   <input
@@ -187,11 +188,11 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
                     step={500}
                     value={proposedSalary}
                     onChange={(e) => setProposedSalary(Number(e.target.value))}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] font-mono font-bold outline-none focus:border-[#F47C68]"
+                    className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] font-mono font-bold tabular-nums outline-none focus:bg-white focus:border-[#18181B]"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-[#252525] mb-1">
+                  <label className="block font-semibold text-[#18181B] mb-1">
                     Available Schedule
                   </label>
                   <input
@@ -199,13 +200,13 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
                     required
                     value={availableSchedule}
                     onChange={(e) => setAvailableSchedule(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] outline-none focus:border-[#F47C68]"
+                    className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] outline-none focus:bg-white focus:border-[#18181B]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-[#252525] mb-1">
+                <label className="block font-semibold text-[#18181B] mb-1">
                   Short Message to {post.learnerName} *
                 </label>
                 <textarea
@@ -213,7 +214,7 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
                   required
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-[#FFF3EF] border border-[#F3D5CC] text-[#252525] leading-relaxed outline-none focus:border-[#F47C68]"
+                  className="w-full p-2.5 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] leading-relaxed outline-none focus:bg-white focus:border-[#18181B]"
                 />
               </div>
 
@@ -221,16 +222,16 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
                 <button
                   type="button"
                   onClick={onClose}
-                  className="h-10 px-5 rounded-full bg-[#FFF3EF] hover:bg-[#FFE6DD] text-[#252525] font-semibold cursor-pointer transition-colors"
+                  className="h-10 px-5 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] font-semibold cursor-pointer transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+                  className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white font-bold flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-3.5 h-3.5 shrink-0" />
                   <span>{isSubmitting ? 'Sending...' : 'Send Application'}</span>
                 </button>
               </div>
