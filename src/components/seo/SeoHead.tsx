@@ -9,8 +9,8 @@ import {
 import { trackAnalyticsEvent } from '../../utils/analytics';
 import { TutorProfile, TuitionPost, isTutorVerified } from '../../types';
 
-const DEFAULT_OG_IMAGE = `${PRODUCTION_BASE_URL}/og-share.jpg`;
-const DEFAULT_OG_IMAGE_ALT = 'FeLoW WebStaR tutor mentoring a student in Bangladesh';
+const DEFAULT_OG_IMAGE = `${PRODUCTION_BASE_URL}/og-share-brand.png`;
+const DEFAULT_OG_IMAGE_ALT = 'FeLoW WebStaR official logo — Bangladesh Tutor & Tuition Marketplace';
 const DYNAMIC_JSONLD_ID = 'felow-dynamic-jsonld';
 
 function upsertMeta(attrName: 'name' | 'property', attrValue: string, content: string) {
