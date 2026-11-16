@@ -456,6 +456,10 @@ export const PublicFooter: React.FC = () => {
               </>
             )}
           </p>
+
+          <p className="text-xs font-bold text-[#18181B] font-['Comic_Sans_MS','Comic_Sans','Comic_Neue',cursive]">
+            Developed by Nihab Al Mahjabin
+          </p>
         </div>
 
         {/* Full-Width Signature Wordmark SVG at the Very Bottom */}
