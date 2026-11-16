@@ -9,7 +9,6 @@ import {
   MapPin,
   Plus,
   Search,
-  Sparkles,
   Users,
   X
 } from 'lucide-react';
@@ -272,7 +271,6 @@ export const TuitionBentoHero: React.FC<TuitionBentoHeroProps> = ({
                     <Briefcase className="w-5 h-5" />
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-[#F5E4DF] text-[11px] font-bold text-[#18181B]">
-                    <Sparkles className="w-3 h-3 text-[#EB624B]" />
                     <span>{isBn ? 'লাইভ বোর্ড' : 'Live Board'}</span>
                   </span>
                 </div>
