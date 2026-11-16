@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { RouteView } from '../../utils/routing';
+import { BrandWordmark } from './BrandWordmark';
 
 export const PublicFooter: React.FC = () => {
   const { setActiveView, setDirectoryTab, setDistrictFilter, language } = useApp();
@@ -20,9 +21,14 @@ export const PublicFooter: React.FC = () => {
 
   return (
     <footer className="border-t border-[#F1E1DC] bg-[#FFFBF9] mt-8">
-      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 md:grid-cols-12 gap-6 text-xs text-[#6B6B6B]">
-        <div className="md:col-span-5 space-y-2">
-          <div className="font-display font-bold text-sm text-[#252525]">FeLoW WebStaR</div>
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-6 pb-2 sm:pt-7 sm:pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 text-xs text-[#6B6B6B]">
+          <div className="md:col-span-5 space-y-2.5">
+          <img
+            src="/assets/aistudio/felow-webstar-color_11ef6d13.svg"
+            alt="FeLoW WebStaR"
+            className="w-28 sm:w-32 h-auto block select-none"
+          />
           <p className="max-w-md leading-relaxed">
             {isBn
               ? 'বাংলাদেশের শিক্ষার্থী, অভিভাবক ও বিশ্ববিদ্যালয়ের টিউটরদের সরাসরি WhatsApp যোগাযোগভিত্তিক টিউশন প্ল্যাটফর্ম।'
@@ -103,11 +109,20 @@ export const PublicFooter: React.FC = () => {
                 onClick={(e) => navigate(e, 'about')}
                 className="hover:text-[#C94A35] transition-colors"
               >
-                {isBn ? 'আমাদের সম্পর্কে' : 'About FeLoW WebStaR'}
+                {isBn ? 'আমাদের সম্পর্কে' : <>About <BrandWordmark /></>}
               </a>
             </li>
           </ul>
         </nav>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-[#F1E1DC]/70">
+          <img
+            src="/assets/aistudio/felow-webstar-side-by-side_1__1df0def6.svg"
+            alt="FeLoW WebStaR"
+            className="w-full h-auto block select-none opacity-95"
+          />
+        </div>
       </div>
     </footer>
   );

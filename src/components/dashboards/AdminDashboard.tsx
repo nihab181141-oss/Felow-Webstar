@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, AlertTriangle, Check, ExternalLink } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { sanitizeSafeHttpUrl } from '../../utils/contactLinks';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -73,17 +74,21 @@ export const AdminDashboard: React.FC = () => {
                       <div className="text-[#858585] break-words">
                         {item.university} · {item.verificationType} · {item.documentName}
                       </div>
-                      {item.documentUrl && (
-                        <a
-                          href={item.documentUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#C94A35] hover:underline pt-1"
-                        >
-                          <span>View Uploaded Document</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
+                      {(() => {
+                        const safeDocUrl = sanitizeSafeHttpUrl(item.documentUrl);
+                        if (!safeDocUrl) return null;
+                        return (
+                          <a
+                            href={safeDocUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-[#C94A35] hover:underline pt-1"
+                          >
+                            <span>View Uploaded Document</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        );
+                      })()}
                     </div>
                     <div className="flex flex-wrap gap-2 shrink-0">
                       <button

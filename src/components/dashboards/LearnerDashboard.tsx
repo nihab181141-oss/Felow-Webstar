@@ -14,6 +14,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { TutorPageCard } from '../shared/TutorPageCard';
 import { DeleteAccountSection } from '../shared/DeleteAccountSection';
+import { BrandWordmark } from '../shared/BrandWordmark';
 import { buildWhatsAppUrl, isValidBdWhatsAppNumber, sanitizeFacebookUrl } from '../../utils/contactLinks';
 import { BD_DISTRICTS_BY_DIVISION, getDivisionByDistrict, getAreasOrUpazilas } from '../../data/bangladeshData';
 import { DEFAULT_PLACEHOLDER_AVATAR, LearnerSubtype } from '../../types';
@@ -641,7 +642,7 @@ export const LearnerDashboard: React.FC = () => {
 
                   <div className="pt-2 border-t border-[#F1E1DC] space-y-2">
                     <div className="font-semibold text-[#252525]">
-                      {isBn ? 'টিউটর হিসেবে পড়াতে চান?' : 'Want to teach on FeLoW WebStaR?'}
+                      {isBn ? 'টিউটর হিসেবে পড়াতে চান?' : <>Want to teach on <BrandWordmark />?</>}
                     </div>
                     <p className="text-[#858585] leading-relaxed">
                       {isBn

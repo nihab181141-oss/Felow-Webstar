@@ -620,7 +620,6 @@ export async function saveTutorProfileInFirestore(
     // Never allow client code to self-assign verification/rating fields or store raw PII on public tutor doc
     const sanitized: Record<string, any> = { ...updates };
     delete sanitized.id;
-    delete sanitized.isSample;
     delete sanitized.reviews;
     delete sanitized.verification;
     delete sanitized.rating;
@@ -723,16 +722,24 @@ export async function saveTutorProfileInFirestore(
 }
 
 export async function fetchTutorProfilesPage(
-  pageSize = 100,
+  pageSize = 500,
   lastDoc?: QueryDocumentSnapshot<DocumentData>
 ): Promise<{ items: TutorProfile[]; lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
   const path = 'tutorProfiles';
   try {
-    const constraints: any[] = [orderBy('updatedAt', 'desc'), limit(pageSize)];
-    if (lastDoc) constraints.splice(1, 0, startAfter(lastDoc));
+    const constraints: any[] = [where('isPublished', '==', true), limit(pageSize)];
+    if (lastDoc) constraints.push(startAfter(lastDoc));
     const q = query(collection(db, path), ...constraints);
     const snap = await getDocs(q);
-    const items: TutorProfile[] = snap.docs.map(mapTutorProfileDoc);
+    const itemsWithTs = snap.docs
+      .map(docSnap => {
+        const raw = docSnap.data() || {};
+        const tsMs = Date.parse(toIsoDateString(raw.updatedAt || raw.createdAt)) || 0;
+        return { tutor: mapTutorProfileDoc(docSnap), tsMs };
+      })
+      .filter(({ tutor }) => tutor.profileVisibility !== 'hidden')
+      .sort((a, b) => b.tsMs - a.tsMs);
+    const items = itemsWithTs.map(entry => entry.tutor);
     const lastVisible = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null;
     return { items, lastVisible };
   } catch (error) {
@@ -742,13 +749,19 @@ export async function fetchTutorProfilesPage(
 }
 
 export async function fetchPublicTuitionPostsPage(
-  pageSize = 100
+  pageSize = 500
 ): Promise<TuitionPost[]> {
   const path = 'tuitionPosts';
   try {
-    const q = query(collection(db, path), limit(pageSize));
+    const q = query(collection(db, path), where('status', '==', 'open'), limit(pageSize));
     const snap = await getDocs(q);
-    return snap.docs.map(mapTuitionPostDoc);
+    return snap.docs
+      .map(mapTuitionPostDoc)
+      .sort((a, b) => {
+        const tb = Date.parse(b.createdAt || b.postedDate || '') || 0;
+        const ta = Date.parse(a.createdAt || a.postedDate || '') || 0;
+        return tb - ta;
+      });
   } catch (error) {
     console.warn('fetchPublicTuitionPostsPage fallback:', error);
     return [];
@@ -831,7 +844,6 @@ export function mapTutorProfileDoc(
     availability: d.availability || 'Available Now',
     teachingStyleSummary: d.teachingStyleSummary || '',
     profileCompletion: Number(d.profileCompletion) || calculateTutorCompleteness(d),
-    isSample: false,
     reviews: Array.isArray(d.reviews) ? d.reviews : []
   };
 }
@@ -1059,7 +1071,7 @@ export async function createTuitionPostInFirestore(
 ): Promise<string> {
   const path = 'tuitionPosts';
   try {
-    const { whatsappNumber, detailedAddress, isSample: _s, ...publicFields } = post as any;
+    const { whatsappNumber, detailedAddress, ...publicFields } = post as any;
     const docRef = await addDoc(collection(db, path), stripUndefined({
       ...publicFields,
       subjects: Array.isArray(publicFields.subjects) ? publicFields.subjects.slice(0, 20) : [],
@@ -1100,7 +1112,6 @@ export async function updateTuitionPostInFirestore(
     delete clean.totalApplicants;
     delete clean.isFeatured;
     delete clean.postedDate;
-    delete clean.isSample;
     delete clean.whatsappNumber;
     delete clean.detailedAddress;
     if (Array.isArray(clean.subjects)) clean.subjects = clean.subjects.slice(0, 20);
@@ -1143,7 +1154,7 @@ export async function updateTuitionPostStatusInFirestore(
 export async function fetchTuitionPrivateContact(
   postId: string
 ): Promise<{ whatsappNumber: string; detailedAddress: string } | null> {
-  if (!auth.currentUser || !postId || postId.startsWith('post-')) return null;
+  if (!auth.currentUser || !postId) return null;
   try {
     const snap = await getDoc(doc(db, 'tuitionPosts', postId, 'private', 'contact'));
     if (!snap.exists()) return null;
@@ -1205,8 +1216,7 @@ export function mapTuitionPostDoc(
     status: d.status || 'open',
     totalApplicants: Number(d.totalApplicants) || 0,
     requirementsDescription: d.requirementsDescription || '',
-    isFeatured: Boolean(d.isFeatured),
-    isSample: false
+    isFeatured: Boolean(d.isFeatured)
   };
 }
 
@@ -1229,7 +1239,7 @@ export async function submitApplicationInFirestore(
     const postRef = doc(db, 'tuitionPosts', appData.tuitionPostId);
     const postSnap = await getDoc(postRef);
     if (!postSnap.exists()) {
-      throw new Error('This is a sample tuition listing. Please apply to a live tuition post.');
+      throw new Error('This tuition post could not be found. It may have been removed.');
     }
     const postData = postSnap.data();
     if (postData.status !== 'open') {
@@ -1249,7 +1259,6 @@ export async function submitApplicationInFirestore(
     // 3. Atomically create application & increment applicant counter
     const safeAppPayload = stripUndefined({ ...appData });
     delete (safeAppPayload as any).guardianWhatsApp;
-    delete (safeAppPayload as any).isSample;
 
     const batch = writeBatch(db);
     batch.set(appRef, {
@@ -1657,9 +1666,16 @@ export async function updateTutorProfileInFirestore(
   return saveTutorProfileInFirestore(tutorId, updates);
 }
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp'
+]);
+
 export async function uploadDocumentToStorage(tutorId: string, file: File): Promise<string> {
   const isAllowedMime =
-    file.type.startsWith('image/') || file.type === 'application/pdf';
+    ALLOWED_IMAGE_MIME_TYPES.has(file.type) || file.type === 'application/pdf';
   if (!isAllowedMime) {
     throw new Error('Please upload an image (JPG, PNG, WebP) or PDF document.');
   }
@@ -1673,7 +1689,7 @@ export async function uploadDocumentToStorage(tutorId: string, file: File): Prom
 }
 
 export async function uploadAvatarToStorage(userId: string, file: File): Promise<string> {
-  if (!file.type.startsWith('image/')) {
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
     throw new Error('Please upload a valid image file (JPG, PNG, or WebP).');
   }
   if (file.size > 5 * 1024 * 1024) {

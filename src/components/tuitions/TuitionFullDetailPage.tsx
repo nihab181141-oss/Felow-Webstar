@@ -53,7 +53,7 @@ export const TuitionFullDetailPage: React.FC = () => {
   useEffect(() => {
     let active = true;
     setGuardianPrivateWa('');
-    if (!post || !isAuthenticated || !canViewGuardianWa || post.whatsappNumber || post.isSample || post.id.startsWith('post-')) {
+    if (!post || !isAuthenticated || !canViewGuardianWa || post.whatsappNumber) {
       return;
     }
     getTuitionPrivateContact(post.id).then(priv => {
@@ -64,7 +64,7 @@ export const TuitionFullDetailPage: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [post?.id, post?.whatsappNumber, post?.isSample, isAuthenticated, canViewGuardianWa, getTuitionPrivateContact]);
+  }, [post?.id, post?.whatsappNumber, isAuthenticated, canViewGuardianWa, getTuitionPrivateContact]);
 
   if (!post) {
     return (

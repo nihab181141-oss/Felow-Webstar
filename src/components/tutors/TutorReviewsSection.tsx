@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Review, TutorProfile } from '../../types';
+import { BrandWordmark } from '../shared/BrandWordmark';
 
 interface TutorReviewsSectionProps {
   tutor: TutorProfile;
@@ -83,23 +84,19 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
     setConfirmDelete(false);
     setFormError('');
 
-    if (!tutor.isSample) {
-      setIsLoadingReviews(true);
-      loadTutorReviews(tutor.id)
-        .catch(() => {
-          // Non-blocking fallback
-        })
-        .finally(() => {
-          if (active) setIsLoadingReviews(false);
-        });
-    } else {
-      setIsLoadingReviews(false);
-    }
+    setIsLoadingReviews(true);
+    loadTutorReviews(tutor.id)
+      .catch(() => {
+        // Non-blocking fallback
+      })
+      .finally(() => {
+        if (active) setIsLoadingReviews(false);
+      });
 
     return () => {
       active = false;
     };
-  }, [tutor.id, tutor.isSample]);
+  }, [tutor.id]);
 
   // Sync form state when switching tutor or opening editor
   useEffect(() => {
@@ -571,7 +568,7 @@ export const TutorReviewsSection: React.FC<TutorReviewsSectionProps> = ({
               <span className="text-[11px] text-[#858585]">
                 {isBn
                   ? 'ভেরিফায়েড গুগল অ্যাকাউন্ট থেকে প্রকাশিত হবে।'
-                  : 'Published under your verified FeLoW WebStaR account.'}
+                  : <>Published under your verified <BrandWordmark /> account.</>}
               </span>
             )}
 

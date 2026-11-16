@@ -18,16 +18,6 @@ import {
   isTutorProfileMandatoryComplete,
   DEFAULT_PLACEHOLDER_AVATAR
 } from '../types';
-import {
-  INITIAL_TUTORS,
-  INITIAL_TUITION_POSTS,
-  INITIAL_APPLICATIONS,
-  INITIAL_INVITATIONS,
-  INITIAL_VERIFICATION_QUEUE,
-  INITIAL_NOTIFICATIONS,
-  INITIAL_REPORTS,
-  PRESET_USERS
-} from '../data/mockData';
 import { TRANSLATIONS, getDivisionByDistrict } from '../data/bangladeshData';
 import {
   auth,
@@ -75,7 +65,7 @@ import {
   toIsoDateString
 } from '../services/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, onSnapshot, query, where, limit } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, limit } from 'firebase/firestore';
 import {
   RouteView,
   parseAppRoute,
@@ -102,9 +92,6 @@ interface AppContextType {
   learnerProfile: LearnerProfile | null;
   switchUserRole: (role: UserRole) => Promise<void>;
   activateDualRole: (role: 'learner' | 'tutor') => Promise<void>;
-  switchUserPersona: (userId: string) => void;
-  presetUsers: UserAccount[];
-  allUsers: UserAccount[];
 
   activeView: AppView;
   setActiveView: (view: AppView) => void;
@@ -213,7 +200,6 @@ interface AppContextType {
   isFirebaseConnected: boolean;
   isAuthReady: boolean;
   isAuthenticated: boolean;
-  isDemoSession: boolean;
   firebaseUser: FirebaseUser | null;
   needsTutorProfileSetup: boolean;
   myTutorProfile: TutorProfile | null;
@@ -227,11 +213,89 @@ interface AppContextType {
   showToast: (text: string, type?: 'success' | 'info' | 'error') => void;
 }
 
+const GUEST_USER: UserAccount = {
+  id: '',
+  name: 'Guest',
+  email: '',
+  phone: '',
+  whatsappNumber: '',
+  facebookUrl: '',
+  role: 'learner',
+  availableRoles: [],
+  learnerSubtype: 'guardian',
+  avatar: DEFAULT_PLACEHOLDER_AVATAR,
+  division: 'Dhaka',
+  district: 'Dhaka',
+  upazila: '',
+  area: '',
+  phoneVisibility: false
+};
+
+const createBlankTutorProfile = (uid: string, user: UserAccount): TutorProfile => ({
+  id: uid,
+  uid,
+  name: user.name || 'Tutor',
+  gender: 'Male',
+  avatar: user.avatar || DEFAULT_PLACEHOLDER_AVATAR,
+  profilePhotoURL: user.avatar || DEFAULT_PLACEHOLDER_AVATAR,
+  headline: '',
+  bio: '',
+  university: user.university || '',
+  degree: '',
+  department: user.department || '',
+  academicYear: user.academicYear || '',
+  semester: '',
+  passingYear: '',
+  gpa: '',
+  schoolName: '',
+  collegeName: '',
+  sscGpa: '',
+  hscGpa: '',
+  achievements: [],
+  experienceSummary: '',
+  division: user.division || 'Dhaka',
+  district: user.district || 'Dhaka',
+  upazila: user.upazila || '',
+  preferredAreas: user.area ? [user.area] : [],
+  mediums: ['Bangla Medium'],
+  classes: [],
+  subjects: [],
+  tuitionTypes: ['Home Tuition'],
+  expectedSalaryMin: 5000,
+  expectedSalaryMax: 10000,
+  daysPerWeek: [3],
+  experienceYears: 0,
+  verification: {
+    identity: { status: 'unverified' },
+    institution: { status: 'unverified' },
+    qualification: { status: 'unverified' }
+  },
+  badges: [],
+  rating: 0,
+  reviewCount: 0,
+  completedTuitionsCount: 0,
+  isFeatured: false,
+  phone: user.phone || '',
+  whatsappNumber: user.whatsappNumber || user.phone || '',
+  normalizedWhatsappNumber: '',
+  whatsappConsent: true,
+  whatsappPublic: true,
+  facebookUrl: user.facebookUrl || '',
+  profileVisibility: 'public',
+  contactVisibility: 'authenticated',
+  isPublished: false,
+  email: user.email || '',
+  availability: 'Available Now',
+  teachingStyleSummary: '',
+  profileCompletion: 20,
+  reviews: []
+});
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<'en' | 'bn'>('en');
-  const [currentUser, setCurrentUser] = useState<UserAccount>(PRESET_USERS[0]);
+  const [currentUser, setCurrentUser] = useState<UserAccount>(GUEST_USER);
   const [currentRole, setCurrentRole] = useState<UserRole>('learner');
   const [learnerProfile, setLearnerProfile] = useState<LearnerProfile | null>(null);
   const initialParsedRoute = useMemo(
@@ -271,49 +335,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
-  const [tutors, setTutors] = useState<TutorProfile[]>(() => {
-    if (typeof window === 'undefined') return INITIAL_TUTORS;
-    try {
-      const raw = window.localStorage.getItem('felow_sample_tutor_reviews_v1');
-      if (!raw) return INITIAL_TUTORS;
-      const savedMap = JSON.parse(raw) as Record<string, { reviews: Review[]; rating: number; reviewCount: number }>;
-      return INITIAL_TUTORS.map(t => {
-        const saved = savedMap[t.id];
-        if (!saved) return t;
-        return {
-          ...t,
-          reviews: Array.isArray(saved.reviews) ? saved.reviews : t.reviews,
-          rating: typeof saved.rating === 'number' ? saved.rating : t.rating,
-          reviewCount: typeof saved.reviewCount === 'number' ? saved.reviewCount : t.reviewCount
-        };
-      });
-    } catch {
-      return INITIAL_TUTORS;
-    }
-  });
-  const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>(INITIAL_TUITION_POSTS);
-  const [applications, setApplications] = useState<Application[]>(INITIAL_APPLICATIONS);
-  const [invitations, setInvitations] = useState<Invitation[]>(INITIAL_INVITATIONS);
-  const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>(INITIAL_VERIFICATION_QUEUE);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
-  const [reports, setReports] = useState<ReportItem[]>(INITIAL_REPORTS);
-  const [allUsers] = useState<UserAccount[]>(PRESET_USERS);
-  const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(false);
+  const [tutors, setTutors] = useState<TutorProfile[]>([]);
+  const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(true);
 
-  const [savedTutorIds, setSavedTutorIds] = useState<string[]>(['tutor-1']);
-  const [savedTuitionIds, setSavedTuitionIds] = useState<string[]>(['post-1']);
+  const [savedTutorIds, setSavedTutorIds] = useState<string[]>([]);
+  const [savedTuitionIds, setSavedTuitionIds] = useState<string[]>([]);
   const [comparisonTutorIds, setComparisonTutorIds] = useState<string[]>([]);
 
-  const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(() =>
-    initialParsedRoute.tutorId
-      ? INITIAL_TUTORS.find(t => t.id === initialParsedRoute.tutorId) || null
-      : null
-  );
-  const [selectedTuition, setSelectedTuition] = useState<TuitionPost | null>(() =>
-    initialParsedRoute.tuitionId
-      ? INITIAL_TUITION_POSTS.find(p => p.id === initialParsedRoute.tuitionId) || null
-      : null
-  );
+  const [selectedTutor, setSelectedTutor] = useState<TutorProfile | null>(null);
+  const [selectedTuition, setSelectedTuition] = useState<TuitionPost | null>(null);
   const [editingTuition, setEditingTuition] = useState<TuitionPost | null>(null);
 
   const [isPostTuitionOpen, setIsPostTuitionOpen] = useState(false);
@@ -340,13 +376,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [isDemoSession, setIsDemoSession] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const myPrivateContactRef = useRef<TutorPrivateContact | null>(null);
   const reviewsCacheRef = useRef<Record<string, Review[]>>({});
 
   const t = TRANSLATIONS[language];
-  const isAuthenticated = Boolean(firebaseUser || isDemoSession);
+  const isAuthenticated = Boolean(firebaseUser);
 
   const showToast = useCallback((text: string, type: 'success' | 'info' | 'error' = 'info') => {
     const id = Math.random().toString(36).substring(7);
@@ -365,7 +400,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
-        setIsDemoSession(false);
         const [isUserAdmin, remoteAccount, remoteLearner, remoteTutor, remotePrivateContact] = await Promise.all([
           isAdminUserInFirestore(user.uid, user.email, user.emailVerified),
           fetchUserAccountFromFirestore(user.uid),
@@ -430,6 +464,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         myPrivateContactRef.current = null;
         setLearnerProfile(null);
+        setCurrentUser(GUEST_USER);
+        setCurrentRole('learner');
+        setApplications([]);
+        setInvitations([]);
+        setVerificationQueue([]);
+        setNotifications([]);
+        setReports([]);
+        setSavedTutorIds([]);
+        setSavedTuitionIds([]);
       }
       setIsAuthReady(true);
     });
@@ -546,38 +589,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let isMounted = true;
     setIsMarketplaceLoading(true);
     Promise.all([
-      fetchTutorProfilesPage(50),
-      fetchPublicTuitionPostsPage(50)
+      fetchTutorProfilesPage(500),
+      fetchPublicTuitionPostsPage(500)
     ])
       .then(([tutorPage, remotePosts]) => {
         if (!isMounted) return;
-        if (tutorPage.items.length > 0) {
-          setTutors(prev => {
-            const existingMine = prev.find(t => t.id === firebaseUser?.uid || t.uid === firebaseUser?.uid);
-            const mergedRemote = tutorPage.items.map(rt => {
-              if (existingMine && (rt.id === existingMine.id || rt.uid === existingMine.uid)) {
-                return {
-                  ...rt,
-                  whatsappNumber: existingMine.whatsappNumber || myPrivateContactRef.current?.whatsappNumber || '',
-                  normalizedWhatsappNumber:
-                    existingMine.normalizedWhatsappNumber || myPrivateContactRef.current?.normalizedWhatsappNumber || '',
-                  facebookUrl: existingMine.facebookUrl || myPrivateContactRef.current?.facebookUrl || ''
-                };
-              }
-              return rt;
-            });
-            const remoteIds = new Set(mergedRemote.map(t => t.id));
-            const sampleKeep = INITIAL_TUTORS.filter(t => !remoteIds.has(t.id));
-            return [...mergedRemote, ...sampleKeep];
+        setTutors(prev => {
+          const existingMine = firebaseUser?.uid
+            ? prev.find(t => t.id === firebaseUser.uid || t.uid === firebaseUser.uid)
+            : undefined;
+          const mergedRemote = tutorPage.items.map(rt => {
+            if (existingMine && (rt.id === existingMine.id || rt.uid === existingMine.uid)) {
+              return {
+                ...rt,
+                whatsappNumber: existingMine.whatsappNumber || myPrivateContactRef.current?.whatsappNumber || '',
+                normalizedWhatsappNumber:
+                  existingMine.normalizedWhatsappNumber || myPrivateContactRef.current?.normalizedWhatsappNumber || '',
+                facebookUrl: existingMine.facebookUrl || myPrivateContactRef.current?.facebookUrl || ''
+              };
+            }
+            return rt;
           });
-        }
-        if (remotePosts.length > 0) {
-          setTuitionPosts(() => {
-            const remoteIds = new Set(remotePosts.map(p => p.id));
-            const sampleKeep = INITIAL_TUITION_POSTS.filter(p => !remoteIds.has(p.id));
-            return [...remotePosts, ...sampleKeep];
-          });
-        }
+          if (existingMine && !mergedRemote.some(t => t.id === existingMine.id)) {
+            return [existingMine, ...mergedRemote];
+          }
+          return mergedRemote;
+        });
+
+        setTuitionPosts(prev => {
+          const remoteIds = new Set(remotePosts.map(p => p.id));
+          const myExtraPosts = firebaseUser?.uid
+            ? prev.filter(p => p.learnerId === firebaseUser.uid && !remoteIds.has(p.id))
+            : [];
+          return [...myExtraPosts, ...remotePosts];
+        });
       })
       .finally(() => {
         if (isMounted) setIsMarketplaceLoading(false);
@@ -590,7 +635,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Real-time Listeners for Authenticated Firebase User
   useEffect(() => {
     if (!firebaseUser) {
-      // Demo persona state uses INITIAL_* fixtures
       return;
     }
 
@@ -598,57 +642,114 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let cancelled = false;
     const unsubs: Array<() => void> = [];
 
-    // Clear sample saved IDs so only authentic Firestore records render for authenticated users
-    setSavedTutorIds([]);
-    setSavedTuitionIds([]);
+    const enrichTutorRecord = (mapped: TutorProfile): TutorProfile => {
+      const cachedReviews = reviewsCacheRef.current[mapped.id];
+      const withCachedReviews = cachedReviews ? { ...mapped, reviews: cachedReviews } : mapped;
+      if (withCachedReviews.id === uid || withCachedReviews.uid === uid) {
+        const priv = myPrivateContactRef.current;
+        if (priv) {
+          return {
+            ...withCachedReviews,
+            whatsappNumber: priv.whatsappNumber || '',
+            normalizedWhatsappNumber: priv.normalizedWhatsappNumber || '',
+            facebookUrl: priv.facebookUrl || '',
+            whatsappConsent: priv.whatsappConsent,
+            contactVisibility: priv.contactVisibility
+          };
+        }
+      }
+      return withCachedReviews;
+    };
+
+    const publicTutorsMap = new Map<string, TutorProfile>();
+    let myOwnTutor: TutorProfile | null = null;
+    const syncTutorsState = () => {
+      const merged = new Map<string, TutorProfile>();
+      publicTutorsMap.forEach((v, k) => merged.set(k, v));
+      if (myOwnTutor) {
+        merged.set(myOwnTutor.id, myOwnTutor);
+      }
+      setTutors(Array.from(merged.values()));
+    };
 
     unsubs.push(
-      onSnapshot(query(collection(db, 'tutorProfiles'), limit(100)), (snapshot) => {
-        const remoteTutors: TutorProfile[] = snapshot.docs.map(docSnap => {
-          const mapped = mapTutorProfileDoc(docSnap);
-          const cachedReviews = reviewsCacheRef.current[mapped.id];
-          const withCachedReviews = cachedReviews ? { ...mapped, reviews: cachedReviews } : mapped;
-          if (withCachedReviews.id === uid || withCachedReviews.uid === uid) {
-            const priv = myPrivateContactRef.current;
-            if (priv) {
-              return {
-                ...withCachedReviews,
-                whatsappNumber: priv.whatsappNumber || '',
-                normalizedWhatsappNumber: priv.normalizedWhatsappNumber || '',
-                facebookUrl: priv.facebookUrl || '',
-                whatsappConsent: priv.whatsappConsent,
-                contactVisibility: priv.contactVisibility
-              };
+      onSnapshot(
+        query(collection(db, 'tutorProfiles'), where('isPublished', '==', true), limit(500)),
+        (snapshot) => {
+          publicTutorsMap.clear();
+          snapshot.docs.forEach(docSnap => {
+            const mapped = enrichTutorRecord(mapTutorProfileDoc(docSnap));
+            if (mapped.profileVisibility !== 'hidden') {
+              publicTutorsMap.set(mapped.id, mapped);
             }
-          }
-          return withCachedReviews;
-        });
-        setTutors(prev => {
-          const prevSampleMap = new Map(
-            prev.filter(t => t.isSample).map(t => [t.id, t])
-          );
-          const remoteIds = new Set(remoteTutors.map(t => t.id));
-          const sampleKeep = INITIAL_TUTORS.filter(t => !remoteIds.has(t.id)).map(
-            t => prevSampleMap.get(t.id) || t
-          );
-          return [...remoteTutors, ...sampleKeep];
-        });
-      }, (err) => {
-        console.warn('tutorProfiles listener fallback:', err);
-      })
+          });
+          syncTutorsState();
+        },
+        (err) => {
+          console.warn('tutorProfiles listener fallback:', err);
+        }
+      )
     );
 
     unsubs.push(
-      onSnapshot(query(collection(db, 'tuitionPosts'), limit(100)), (snapshot) => {
-        const remotePosts: TuitionPost[] = snapshot.docs.map(mapTuitionPostDoc);
-        setTuitionPosts(() => {
-          const remoteIds = new Set(remotePosts.map(p => p.id));
-          const sampleKeep = INITIAL_TUITION_POSTS.filter(p => !remoteIds.has(p.id));
-          return [...remotePosts, ...sampleKeep];
-        });
-      }, (err) => {
-        console.warn('tuitionPosts listener fallback:', err);
-      })
+      onSnapshot(
+        doc(db, 'tutorProfiles', uid),
+        (docSnap) => {
+          myOwnTutor = docSnap.exists() ? enrichTutorRecord(mapTutorProfileDoc(docSnap)) : null;
+          syncTutorsState();
+        },
+        (err) => {
+          console.warn('own tutorProfile listener fallback:', err);
+        }
+      )
+    );
+
+    const openPostsMap = new Map<string, TuitionPost>();
+    const myPostsMap = new Map<string, TuitionPost>();
+    const syncTuitionPostsState = () => {
+      const merged = new Map<string, TuitionPost>();
+      openPostsMap.forEach((v, k) => merged.set(k, v));
+      myPostsMap.forEach((v, k) => merged.set(k, v));
+      const sorted = Array.from(merged.values()).sort((a, b) => {
+        const tb = Date.parse(b.createdAt || b.postedDate || '') || 0;
+        const ta = Date.parse(a.createdAt || a.postedDate || '') || 0;
+        return tb - ta;
+      });
+      setTuitionPosts(sorted);
+    };
+
+    unsubs.push(
+      onSnapshot(
+        query(collection(db, 'tuitionPosts'), where('status', '==', 'open'), limit(500)),
+        (snapshot) => {
+          openPostsMap.clear();
+          snapshot.docs.forEach(d => {
+            const post = mapTuitionPostDoc(d);
+            openPostsMap.set(post.id, post);
+          });
+          syncTuitionPostsState();
+        },
+        (err) => {
+          console.warn('tuitionPosts listener fallback:', err);
+        }
+      )
+    );
+
+    unsubs.push(
+      onSnapshot(
+        query(collection(db, 'tuitionPosts'), where('learnerId', '==', uid), limit(200)),
+        (snapshot) => {
+          myPostsMap.clear();
+          snapshot.docs.forEach(d => {
+            const post = mapTuitionPostDoc(d);
+            myPostsMap.set(post.id, post);
+          });
+          syncTuitionPostsState();
+        },
+        (err) => {
+          console.warn('my tuitionPosts listener fallback:', err);
+        }
+      )
     );
 
     const mapAppDoc = (docSnap: any): Application => {
@@ -681,8 +782,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updatedAt: toIsoDateString(d.updatedAt),
         status: d.status || 'pending',
         demoDate: d.demoDate,
-        feedbackNote: d.feedbackNote,
-        isSample: false
+        feedbackNote: d.feedbackNote
       };
     };
 
@@ -769,8 +869,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         preferredSchedule: d.preferredSchedule || '',
         message: d.message || '',
         status: d.status || 'pending',
-        sentAt: d.sentAt || toIsoDateString(d.createdAt, '').split('T')[0],
-        isSample: false
+        sentAt: d.sentAt || toIsoDateString(d.createdAt, '').split('T')[0]
       };
     };
 
@@ -847,7 +946,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (!myTutorProfile || !myTutorProfile.isPublished)
   );
 
-  // Multi-Role & Demo Persona Switching
+  // Multi-Role Account Switching
   const switchUserRole = async (role: UserRole) => {
     setCurrentRole(role);
     const updatedRoles = Array.from(new Set([...(currentUser.availableRoles || [currentUser.role]), role]));
@@ -911,41 +1010,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`${role === 'tutor' ? 'Tutor' : 'Learner / Guardian'} mode activated on your account!`, 'success');
   };
 
-  const switchUserPersona = (userId: string) => {
-    const target = PRESET_USERS.find(u => u.id === userId);
-    if (target) {
-      setIsDemoSession(true);
-      setCurrentUser(target);
-      setCurrentRole(target.role);
-      showToast(`Preview mode active as ${target.name} (${target.role})`, 'info');
-    }
-  };
-
   const toggleSaveTutor = async (tutorId: string) => {
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to save tutors.', 'info');
+      return;
+    }
     const exists = savedTutorIds.includes(tutorId);
     setSavedTutorIds(prev => (exists ? prev.filter(id => id !== tutorId) : [...prev, tutorId]));
     showToast(exists ? 'Removed from saved tutors' : 'Tutor saved to your shortlist');
 
-    if (firebaseUser) {
-      try {
-        await toggleTutorFavouriteInFirestore(firebaseUser.uid, tutorId, !exists);
-      } catch (err) {
-        console.warn('toggleTutorFavouriteInFirestore failed:', err);
-      }
+    try {
+      await toggleTutorFavouriteInFirestore(firebaseUser.uid, tutorId, !exists);
+    } catch (err) {
+      console.warn('toggleTutorFavouriteInFirestore failed:', err);
     }
   };
 
   const toggleSaveTuition = async (tuitionId: string) => {
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to save tuition posts.', 'info');
+      return;
+    }
     const exists = savedTuitionIds.includes(tuitionId);
     setSavedTuitionIds(prev => (exists ? prev.filter(id => id !== tuitionId) : [...prev, tuitionId]));
     showToast(exists ? 'Removed from saved tuitions' : 'Tuition opportunity saved');
 
-    if (firebaseUser) {
-      try {
-        await toggleSavedTuitionInFirestore(firebaseUser.uid, tuitionId, !exists);
-      } catch (err) {
-        console.warn('toggleSavedTuitionInFirestore failed:', err);
-      }
+    try {
+      await toggleSavedTuitionInFirestore(firebaseUser.uid, tuitionId, !exists);
+    } catch (err) {
+      console.warn('toggleSavedTuitionInFirestore failed:', err);
     }
   };
 
@@ -966,6 +1063,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const openCreateTuitionModal = () => {
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to post a tuition requirement.', 'info');
+      return;
+    }
     setEditingTuition(null);
     setIsPostTuitionOpen(true);
   };
@@ -973,7 +1076,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openEditTuitionModal = (tuition: TuitionPost) => {
     setEditingTuition(tuition);
     setIsPostTuitionOpen(true);
-    if (firebaseUser && !tuition.isSample && !tuition.id.startsWith('post-')) {
+    if (firebaseUser) {
       fetchTuitionPrivateContact(tuition.id).then(priv => {
         if (priv) {
           setEditingTuition(prev =>
@@ -1015,52 +1118,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const postNewTuition = async (
     postData: Omit<TuitionPost, 'id' | 'learnerId' | 'learnerName' | 'postedDate' | 'status' | 'totalApplicants'>
   ) => {
-    const tempId = `post-${Date.now()}`;
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to publish a tuition post.', 'info');
+      return;
+    }
+
+    const tempId = `pending_${Date.now()}`;
     const division = postData.division || getDivisionByDistrict(postData.district);
     const newPost: TuitionPost = {
       ...postData,
       division,
       id: tempId,
-      learnerId: currentUser.id,
+      learnerId: firebaseUser.uid,
       learnerName: currentUser.name,
       whatsappNumber: postData.whatsappNumber || currentUser.whatsappNumber || currentUser.phone,
       postedDate: new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString(),
       status: 'open',
       totalApplicants: 0,
-      isFeatured: false,
-      isSample: !firebaseUser
+      isFeatured: false
     };
 
     setTuitionPosts(prev => [newPost, ...prev]);
     setIsPostTuitionOpen(false);
     setEditingTuition(null);
 
-    if (firebaseUser) {
-      try {
-        const firestoreId = await createTuitionPostInFirestore({
-          ...postData,
-          division,
-          learnerId: firebaseUser.uid,
-          learnerName: currentUser.name,
-          whatsappNumber: postData.whatsappNumber || currentUser.whatsappNumber || currentUser.phone,
-          isFeatured: false
-        });
-        if (firestoreId) {
-          setTuitionPosts(prev => prev.map(p => (p.id === tempId ? { ...p, id: firestoreId } : p)));
-          showToast('Tuition requirement published and saved!', 'success');
-        }
-      } catch (err: any) {
-        setTuitionPosts(prev => prev.filter(p => p.id !== tempId));
-        showToast(extractFriendlyErrorMessage(err, 'Failed to publish tuition post.'), 'error');
-        throw err;
+    try {
+      const firestoreId = await createTuitionPostInFirestore({
+        ...postData,
+        division,
+        learnerId: firebaseUser.uid,
+        learnerName: currentUser.name,
+        whatsappNumber: postData.whatsappNumber || currentUser.whatsappNumber || currentUser.phone,
+        isFeatured: false
+      });
+      if (firestoreId) {
+        setTuitionPosts(prev => prev.map(p => (p.id === tempId ? { ...p, id: firestoreId } : p)));
+        showToast('Tuition requirement published and saved!', 'success');
       }
-    } else {
-      showToast('Tuition post created in preview mode. Sign in to persist to database.', 'success');
+    } catch (err: any) {
+      setTuitionPosts(prev => prev.filter(p => p.id !== tempId));
+      showToast(extractFriendlyErrorMessage(err, 'Failed to publish tuition post.'), 'error');
+      throw err;
     }
   };
 
   const updateTuitionPost = async (postId: string, updates: Partial<TuitionPost>) => {
+    if (!firebaseUser) return;
     setTuitionPosts(prev => prev.map(p => (p.id === postId ? { ...p, ...updates } : p)));
     if (selectedTuition?.id === postId) {
       setSelectedTuition(prev => (prev ? { ...prev, ...updates } : null));
@@ -1068,49 +1174,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsPostTuitionOpen(false);
     setEditingTuition(null);
 
-    if (firebaseUser && !postId.startsWith('post-')) {
-      try {
-        await updateTuitionPostInFirestore(postId, updates);
-        showToast('Tuition post updated!', 'success');
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to update tuition post.'), 'error');
-      }
-    } else {
+    try {
+      await updateTuitionPostInFirestore(postId, updates);
       showToast('Tuition post updated!', 'success');
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to update tuition post.'), 'error');
     }
   };
 
   const updateTuitionPostStatus = async (postId: string, status: TuitionPostStatus) => {
+    if (!firebaseUser) return;
     setTuitionPosts(prev => prev.map(p => (p.id === postId ? { ...p, status } : p)));
     if (selectedTuition?.id === postId) {
       setSelectedTuition(prev => (prev ? { ...prev, status } : null));
     }
 
-    if (firebaseUser && !postId.startsWith('post-')) {
-      try {
-        await updateTuitionPostStatusInFirestore(postId, status);
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to update post status.'), 'error');
-        return;
-      }
+    try {
+      await updateTuitionPostStatusInFirestore(postId, status);
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to update post status.'), 'error');
+      return;
     }
     showToast(`Tuition post marked as ${status.toUpperCase()}`, 'info');
   };
 
   const deleteTuitionPost = async (postId: string) => {
+    if (!firebaseUser) return;
     setTuitionPosts(prev => prev.filter(p => p.id !== postId));
     if (selectedTuition?.id === postId) {
       setSelectedTuition(null);
       if (activeView === 'tuition-detail') setActiveView('tuitions');
     }
 
-    if (firebaseUser && !postId.startsWith('post-')) {
-      try {
-        await deleteTuitionPostInFirestore(postId);
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to delete tuition post.'), 'error');
-        return;
-      }
+    try {
+      await deleteTuitionPostInFirestore(postId);
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to delete tuition post.'), 'error');
+      return;
     }
     showToast('Tuition post deleted.', 'info');
   };
@@ -1136,17 +1236,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 
   const submitApplication = async (appData: Omit<Application, 'id' | 'appliedAt' | 'status'>) => {
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to apply for tuition posts.', 'info');
+      return;
+    }
     const targetPost = tuitionPosts.find(p => p.id === appData.tuitionPostId);
     if (targetPost && targetPost.status !== 'open') {
       showToast('This tuition post is no longer open for applications.', 'error');
       return;
     }
-    if (targetPost && targetPost.learnerId === currentUser.id) {
+    if (targetPost && targetPost.learnerId === firebaseUser.uid) {
       showToast('You cannot apply to your own tuition post.', 'error');
-      return;
-    }
-    if (firebaseUser && (targetPost?.isSample || appData.tuitionPostId.startsWith('post-'))) {
-      showToast('This is a sample tuition listing. Please apply to a live tuition post.', 'info');
       return;
     }
     if (hasAppliedToPost(appData.tuitionPostId)) {
@@ -1159,8 +1261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...appData,
       id: deterministicId,
       appliedAt: new Date().toISOString().split('T')[0],
-      status: 'pending',
-      isSample: !firebaseUser
+      status: 'pending'
     };
 
     setApplications(prev => [newApp, ...prev]);
@@ -1169,48 +1270,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
     setIsApplyModalOpen(false);
 
-    if (firebaseUser) {
-      try {
-        const firestoreId = await submitApplicationInFirestore(appData);
-        if (firestoreId) {
-          trackAnalyticsEvent('tuition_application', {
-            district: targetPost?.district,
-            medium: targetPost?.medium
-          });
-          showToast('Proposal submitted and saved!', 'success');
-        }
-      } catch (err: any) {
-        setApplications(prev => prev.filter(a => a.id !== deterministicId));
-        setTuitionPosts(prev =>
-          prev.map(p =>
-            p.id === appData.tuitionPostId
-              ? { ...p, totalApplicants: Math.max(0, p.totalApplicants - 1) }
-              : p
-          )
-        );
-        showToast(extractFriendlyErrorMessage(err, 'Failed to submit application.'), 'error');
-        throw err;
+    try {
+      const firestoreId = await submitApplicationInFirestore(appData);
+      if (firestoreId) {
+        trackAnalyticsEvent('tuition_application', {
+          district: targetPost?.district,
+          medium: targetPost?.medium
+        });
+        showToast('Proposal submitted and saved!', 'success');
       }
-    } else {
-      showToast('Proposal submitted in preview mode!', 'success');
+    } catch (err: any) {
+      setApplications(prev => prev.filter(a => a.id !== deterministicId));
+      setTuitionPosts(prev =>
+        prev.map(p =>
+          p.id === appData.tuitionPostId
+            ? { ...p, totalApplicants: Math.max(0, p.totalApplicants - 1) }
+            : p
+        )
+      );
+      showToast(extractFriendlyErrorMessage(err, 'Failed to submit application.'), 'error');
+      throw err;
     }
   };
 
   const withdrawApplication = async (appId: string) => {
+    if (!firebaseUser) return;
     const target = applications.find(a => a.id === appId);
     setApplications(prev => prev.map(a => (a.id === appId ? { ...a, status: 'withdrawn' } : a)));
 
-    if (firebaseUser && !target?.isSample) {
-      try {
-        await updateApplicationStatusInFirestore(appId, 'withdrawn', 'Withdrawn by tutor', {
-          learnerId: target?.learnerId,
-          tutorName: target?.tutorName,
-          tuitionTitle: target?.tuitionTitle
-        });
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to withdraw application.'), 'error');
-        return;
-      }
+    try {
+      await updateApplicationStatusInFirestore(appId, 'withdrawn', 'Withdrawn by tutor', {
+        learnerId: target?.learnerId,
+        tutorName: target?.tutorName,
+        tuitionTitle: target?.tuitionTitle
+      });
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to withdraw application.'), 'error');
+      return;
     }
     showToast('Application withdrawn.', 'info');
   };
@@ -1221,6 +1317,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     note?: string,
     closePostOnAccept = true
   ) => {
+    if (!firebaseUser) return;
     const target = applications.find(a => a.id === appId);
     setApplications(prev =>
       prev.map(app => {
@@ -1240,20 +1337,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await updateTuitionPostStatus(target.tuitionPostId, 'assigned');
     }
 
-    if (firebaseUser && !target?.isSample) {
-      try {
-        await updateApplicationStatusInFirestore(appId, status, note, {
-          tutorId: target?.tutorId,
-          learnerId: target?.learnerId,
-          tutorName: target?.tutorName,
-          tuitionTitle: target?.tuitionTitle,
-          tuitionPostId: target?.tuitionPostId,
-          guardianWhatsApp: currentUser.whatsappNumber || currentUser.phone
-        });
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to update application status.'), 'error');
-        return;
-      }
+    try {
+      await updateApplicationStatusInFirestore(appId, status, note, {
+        tutorId: target?.tutorId,
+        learnerId: target?.learnerId,
+        tutorName: target?.tutorName,
+        tuitionTitle: target?.tuitionTitle,
+        tuitionPostId: target?.tuitionPostId,
+        guardianWhatsApp: currentUser.whatsappNumber || currentUser.phone
+      });
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to update application status.'), 'error');
+      return;
     }
     showToast(`Application marked as ${status.toUpperCase()}`, 'success');
   };
@@ -1271,11 +1366,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     tuitionPostId?: string,
     preferredSchedule?: string
   ) => {
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to send an invitation.', 'info');
+      return;
+    }
     const linkedPost = tuitionPostId ? tuitionPosts.find(p => p.id === tuitionPostId) : undefined;
     let resolvedTutorWa = tutor.whatsappNumber || tutor.phone || '';
     let resolvedTutorFb = tutor.facebookUrl || '';
 
-    if (firebaseUser && !tutor.isSample && (!resolvedTutorWa || !resolvedTutorFb)) {
+    if (!resolvedTutorWa || !resolvedTutorFb) {
       try {
         const priv = await fetchTutorContactDetails(tutor.uid || tutor.id);
         if (priv) {
@@ -1287,10 +1388,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
-    const tempId = `inv-${Date.now()}`;
+    const tempId = `pending_inv_${Date.now()}`;
     const newInv: Invitation = {
       id: tempId,
-      learnerId: currentUser.id,
+      learnerId: firebaseUser.uid,
       learnerName: currentUser.name,
       learnerWhatsApp: currentUser.whatsappNumber || currentUser.phone,
       tutorId: tutor.uid || tutor.id,
@@ -1305,43 +1406,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       preferredSchedule,
       message,
       status: 'pending',
-      sentAt: new Date().toISOString().split('T')[0],
-      isSample: !firebaseUser
+      sentAt: new Date().toISOString().split('T')[0]
     };
 
     setInvitations(prev => [newInv, ...prev]);
 
-    if (firebaseUser) {
-      try {
-        const firestoreId = await sendInvitationInFirestore({
-          learnerId: firebaseUser.uid,
-          learnerName: currentUser.name,
-          learnerWhatsApp: currentUser.whatsappNumber || currentUser.phone,
-          tutorId: tutor.uid || tutor.id,
-          tutorName: tutor.name,
-          tutorWhatsApp: resolvedTutorWa,
-          tutorFacebookUrl: resolvedTutorFb,
-          tuitionPostId: linkedPost?.id,
-          tuitionTitle: linkedPost?.title,
-          classGrade,
-          subjects,
-          offerSalaryBDT: offerBDT,
-          preferredSchedule,
-          message
-        });
-        if (firestoreId) {
-          setInvitations(prev => prev.map(i => (i.id === tempId ? { ...i, id: firestoreId } : i)));
-        }
-      } catch (err: any) {
-        setInvitations(prev => prev.filter(i => i.id !== tempId));
-        showToast(extractFriendlyErrorMessage(err, 'Failed to send invitation.'), 'error');
-        return;
+    try {
+      const firestoreId = await sendInvitationInFirestore({
+        learnerId: firebaseUser.uid,
+        learnerName: currentUser.name,
+        learnerWhatsApp: currentUser.whatsappNumber || currentUser.phone,
+        tutorId: tutor.uid || tutor.id,
+        tutorName: tutor.name,
+        tutorWhatsApp: resolvedTutorWa,
+        tutorFacebookUrl: resolvedTutorFb,
+        tuitionPostId: linkedPost?.id,
+        tuitionTitle: linkedPost?.title,
+        classGrade,
+        subjects,
+        offerSalaryBDT: offerBDT,
+        preferredSchedule,
+        message
+      });
+      if (firestoreId) {
+        setInvitations(prev => prev.map(i => (i.id === tempId ? { ...i, id: firestoreId } : i)));
       }
+    } catch (err: any) {
+      setInvitations(prev => prev.filter(i => i.id !== tempId));
+      showToast(extractFriendlyErrorMessage(err, 'Failed to send invitation.'), 'error');
+      return;
     }
     showToast(`Tuition invitation sent to ${tutor.name}!`, 'success');
   };
 
   const respondToInvitation = async (invitationId: string, status: 'accepted' | 'declined') => {
+    if (!firebaseUser) return;
     const target = invitations.find(i => i.id === invitationId);
     const tutorCanShareWa =
       myTutorProfile?.whatsappConsent !== false && myTutorProfile?.contactVisibility !== 'hidden';
@@ -1362,19 +1461,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       )
     );
 
-    if (firebaseUser && !target?.isSample) {
-      try {
-        await respondToInvitationInFirestore(invitationId, status, {
-          learnerId: target?.learnerId,
-          tutorName: target?.tutorName,
-          classGrade: target?.classGrade,
-          tutorWhatsApp: tutorWa,
-          tutorFacebookUrl: tutorFb
-        });
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to update invitation response.'), 'error');
-        return;
-      }
+    try {
+      await respondToInvitationInFirestore(invitationId, status, {
+        learnerId: target?.learnerId,
+        tutorName: target?.tutorName,
+        classGrade: target?.classGrade,
+        tutorWhatsApp: tutorWa,
+        tutorFacebookUrl: tutorFb
+      });
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to update invitation response.'), 'error');
+      return;
     }
     showToast(
       status === 'accepted'
@@ -1457,9 +1554,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // -------------------------------------------------------------
 
   const updateTutorProfile = async (tutorId: string, updated: Partial<TutorProfile>) => {
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to save your tutor profile.', 'info');
+      return;
+    }
+
     const existing = tutors.find(t => t.id === tutorId || t.uid === tutorId);
+    const baseProfile = existing || createBlankTutorProfile(tutorId, currentUser);
     const merged: TutorProfile = {
-      ...(existing || INITIAL_TUTORS[0]),
+      ...baseProfile,
       ...updated,
       id: tutorId,
       uid: updated.uid || existing?.uid || tutorId
@@ -1506,40 +1611,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
     }
 
-    if (firebaseUser) {
-      try {
-        await saveTutorProfileInFirestore(firebaseUser.uid, merged);
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to save tutor profile to Firestore.'), 'error');
-        throw err;
-      }
+    try {
+      await saveTutorProfileInFirestore(firebaseUser.uid, merged);
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to save tutor profile to Firestore.'), 'error');
+      throw err;
     }
     showToast(merged.isPublished ? 'Tutor profile published & saved!' : 'Teaching profile saved!', 'success');
   };
 
-  const persistSampleTutorReviews = (
-    tutorId: string,
-    reviews: Review[],
-    rating: number,
-    reviewCount: number
-  ) => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = window.localStorage.getItem('felow_sample_tutor_reviews_v1');
-      const existingMap = raw ? JSON.parse(raw) : {};
-      existingMap[tutorId] = { reviews, rating, reviewCount };
-      window.localStorage.setItem('felow_sample_tutor_reviews_v1', JSON.stringify(existingMap));
-    } catch {
-      // Ignore storage quota errors
-    }
-  };
-
   const loadTutorReviews = useCallback(async (tutorId: string): Promise<Review[]> => {
     if (!tutorId) return [];
-    const target = tutors.find(t => t.id === tutorId || t.uid === tutorId);
-    if (target?.isSample) {
-      return target.reviews || [];
-    }
     const remoteReviews = await fetchTutorReviewsFromFirestore(tutorId);
     reviewsCacheRef.current[tutorId] = remoteReviews;
     setTutors(prev =>
@@ -1549,16 +1631,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev && (prev.id === tutorId || prev.uid === tutorId) ? { ...prev, reviews: remoteReviews } : prev
     );
     return remoteReviews;
-  }, [tutors]);
+  }, []);
 
   const submitTutorReview = async (
     tutorId: string,
     input: { rating: number; comment: string; classGrade: string; subjects: string[]; learnerRole: string }
   ) => {
-    if (!isAuthenticated) {
+    if (!firebaseUser) {
       setAuthModalMode('login');
       setIsAuthModalOpen(true);
-      showToast('Please sign in to submit a star rating and review.', 'info');
+      showToast('Please sign in with Google to submit a star rating and review.', 'info');
       return;
     }
 
@@ -1567,8 +1649,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (selectedTutor && (selectedTutor.id === tutorId || selectedTutor.uid === tutorId) ? selectedTutor : null);
 
     if (
-      currentUser.id === tutorId ||
-      (targetTutor?.uid && currentUser.id === targetTutor.uid)
+      firebaseUser.uid === tutorId ||
+      (targetTutor?.uid && firebaseUser.uid === targetTutor.uid)
     ) {
       showToast('You cannot review your own tutor profile.', 'error');
       return;
@@ -1586,164 +1668,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const existingReviews = targetTutor?.reviews || [];
-    const wasEditing = existingReviews.some(r => r.learnerId === currentUser.id || r.id === currentUser.id);
+    const wasEditing = existingReviews.some(r => r.learnerId === firebaseUser.uid || r.id === firebaseUser.uid);
 
-    if (firebaseUser && !targetTutor?.isSample) {
-      try {
-        const res = await submitTutorReviewInFirestore(tutorId, {
-          learnerId: firebaseUser.uid,
-          learnerName: currentUser.name,
-          learnerRole: input.learnerRole || (currentUser.learnerSubtype === 'student' ? 'Student' : 'Guardian'),
-          learnerAvatar: currentUser.avatar,
-          rating: cleanRating,
-          comment: cleanComment,
-          classGrade: input.classGrade,
-          subjects: input.subjects
-        });
-        reviewsCacheRef.current[tutorId] = res.reviews;
-        setTutors(prev =>
-          prev.map(t =>
-            t.id === tutorId || t.uid === tutorId
-              ? { ...t, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
-              : t
-          )
-        );
-        setSelectedTutor(prev =>
-          prev && (prev.id === tutorId || prev.uid === tutorId)
-            ? { ...prev, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
-            : prev
-        );
-        showToast(
-          wasEditing ? 'Your review has been updated!' : 'Thank you! Your review has been published.',
-          'success'
-        );
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Could not submit your review.'), 'error');
-        throw err;
-      }
-      return;
+    try {
+      const res = await submitTutorReviewInFirestore(tutorId, {
+        learnerId: firebaseUser.uid,
+        learnerName: currentUser.name,
+        learnerRole: input.learnerRole || (currentUser.learnerSubtype === 'student' ? 'Student' : 'Guardian'),
+        learnerAvatar: currentUser.avatar,
+        rating: cleanRating,
+        comment: cleanComment,
+        classGrade: input.classGrade,
+        subjects: input.subjects
+      });
+      reviewsCacheRef.current[tutorId] = res.reviews;
+      setTutors(prev =>
+        prev.map(t =>
+          t.id === tutorId || t.uid === tutorId
+            ? { ...t, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
+            : t
+        )
+      );
+      setSelectedTutor(prev =>
+        prev && (prev.id === tutorId || prev.uid === tutorId)
+          ? { ...prev, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
+          : prev
+      );
+      showToast(
+        wasEditing ? 'Your review has been updated!' : 'Thank you! Your review has been published.',
+        'success'
+      );
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Could not submit your review.'), 'error');
+      throw err;
     }
-
-    // Sample / Preview tutor path (local + localStorage persistence)
-    const todayStr = new Date().toISOString().split('T')[0];
-    const nowIso = new Date().toISOString();
-    const prevReview = existingReviews.find(r => r.learnerId === currentUser.id || r.id === currentUser.id);
-    const newReview: Review = {
-      id: currentUser.id,
-      tutorId,
-      learnerId: currentUser.id,
-      learnerName: currentUser.name,
-      learnerRole: input.learnerRole || (currentUser.learnerSubtype === 'student' ? 'Student' : 'Guardian'),
-      learnerAvatar: currentUser.avatar,
-      rating: cleanRating,
-      comment: cleanComment,
-      date: todayStr,
-      subjects: input.subjects,
-      classGrade: input.classGrade,
-      createdAt: prevReview?.createdAt || nowIso,
-      updatedAt: nowIso
-    };
-
-    const nextReviews = [
-      newReview,
-      ...existingReviews.filter(r => r.learnerId !== currentUser.id && r.id !== currentUser.id)
-    ];
-
-    const prevCount = Math.max(targetTutor?.reviewCount || 0, existingReviews.length);
-    const prevAvg = targetTutor?.rating || 0;
-    let nextCount = prevCount;
-    let nextRating = cleanRating;
-
-    if (prevReview) {
-      nextCount = Math.max(1, prevCount);
-      const adjustedSum = prevAvg * prevCount - prevReview.rating + cleanRating;
-      nextRating = Number(Math.max(1, Math.min(5, adjustedSum / nextCount)).toFixed(2));
-    } else {
-      nextCount = prevCount + 1;
-      const adjustedSum = prevAvg * prevCount + cleanRating;
-      nextRating = Number(Math.max(1, Math.min(5, adjustedSum / nextCount)).toFixed(2));
-    }
-
-    persistSampleTutorReviews(tutorId, nextReviews, nextRating, nextCount);
-    setTutors(prev =>
-      prev.map(t =>
-        t.id === tutorId || t.uid === tutorId
-          ? { ...t, reviews: nextReviews, rating: nextRating, reviewCount: nextCount }
-          : t
-      )
-    );
-    setSelectedTutor(prev =>
-      prev && (prev.id === tutorId || prev.uid === tutorId)
-        ? { ...prev, reviews: nextReviews, rating: nextRating, reviewCount: nextCount }
-        : prev
-    );
-    showToast(
-      wasEditing ? 'Your review has been updated!' : 'Thank you! Your review has been published.',
-      'success'
-    );
   };
 
   const deleteTutorReview = async (tutorId: string) => {
-    if (!isAuthenticated) return;
-    const targetTutor =
-      tutors.find(t => t.id === tutorId || t.uid === tutorId) ||
-      (selectedTutor && (selectedTutor.id === tutorId || selectedTutor.uid === tutorId) ? selectedTutor : null);
-    if (!targetTutor) return;
-
-    if (firebaseUser && !targetTutor.isSample) {
-      try {
-        const res = await deleteTutorReviewInFirestore(tutorId, firebaseUser.uid);
-        reviewsCacheRef.current[tutorId] = res.reviews;
-        setTutors(prev =>
-          prev.map(t =>
-            t.id === tutorId || t.uid === tutorId
-              ? { ...t, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
-              : t
-          )
-        );
-        setSelectedTutor(prev =>
-          prev && (prev.id === tutorId || prev.uid === tutorId)
-            ? { ...prev, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
-            : prev
-        );
-        showToast('Your review was removed.', 'info');
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Could not remove review.'), 'error');
-        throw err;
-      }
-      return;
+    if (!firebaseUser) return;
+    try {
+      const res = await deleteTutorReviewInFirestore(tutorId, firebaseUser.uid);
+      reviewsCacheRef.current[tutorId] = res.reviews;
+      setTutors(prev =>
+        prev.map(t =>
+          t.id === tutorId || t.uid === tutorId
+            ? { ...t, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
+            : t
+        )
+      );
+      setSelectedTutor(prev =>
+        prev && (prev.id === tutorId || prev.uid === tutorId)
+          ? { ...prev, reviews: res.reviews, rating: res.rating, reviewCount: res.reviewCount }
+          : prev
+      );
+      showToast('Your review was removed.', 'info');
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Could not remove review.'), 'error');
+      throw err;
     }
-
-    const existingReviews = targetTutor.reviews || [];
-    const removed = existingReviews.find(r => r.learnerId === currentUser.id || r.id === currentUser.id);
-    if (!removed) return;
-    const nextReviews = existingReviews.filter(r => r.learnerId !== currentUser.id && r.id !== currentUser.id);
-    const prevCount = Math.max(targetTutor.reviewCount || 0, existingReviews.length);
-    const nextCount = Math.max(0, prevCount - 1);
-    const nextRating =
-      nextCount === 0
-        ? 0
-        : Number(
-            Math.max(1, Math.min(5, (targetTutor.rating * prevCount - removed.rating) / nextCount)).toFixed(2)
-          );
-    persistSampleTutorReviews(tutorId, nextReviews, nextRating, nextCount);
-    setTutors(prev =>
-      prev.map(t =>
-        t.id === tutorId || t.uid === tutorId
-          ? { ...t, reviews: nextReviews, rating: nextRating, reviewCount: nextCount }
-          : t
-      )
-    );
-    setSelectedTutor(prev =>
-      prev && (prev.id === tutorId || prev.uid === tutorId)
-        ? { ...prev, reviews: nextReviews, rating: nextRating, reviewCount: nextCount }
-        : prev
-    );
-    showToast('Your review was removed.', 'info');
   };
 
   const saveLearnerProfile = async (profile: Partial<LearnerProfile>) => {
-    const uid = firebaseUser?.uid || currentUser.id;
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to save account settings.', 'info');
+      return;
+    }
+    const uid = firebaseUser.uid;
     const division = profile.division || getDivisionByDistrict(profile.district || currentUser.district);
     const nextProfile: LearnerProfile = {
       uid,
@@ -1774,13 +1766,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       phoneVisibility: nextProfile.phoneVisibility
     }));
 
-    if (firebaseUser) {
-      try {
-        await saveLearnerProfileInFirestore(firebaseUser.uid, nextProfile);
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to save learner profile.'), 'error');
-        throw err;
-      }
+    try {
+      await saveLearnerProfileInFirestore(firebaseUser.uid, nextProfile);
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to save learner profile.'), 'error');
+      throw err;
     }
     showToast('Account & contact settings saved!', 'success');
   };
@@ -1790,24 +1780,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // -------------------------------------------------------------
 
   const markNotificationRead = async (id: string) => {
+    if (!firebaseUser) return;
     setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
-    if (firebaseUser && !id.startsWith('notif-')) {
-      try {
-        await markNotificationAsReadInFirestore(id);
-      } catch (e) {
-        console.warn('Notification read sync skipped:', e);
-      }
+    try {
+      await markNotificationAsReadInFirestore(id);
+    } catch (e) {
+      console.warn('Notification read sync skipped:', e);
     }
   };
 
   const markAllNotificationsRead = async () => {
+    if (!firebaseUser) return;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    if (firebaseUser) {
-      try {
-        await markAllNotificationsAsReadInFirestore(firebaseUser.uid);
-      } catch (e) {
-        console.warn('All notifications read sync skipped:', e);
-      }
+    try {
+      await markAllNotificationsAsReadInFirestore(firebaseUser.uid);
+    } catch (e) {
+      console.warn('All notifications read sync skipped:', e);
     }
   };
 
@@ -1831,36 +1819,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const submitReport = async (report: Omit<ReportItem, 'id' | 'submittedAt' | 'status'>) => {
-    const newReport: ReportItem = {
-      ...report,
-      id: `rep-${Date.now()}`,
-      status: 'pending',
-      submittedAt: new Date().toISOString().split('T')[0]
-    };
-    setReports(prev => [newReport, ...prev]);
-    if (firebaseUser) {
-      try {
-        await submitReportInFirestore({ ...report, reportedById: firebaseUser.uid });
-      } catch (e) {
-        console.warn('submitReportInFirestore warning:', e);
-      }
+    if (!firebaseUser) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+      showToast('Please sign in with Google to submit a safety report.', 'info');
+      return;
     }
-    showToast('Report submitted to FeLoW WebStaR safety team.', 'success');
+    try {
+      const id = await submitReportInFirestore({ ...report, reportedById: firebaseUser.uid });
+      const newReport: ReportItem = {
+        ...report,
+        id,
+        reportedById: firebaseUser.uid,
+        status: 'pending',
+        submittedAt: new Date().toISOString().split('T')[0]
+      };
+      setReports(prev => [newReport, ...prev]);
+      showToast('Report submitted to FeLoW WebStaR safety team.', 'success');
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Could not submit report.'), 'error');
+    }
   };
 
   const resolveReport = async (id: string) => {
+    if (!firebaseUser) return;
     setReports(prev => prev.map(r => (r.id === id ? { ...r, status: 'resolved' } : r)));
-    showToast('Report marked as resolved by administrator.', 'success');
-    if (firebaseUser && !id.startsWith('rep-')) {
-      try {
-        await resolveReportInFirestore(id);
-      } catch (e) {
-        console.warn('Resolve report sync skipped:', e);
-      }
+    try {
+      await resolveReportInFirestore(id);
+      showToast('Report marked as resolved by administrator.', 'success');
+    } catch (e) {
+      console.warn('Resolve report sync skipped:', e);
     }
   };
 
   const approveVerification = async (queueId: string) => {
+    if (!firebaseUser) return;
     const targetItem = verificationQueue.find(item => item.id === queueId);
     setVerificationQueue(prev => prev.map(item => (item.id === queueId ? { ...item, status: 'approved' } : item)));
     if (targetItem) {
@@ -1889,18 +1882,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         )
       );
     }
-    if (firebaseUser && !queueId.startsWith('ver-')) {
-      try {
-        await updateVerificationInFirestore(queueId, 'approved');
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to approve verification.'), 'error');
-        return;
-      }
+    try {
+      await updateVerificationInFirestore(queueId, 'approved');
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to approve verification.'), 'error');
+      return;
     }
     showToast('Tutor document approved! Verification badge issued to profile.', 'success');
   };
 
   const rejectVerification = async (queueId: string, reason: string) => {
+    if (!firebaseUser) return;
     const targetItem = verificationQueue.find(item => item.id === queueId);
     setVerificationQueue(prev =>
       prev.map(item => (item.id === queueId ? { ...item, status: 'rejected', rejectionReason: reason } : item))
@@ -1923,13 +1915,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         )
       );
     }
-    if (firebaseUser && !queueId.startsWith('ver-')) {
-      try {
-        await updateVerificationInFirestore(queueId, 'rejected', reason);
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Failed to reject verification.'), 'error');
-        return;
-      }
+    try {
+      await updateVerificationInFirestore(queueId, 'rejected', reason);
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Failed to reject verification.'), 'error');
+      return;
     }
     showToast('Document rejected and feedback notification sent to tutor.', 'info');
   };
@@ -1940,48 +1930,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     docName: string,
     docUrl?: string
   ) => {
-    const newItem: VerificationQueueItem = {
-      id: `ver-${Date.now()}`,
-      tutorId,
-      tutorName: currentUser.name,
-      university: myTutorProfile?.university || currentUser.university || 'Submitted Institution',
-      verificationType: type,
-      documentName: docName,
-      documentUrl: docUrl,
-      submittedAt: new Date().toISOString().split('T')[0],
-      status: 'pending'
-    };
-    setVerificationQueue(prev => [newItem, ...prev]);
-    setTutors(prev =>
-      prev.map(t =>
-        t.id === tutorId || t.uid === tutorId
-          ? {
-              ...t,
-              verification: {
-                ...t.verification,
-                [type]: { ...t.verification[type], status: 'pending' }
+    if (!firebaseUser) return;
+    try {
+      const firestoreId = await submitVerificationInFirestore({
+        tutorId: firebaseUser.uid,
+        tutorName: currentUser.name,
+        university: myTutorProfile?.university || currentUser.university || 'Submitted Institution',
+        verificationType: type,
+        documentName: docName,
+        documentUrl: docUrl
+      });
+      const newItem: VerificationQueueItem = {
+        id: firestoreId,
+        tutorId: firebaseUser.uid,
+        tutorName: currentUser.name,
+        university: myTutorProfile?.university || currentUser.university || 'Submitted Institution',
+        verificationType: type,
+        documentName: docName,
+        documentUrl: docUrl,
+        submittedAt: new Date().toISOString().split('T')[0],
+        status: 'pending'
+      };
+      setVerificationQueue(prev => [newItem, ...prev]);
+      setTutors(prev =>
+        prev.map(t =>
+          t.id === tutorId || t.uid === tutorId
+            ? {
+                ...t,
+                verification: {
+                  ...t.verification,
+                  [type]: { ...t.verification[type], status: 'pending' }
+                }
               }
-            }
-          : t
-      )
-    );
-
-    if (firebaseUser) {
-      try {
-        await submitVerificationInFirestore({
-          tutorId: firebaseUser.uid,
-          tutorName: currentUser.name,
-          university: myTutorProfile?.university || currentUser.university || 'Submitted Institution',
-          verificationType: type,
-          documentName: docName,
-          documentUrl: docUrl
-        });
-      } catch (err: any) {
-        showToast(extractFriendlyErrorMessage(err, 'Could not submit verification document.'), 'error');
-        return;
-      }
+            : t
+        )
+      );
+      showToast('Document submitted for admin verification audit.', 'success');
+    } catch (err: any) {
+      showToast(extractFriendlyErrorMessage(err, 'Could not submit verification document.'), 'error');
     }
-    showToast('Document submitted for admin verification audit.', 'success');
   };
 
   // -------------------------------------------------------------
@@ -1998,7 +1985,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         method: 'google',
         role: intendedRole
       });
-      setIsDemoSession(false);
       const [isUserAdmin, remoteAccount, remoteLearner, remoteTutor, remotePrivateContact] = await Promise.all([
         isAdminUserInFirestore(fbUser.uid, fbUser.email, fbUser.emailVerified),
         fetchUserAccountFromFirestore(fbUser.uid),
@@ -2055,17 +2041,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await logout();
       myPrivateContactRef.current = null;
-      setIsDemoSession(false);
       setLearnerProfile(null);
-      setCurrentUser(PRESET_USERS[0]);
+      setCurrentUser(GUEST_USER);
       setCurrentRole('learner');
-      setApplications(INITIAL_APPLICATIONS);
-      setInvitations(INITIAL_INVITATIONS);
-      setNotifications(INITIAL_NOTIFICATIONS);
-      setVerificationQueue(INITIAL_VERIFICATION_QUEUE);
-      setReports(INITIAL_REPORTS);
-      setSavedTutorIds(['tutor-1']);
-      setSavedTuitionIds(['post-1']);
+      setApplications([]);
+      setInvitations([]);
+      setNotifications([]);
+      setVerificationQueue([]);
+      setReports([]);
+      setSavedTutorIds([]);
+      setSavedTuitionIds([]);
       showToast('Signed out of FeLoW WebStaR.', 'info');
       setActiveView('landing');
     } catch (err: any) {
@@ -2081,21 +2066,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       myPrivateContactRef.current = null;
       reviewsCacheRef.current = {};
-      setIsDemoSession(false);
       setLearnerProfile(null);
-      setCurrentUser(PRESET_USERS[0]);
+      setCurrentUser(GUEST_USER);
       setCurrentRole('learner');
       setTutors(prev => prev.filter(t => t.id !== uidToDelete && t.uid !== uidToDelete));
       setTuitionPosts(prev => prev.filter(p => p.learnerId !== uidToDelete));
       setSelectedTutor(prev => (prev && (prev.id === uidToDelete || prev.uid === uidToDelete) ? null : prev));
       setSelectedTuition(prev => (prev && prev.learnerId === uidToDelete ? null : prev));
-      setApplications(INITIAL_APPLICATIONS);
-      setInvitations(INITIAL_INVITATIONS);
-      setNotifications(INITIAL_NOTIFICATIONS);
-      setVerificationQueue(INITIAL_VERIFICATION_QUEUE);
-      setReports(INITIAL_REPORTS);
-      setSavedTutorIds(['tutor-1']);
-      setSavedTuitionIds(['post-1']);
+      setApplications([]);
+      setInvitations([]);
+      setNotifications([]);
+      setVerificationQueue([]);
+      setReports([]);
+      setSavedTutorIds([]);
+      setSavedTuitionIds([]);
       setActiveView('landing');
       showToast('Your account and personal data have been permanently deleted.', 'success');
     } catch (err: any) {
@@ -2124,13 +2108,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const uploadTutorAvatar = async (file: File): Promise<string> => {
     if (!firebaseUser) {
-      // Preview fallback if unauthenticated demo session
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result || ''));
-        reader.onerror = () => reject(new Error('Failed to read image file.'));
-        reader.readAsDataURL(file);
-      });
+      throw new Error('Please sign in with Google to upload a profile photo.');
     }
     try {
       showToast('Uploading profile photo...', 'info');
@@ -2154,9 +2132,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         learnerProfile,
         switchUserRole,
         activateDualRole,
-        switchUserPersona,
-        presetUsers: PRESET_USERS,
-        allUsers,
         activeView,
         setActiveView,
         directoryTab,
@@ -2233,7 +2208,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isFirebaseConnected,
         isAuthReady,
         isAuthenticated,
-        isDemoSession,
         firebaseUser,
         needsTutorProfileSetup,
         myTutorProfile,

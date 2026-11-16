@@ -73,7 +73,6 @@ export const TutorFullProfilePage: React.FC = () => {
     if (
       isAuthenticated &&
       canView &&
-      !tutor.isSample &&
       (!tutor.whatsappNumber || !tutor.facebookUrl)
     ) {
       getTutorContactInfo(tutor.uid || tutor.id).then(info => {
@@ -86,7 +85,6 @@ export const TutorFullProfilePage: React.FC = () => {
   }, [
     tutor?.id,
     tutor?.uid,
-    tutor?.isSample,
     tutor?.whatsappNumber,
     tutor?.facebookUrl,
     isAuthenticated,
@@ -163,7 +161,7 @@ export const TutorFullProfilePage: React.FC = () => {
       tutor.whatsappNumber ||
       tutor.phone;
 
-    if (!phone && !tutor.isSample) {
+    if (!phone) {
       setOpeningWa(true);
       try {
         const priv = await getTutorContactInfo(tutor.uid || tutor.id);

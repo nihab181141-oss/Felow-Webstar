@@ -60,8 +60,6 @@ export const TutorDashboard: React.FC = () => {
       a =>
         (a.status === 'shortlisted' || a.status === 'invited' || a.status === 'accepted') &&
         !a.guardianWhatsApp &&
-        !a.isSample &&
-        !a.tuitionPostId.startsWith('post-') &&
         !guardianContacts[a.tuitionPostId]
     );
     if (unlockedMissing.length === 0) return;

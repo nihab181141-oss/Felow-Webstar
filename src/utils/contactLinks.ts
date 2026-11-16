@@ -160,6 +160,21 @@ export function sanitizeFacebookUrl(rawUrl?: string): string | null {
   }
 }
 
+export function sanitizeSafeHttpUrl(rawUrl?: string): string | null {
+  if (!rawUrl) return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed || /^(javascript|data|vbscript|file):/i.test(trimmed)) {
+    return null;
+  }
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol !== 'https:') return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function formatBDT(amount?: number): string {
   if (typeof amount !== 'number' || Number.isNaN(amount)) return '৳0';
   return `৳${amount.toLocaleString('en-US')}`;

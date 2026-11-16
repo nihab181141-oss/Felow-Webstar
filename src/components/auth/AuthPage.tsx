@@ -10,14 +10,13 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { BrandWordmark } from '../shared/BrandWordmark';
 
 type RoleChoice = 'learner' | 'tutor';
 
 export const AuthPage: React.FC = () => {
   const {
     loginWithGoogleUser,
-    switchUserPersona,
-    setActiveView,
     setIsAuthModalOpen,
     authModalMode,
     setAuthModalMode,
@@ -258,7 +257,7 @@ export const AuthPage: React.FC = () => {
                   language === 'bn' ? (
                     <>নতুন ব্যবহারকারী? <span className="font-bold underline">অ্যাকাউন্ট খুলুন</span></>
                   ) : (
-                    <>New to FeLoW WebStaR? <span className="font-bold underline">Create an account</span></>
+                    <>New to <BrandWordmark invert />? <span className="font-bold underline">Create an account</span></>
                   )
                 ) : (
                   language === 'bn' ? (
@@ -267,19 +266,6 @@ export const AuthPage: React.FC = () => {
                     <>Already have an account? <span className="font-bold underline">Sign in</span></>
                   )
                 )}
-              </button>
-
-              <span className="text-white/60" aria-hidden="true">·</span>
-
-              <button
-                type="button"
-                onClick={() => {
-                  switchUserPersona(selectedRole === 'tutor' ? 'user-tutor-1' : 'user-guardian-1');
-                  setActiveView('dashboard');
-                }}
-                className="font-bold hover:underline cursor-pointer"
-              >
-                {language === 'bn' ? 'ডেমো অ্যাকাউন্ট দেখুন' : 'Preview Demo Account'}
               </button>
             </div>
 
@@ -312,7 +298,7 @@ export const AuthPage: React.FC = () => {
               <div className="flex items-center gap-2.5">
                 <ShieldCheck className="w-5 h-5 text-[#174E3E] shrink-0" />
                 <h2 className="font-display text-base font-bold">
-                  {language === 'bn' ? 'শর্তাবলী ও প্রাইভেসি নীতি' : 'FeLoW WebStaR Terms & Privacy'}
+                  {language === 'bn' ? 'শর্তাবলী ও প্রাইভেসি নীতি' : <><BrandWordmark /> Terms &amp; Privacy</>}
                 </h2>
               </div>
               <button

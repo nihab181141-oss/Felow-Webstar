@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { BrandWordmark } from '../shared/BrandWordmark';
 
 export const NotFoundPage: React.FC = () => {
   const { setActiveView, setDirectoryTab } = useApp();
@@ -11,7 +12,7 @@ export const NotFoundPage: React.FC = () => {
         <div className="text-xs font-mono font-bold uppercase tracking-wider text-[#C94A35]">404</div>
         <h1 className="font-display text-2xl font-extrabold text-[#252525]">Page not found</h1>
         <p className="text-sm text-[#858585] leading-relaxed">
-          The page you requested does not exist on FeLoW WebStaR. Browse verified tutors or open tuition posts instead.
+          The page you requested does not exist on <BrandWordmark />. Browse verified tutors or open tuition posts instead.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
           <a

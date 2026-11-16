@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { BrandWordmark } from './shared/BrandWordmark';
 
 type DockTabId = 'tutors' | 'tuitions' | 'post' | 'account';
 
@@ -189,7 +190,7 @@ export const MobileBottomNav: React.FC = () => {
             ) : (
               <div className="ivory-card p-4 space-y-3 bg-[#FFF3EF]/50">
                 <div className="text-sm font-bold text-[#252525]">
-                  {isBn ? 'FeLoW WebStaR-এ যোগ দিন' : 'Sign in with Google'}
+                  {isBn ? <><BrandWordmark />-এ যোগ দিন</> : 'Sign in with Google'}
                 </div>
                 <p className="text-xs text-[#858585] leading-relaxed">
                   {isBn

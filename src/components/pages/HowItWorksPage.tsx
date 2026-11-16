@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, Search, FileText, UserCheck, MessageCircle, HelpCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { RouteView } from '../../utils/routing';
+import { BrandWordmark } from '../shared/BrandWordmark';
 
 export const HowItWorksPage: React.FC = () => {
   const { setActiveView, setDirectoryTab, language } = useApp();
@@ -62,33 +63,39 @@ export const HowItWorksPage: React.FC = () => {
     }
   ];
 
-  const commonQuestions = isBn
+  const commonQuestions: Array<{ id: string; q: React.ReactNode; a: React.ReactNode }> = isBn
     ? [
         {
-          q: 'FeLoW WebStaR-এ কি ইন-অ্যাপ মেসেজিং আছে?',
+          id: 'bn-chat',
+          q: <><BrandWordmark />-এ কি ইন-অ্যাপ মেসেজিং আছে?</>,
           a: 'না। শিক্ষার্থী, অভিভাবক ও টিউটররা দ্রুত এবং সরাসরি যোগাযোগের জন্য WhatsApp ব্যবহার করেন।'
         },
         {
+          id: 'bn-city',
           q: 'ঢাকা বা রাজশাহীর মতো শহরে টিউটর খুঁজে পাব কীভাবে?',
           a: 'টিউটর ডিরেক্টরি থেকে জেলা (যেমন Dhaka বা Rajshahi) এবং পছন্দের এলাকা ও বিষয় বেছে নিয়ে উপযুক্ত টিউটরের সাথে যোগাযোগ করুন বা টিউশন পোস্ট করুন।'
         },
         {
+          id: 'bn-start',
           q: 'টিউটর হতে চাইলে কীভাবে শুরু করব?',
           a: 'Google দিয়ে সাইন ইন করে আপনার বিশ্ববিদ্যালয়, বিভাগ ও পড়ানোর তথ্য দিয়ে টিউটর পেজ প্রকাশ করুন এবং খোলা টিউশনে আবেদন শুরু করুন।'
         }
       ]
     : [
         {
-          q: 'How can I find a tutor in Bangladesh on FeLoW WebStaR?',
+          id: 'en-find',
+          q: <>How can I find a tutor in Bangladesh on <BrandWordmark />?</>,
           a: 'Open the Tutor Directory, filter by your district, curriculum medium, and subject, inspect each tutor’s academic profile, and either send an invite or connect directly on WhatsApp.'
         },
         {
+          id: 'en-city',
           q: 'How do I find a home tutor in Dhaka or Rajshahi?',
           a: 'Select Dhaka, Rajshahi, or any supported district in the directory filter to view available tutors and open tuition posts in areas such as Dhanmondi, Uttara, Mirpur, Shaheb Bazar, or Uposhohor.'
         },
         {
-          q: 'Does FeLoW WebStaR have an internal chat system?',
-          a: 'No. FeLoW WebStaR uses direct WhatsApp communication after consent or application acceptance so parents and tutors can coordinate schedules faster.'
+          id: 'en-chat',
+          q: <>Does <BrandWordmark /> have an internal chat system?</>,
+          a: <>No. <BrandWordmark /> uses direct WhatsApp communication after consent or application acceptance so parents and tutors can coordinate schedules faster.</>
         }
       ];
 
@@ -106,7 +113,7 @@ export const HowItWorksPage: React.FC = () => {
         <article className="ivory-card p-6 sm:p-8 space-y-8">
           <header className="space-y-2 border-b border-[#F1E1DC] pb-5">
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[#252525] leading-tight">
-              {isBn ? 'FeLoW WebStaR কিভাবে কাজ করে' : 'How FeLoW WebStaR Works'}
+              {isBn ? <><BrandWordmark /> কিভাবে কাজ করে</> : <>How <BrandWordmark /> Works</>}
             </h1>
             <p className="text-sm sm:text-base text-[#555555] leading-relaxed">
               {isBn
@@ -160,7 +167,7 @@ export const HowItWorksPage: React.FC = () => {
             </div>
             <div className="space-y-4">
               {commonQuestions.map(item => (
-                <div key={item.q} className="border-b border-[#F1E1DC]/70 pb-4 last:border-none last:pb-0 space-y-1.5">
+                <div key={item.id} className="border-b border-[#F1E1DC]/70 pb-4 last:border-none last:pb-0 space-y-1.5">
                   <h3 className="font-display text-sm sm:text-base font-bold text-[#252525]">{item.q}</h3>
                   <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">{item.a}</p>
                 </div>
@@ -193,7 +200,7 @@ export const HowItWorksPage: React.FC = () => {
               {isBn ? 'টিউটর নিবন্ধন তথ্য →' : 'Tutor Registration Guide →'}
             </a>
             <a href="/about" onClick={(e) => navigate(e, 'about')} className="hover:underline">
-              {isBn ? 'আমাদের সম্পর্কে →' : 'About FeLoW WebStaR →'}
+              {isBn ? 'আমাদের সম্পর্কে →' : <>About <BrandWordmark /> →</>}
             </a>
           </section>
         </article>

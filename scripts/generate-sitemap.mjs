@@ -91,7 +91,6 @@ async function generateSitemap() {
               query(
                 collection(db, 'tutorProfiles'),
                 where('isPublished', '==', true),
-                where('profileVisibility', '==', 'public'),
                 limit(500)
               )
             ),
@@ -114,7 +113,6 @@ async function generateSitemap() {
         for (const docSnap of tutorSnap.docs) {
           const data = docSnap.data();
           const isPublicReal =
-            data.isSample !== true &&
             data.isPublished !== false &&
             data.profileVisibility !== 'hidden' &&
             typeof data.name === 'string' &&
@@ -145,7 +143,6 @@ async function generateSitemap() {
         for (const docSnap of postSnap.docs) {
           const data = docSnap.data();
           const isOpenReal =
-            data.isSample !== true &&
             data.status === 'open' &&
             typeof data.title === 'string' &&
             data.title.trim().length > 0;

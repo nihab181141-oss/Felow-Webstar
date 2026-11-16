@@ -119,8 +119,7 @@ function buildTuitionSchema(post: TuitionPost, canonicalUrl: string) {
   const validDate =
     post.createdAt || (post.postedDate ? `${post.postedDate}T00:00:00Z` : undefined);
   const canEmitJobPosting = Boolean(
-    !post.isSample &&
-      post.status === 'open' &&
+    post.status === 'open' &&
       post.title &&
       descriptionParts.length > 0 &&
       validDate &&
@@ -223,7 +222,6 @@ export const SeoHead: React.FC = () => {
       if (activeLocation) {
         const liveTutorsInDistrict = tutors.filter(
           t =>
-            !t.isSample &&
             t.isPublished !== false &&
             t.profileVisibility !== 'hidden' &&
             t.district === activeLocation.district
@@ -263,7 +261,7 @@ export const SeoHead: React.FC = () => {
     } else if (activeView === 'tuitions') {
       if (activeLocation) {
         const livePostsInDistrict = tuitionPosts.filter(
-          p => !p.isSample && p.status === 'open' && p.district === activeLocation.district
+          p => p.status === 'open' && p.district === activeLocation.district
         ).length;
         const hasEnoughLiveSupply = livePostsInDistrict >= MIN_LIVE_FOR_LOCATION_INDEX;
         title = `Open Tuition Jobs in ${activeLocation.displayName}, Bangladesh | FeLoW WebStaR`;
@@ -476,7 +474,6 @@ export const SeoHead: React.FC = () => {
         robots = 'noindex, nofollow';
       } else {
         const isPublicReal =
-          !resolvedTutor.isSample &&
           resolvedTutor.isPublished !== false &&
           resolvedTutor.profileVisibility !== 'hidden' &&
           Boolean(resolvedTutor.name?.trim()) &&
@@ -504,7 +501,7 @@ export const SeoHead: React.FC = () => {
         canonical = null;
         robots = 'noindex, nofollow';
       } else {
-        const isPublicOpenReal = !resolvedTuition.isSample && resolvedTuition.status === 'open';
+        const isPublicOpenReal = resolvedTuition.status === 'open';
         title = `${resolvedTuition.title} | FeLoW WebStaR`;
         description = `${resolvedTuition.classGrade} tuition in ${resolvedTuition.area || resolvedTuition.district}, ${resolvedTuition.district} (${resolvedTuition.medium}). Offered salary: BDT ${resolvedTuition.salaryOfferBDT}/month.`;
         const path = buildPathForView('tuition-detail', { tuitionId: resolvedTuition.id });

@@ -49,7 +49,7 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
     }
 
     let phone = tutor.normalizedWhatsappNumber || tutor.whatsappNumber || tutor.phone;
-    if (!phone && !tutor.isSample) {
+    if (!phone) {
       setOpeningWa(true);
       try {
         const priv = await getTutorContactInfo(tutor.uid || tutor.id);

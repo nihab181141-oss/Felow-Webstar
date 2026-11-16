@@ -483,8 +483,12 @@ service cloud.firestore {
 
     // 8. Tutor Profiles (Public Discovery — zero raw PII; WhatsApp/Facebook isolated in /private/contact)
     match /tutorProfiles/{profileId} {
-      allow get: if isValidId(profileId);
-      allow list: if true;
+      allow get: if isValidId(profileId) && (
+        (existing().isPublished == true && existing().profileVisibility != 'hidden') ||
+        isOwner(profileId) ||
+        isAdmin()
+      );
+      allow list: if existing().isPublished == true || (isSignedIn() && existing().uid == request.auth.uid) || isAdmin();
       allow create: if isVerifiedUser() &&
         isValidId(profileId) &&
         isOwner(profileId) &&
@@ -556,7 +560,7 @@ service cloud.firestore {
       allow delete: if isVerifiedUser() && isValidId(profileId) && (isOwner(profileId) || isAdmin());
 
       match /private/contact {
-        allow get: if isValidId(profileId) && isSignedIn() && (
+        allow get: if isValidId(profileId) && isVerifiedUser() && (
           isOwner(profileId) ||
           isAdmin() ||
           (existing().whatsappConsent == true && existing().contactVisibility == 'authenticated')
@@ -609,7 +613,7 @@ service cloud.firestore {
     // 9. Tuition Posts (Public Job Board) & Isolated Guardian Private Contact
     match /tuitionPosts/{postId} {
       allow get: if isValidId(postId);
-      allow list: if true;
+      allow list: if existing().status == 'open' || (isSignedIn() && existing().learnerId == request.auth.uid) || isAdmin();
       allow create: if isVerifiedUser() &&
         isValidId(postId) &&
         isValidTuitionPost(incoming()) &&
@@ -651,13 +655,14 @@ service cloud.firestore {
             incoming().createdAt == existing().createdAt &&
             incoming().updatedAt == request.time &&
             incoming().diff(existing()).affectedKeys().hasOnly(['totalApplicants', 'updatedAt']) &&
+            !exists(/databases/$(database)/documents/applications/$(postId + '_' + request.auth.uid)) &&
             existsAfter(/databases/$(database)/documents/applications/$(postId + '_' + request.auth.uid))
           )
         );
       allow delete: if isVerifiedUser() && isValidId(postId) && (existing().learnerId == request.auth.uid || isAdmin());
 
       match /private/contact {
-        allow get: if isValidId(postId) && isSignedIn() && (
+        allow get: if isValidId(postId) && isVerifiedUser() && (
           existing().learnerId == request.auth.uid ||
           isAdmin() ||
           (

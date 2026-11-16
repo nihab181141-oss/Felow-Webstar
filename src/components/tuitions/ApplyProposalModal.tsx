@@ -15,7 +15,6 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
     tutors,
     myTutorProfile,
     isAuthenticated,
-    isDemoSession,
     setActiveView,
     isApplyModalOpen,
     getUserApplicationForPost,
@@ -54,18 +53,15 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
   const existingApp = getUserApplicationForPost(post.id);
   const isOwnPost = post.learnerId === currentUser.id;
   const isPostClosed = post.status !== 'open';
-  const isLiveSampleBlocked = Boolean(
-    isAuthenticated && !isDemoSession && (post.isSample || post.id.startsWith('post-'))
-  );
   const needsPublishedTutorProfile = Boolean(
-    isAuthenticated && !isDemoSession && (!currentTutor || !currentTutor.isPublished)
+    isAuthenticated && (!currentTutor || !currentTutor.isPublished)
   );
   const canShareContact =
     currentTutor?.whatsappConsent !== false && currentTutor?.contactVisibility !== 'hidden';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (existingApp || isOwnPost || isPostClosed || isLiveSampleBlocked || needsPublishedTutorProfile) {
+    if (existingApp || isOwnPost || isPostClosed || needsPublishedTutorProfile) {
       return;
     }
     const cleanSalary = Math.round(Number(proposedSalary));
@@ -159,13 +155,6 @@ export const ApplyProposalModal: React.FC<ApplyProposalModalProps> = ({ post, on
           ) : isPostClosed ? (
             <div className="p-3 rounded-2xl bg-rose-50 text-rose-700 font-semibold">
               This tuition post is closed.
-            </div>
-          ) : isLiveSampleBlocked ? (
-            <div className="p-3.5 rounded-2xl bg-[#FFF3EF] text-[#252525] border border-[#F5A04E] space-y-2">
-              <div className="font-semibold">This is a sample tuition preview.</div>
-              <p className="text-[#858585]">
-                Please select a live tuition post published by a student or guardian to submit your application.
-              </p>
             </div>
           ) : needsPublishedTutorProfile ? (
             <div className="p-3.5 rounded-2xl bg-[#FFF3EF] text-[#252525] border border-[#F5A04E] space-y-3">

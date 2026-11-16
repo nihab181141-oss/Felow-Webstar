@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, ShieldCheck, GraduationCap, MessageCircle, MapPin } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { RouteView } from '../../utils/routing';
+import { BrandWordmark } from '../shared/BrandWordmark';
 
 export const AboutPage: React.FC = () => {
   const { setActiveView, setDirectoryTab, language } = useApp();
@@ -22,20 +23,32 @@ export const AboutPage: React.FC = () => {
             {isBn ? 'হোম' : 'Home'}
           </a>
           <ChevronRight className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-          <span className="font-semibold text-[#252525]">{isBn ? 'আমাদের সম্পর্কে' : 'About FeLoW WebStaR'}</span>
+          <span className="font-semibold text-[#252525]">{isBn ? 'আমাদের সম্পর্কে' : <>About <BrandWordmark /></>}</span>
         </nav>
 
         <article className="ivory-card p-6 sm:p-8 space-y-6">
           <header className="space-y-2 border-b border-[#F1E1DC] pb-5">
             <h1 className="font-display text-2xl sm:text-3xl font-extrabold text-[#252525] leading-tight">
-              {isBn
-                ? 'FeLoW WebStaR সম্পর্কে — বাংলাদেশের নির্ভরযোগ্য টিউটর ও টিউশন মার্কেটপ্লেস'
-                : 'About FeLoW WebStaR — Bangladesh Tutor Discovery & Tuition Marketplace'}
+              {isBn ? (
+                <>
+                  <BrandWordmark /> সম্পর্কে — বাংলাদেশের নির্ভরযোগ্য টিউটর ও টিউশন মার্কেটপ্লেস
+                </>
+              ) : (
+                <>
+                  About <BrandWordmark /> — Bangladesh Tutor Discovery &amp; Tuition Marketplace
+                </>
+              )}
             </h1>
             <p className="text-sm sm:text-base text-[#555555] leading-relaxed">
-              {isBn
-                ? 'FeLoW WebStaR বাংলাদেশের শিক্ষার্থী, অভিভাবক এবং বিশ্ববিদ্যালয় পর্যায়ের যোগ্য টিউটরদের সরাসরি ও নিরাপদভাবে যুক্ত করার একটি আধুনিক শিক্ষামূলক প্ল্যাটফর্ম।'
-                : 'FeLoW WebStaR connects students and guardians across Bangladesh with university tutors through transparent academic credentials, clear tuition expectations, and privacy-protected WhatsApp communication.'}
+              {isBn ? (
+                <>
+                  <BrandWordmark /> বাংলাদেশের শিক্ষার্থী, অভিভাবক এবং বিশ্ববিদ্যালয় পর্যায়ের যোগ্য টিউটরদের সরাসরি ও নিরাপদভাবে যুক্ত করার একটি আধুনিক শিক্ষামূলক প্ল্যাটফর্ম।
+                </>
+              ) : (
+                <>
+                  <BrandWordmark /> connects students and guardians across Bangladesh with university tutors through transparent academic credentials, clear tuition expectations, and privacy-protected WhatsApp communication.
+                </>
+              )}
             </p>
           </header>
 

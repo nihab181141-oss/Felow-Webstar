@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION, POPULAR_SUBJECTS } from '../../data/bangladeshData';
+import { BrandWordmark } from '../shared/BrandWordmark';
 import {
   TutorProfile,
   TutorPrivateContact,
@@ -474,7 +475,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     activateDualRole,
     submitReport,
     showToast,
-    language
+    language,
+    isMarketplaceLoading
   } = useApp();
 
   const [subjectFilter, setSubjectFilter] = useState('All');
@@ -607,7 +609,6 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     if (
       isAuthenticated &&
       canView &&
-      !activeTutor.isSample &&
       (!activeTutor.whatsappNumber || !activeTutor.facebookUrl)
     ) {
       getTutorContactInfo(activeTutor.uid || activeTutor.id).then(info => {
@@ -620,7 +621,6 @@ export const SplitDirectoryWorkspace: React.FC = () => {
   }, [
     activeTutor?.id,
     activeTutor?.uid,
-    activeTutor?.isSample,
     activeTutor?.whatsappNumber,
     activeTutor?.facebookUrl,
     isAuthenticated,
@@ -637,9 +637,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       !activeTuition ||
       !isAuthenticated ||
       !activeTuitionCanViewWa ||
-      activeTuition.whatsappNumber ||
-      activeTuition.isSample ||
-      activeTuition.id.startsWith('post-')
+      activeTuition.whatsappNumber
     ) {
       return;
     }
@@ -654,7 +652,6 @@ export const SplitDirectoryWorkspace: React.FC = () => {
   }, [
     activeTuition?.id,
     activeTuition?.whatsappNumber,
-    activeTuition?.isSample,
     isAuthenticated,
     activeTuitionCanViewWa,
     getTuitionPrivateContact
@@ -705,7 +702,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       tutor.whatsappNumber ||
       tutor.phone;
 
-    if (!phone && !tutor.isSample) {
+    if (!phone) {
       setOpeningWaId(tutor.id);
       try {
         const priv = await getTutorContactInfo(tutor.uid || tutor.id);
@@ -974,19 +971,61 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
           {/* Detailed Feed Stream */}
           {directoryTab === 'tutors' ? (
-            filteredTutors.length === 0 ? (
-              <div className="ivory-card p-8 text-center space-y-3">
-                <div className="text-base font-bold text-[#252525]">No matching tutors</div>
+            isMarketplaceLoading && tutors.length === 0 ? (
+              <div className="ivory-card p-8 text-center space-y-2">
+                <div className="text-base font-bold text-[#252525]">
+                  {language === 'bn' ? 'টিউটর লোড হচ্ছে...' : 'Loading verified tutors...'}
+                </div>
                 <p className="text-xs sm:text-sm text-[#858585]">
-                  Try another subject, district, or clear your search.
+                  {language === 'bn'
+                    ? 'লাইভ ডাটাবেজ থেকে টিউটর প্রোফাইল আনা হচ্ছে।'
+                    : <>Fetching live tutor profiles from <BrandWordmark />.</>}
                 </p>
-                <button
-                  type="button"
-                  onClick={resetAllFilters}
-                  className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
-                >
-                  Show All Tutors
-                </button>
+              </div>
+            ) : filteredTutors.length === 0 ? (
+              <div className="ivory-card p-8 text-center space-y-3">
+                <div className="text-base font-bold text-[#252525]">
+                  {hasFilters
+                    ? language === 'bn'
+                      ? 'কোনো টিউটর পাওয়া যায়নি'
+                      : 'No matching tutors'
+                    : language === 'bn'
+                      ? 'এখনো কোনো পাবলিশড টিউটর নেই'
+                      : 'No published tutors yet'}
+                </div>
+                <p className="text-xs sm:text-sm text-[#858585]">
+                  {hasFilters
+                    ? language === 'bn'
+                      ? 'অন্য বিষয় বা জেলা দিয়ে খুঁজুন অথবা ফিল্টার রিসেট করুন।'
+                      : 'Try another subject, district, or clear your search.'
+                    : language === 'bn'
+                      ? 'বাংলাদেশের বিশ্ববিদ্যালয় টিউটররা প্রোফাইল পাবলিশ করলে এখানে দেখা যাবে।'
+                      : 'Verified university tutors who publish their profile will appear here.'}
+                </p>
+                {hasFilters ? (
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                  >
+                    {language === 'bn' ? 'সব টিউটর দেখুন' : 'Show All Tutors'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        setAuthModalMode('register');
+                        setIsAuthModalOpen(true);
+                        return;
+                      }
+                      activateDualRole('tutor');
+                    }}
+                    className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                  >
+                    {language === 'bn' ? 'টিউটর পেজ খুলুন' : 'Create Tutor Page'}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="space-y-4">
@@ -1004,8 +1043,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                     }}
                     onOpenFullProfile={(t) => {
                       trackAnalyticsEvent('tutor_profile_view', {
-                        district: t.district,
-                        is_sample: Boolean(t.isSample)
+                        district: t.district
                       });
                       viewTutorDetail(t);
                     }}
@@ -1015,19 +1053,61 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 ))}
               </div>
             )
+          ) : isMarketplaceLoading && tuitionPosts.length === 0 ? (
+            <div className="ivory-card p-8 text-center space-y-2">
+              <div className="text-base font-bold text-[#252525]">
+                {language === 'bn' ? 'টিউশন লোড হচ্ছে...' : 'Loading tuition posts...'}
+              </div>
+              <p className="text-xs sm:text-sm text-[#858585]">
+                {language === 'bn'
+                  ? 'লাইভ টিউশন বিজ্ঞপ্তি আনা হচ্ছে।'
+                  : <>Fetching live tuition requirements from <BrandWordmark />.</>}
+              </p>
+            </div>
           ) : filteredTuitions.length === 0 ? (
             <div className="ivory-card p-8 text-center space-y-3">
-              <div className="text-base font-bold text-[#252525]">No matching tuition posts</div>
+              <div className="text-base font-bold text-[#252525]">
+                {hasFilters
+                  ? language === 'bn'
+                    ? 'কোনো টিউশন পাওয়া যায়নি'
+                    : 'No matching tuition posts'
+                  : language === 'bn'
+                    ? 'এখনো কোনো খোলা টিউশন নেই'
+                    : 'No open tuition posts yet'}
+              </div>
               <p className="text-xs sm:text-sm text-[#858585]">
-                Try clearing filters or post a new tuition request.
+                {hasFilters
+                  ? language === 'bn'
+                    ? 'ফিল্টার রিসেট করুন অথবা নতুন টিউশন পোস্ট করুন।'
+                    : 'Try clearing filters or post a new tuition request.'
+                  : language === 'bn'
+                    ? 'প্রথম স্টুডেন্ট বা অভিভাবক হিসেবে আপনার টিউশন প্রয়োজন পোস্ট করুন।'
+                    : 'Post your tuition requirement so qualified tutors can apply directly.'}
               </p>
-              <button
-                type="button"
-                onClick={resetAllFilters}
-                className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
-              >
-                Show All Tuitions
-              </button>
+              {hasFilters ? (
+                <button
+                  type="button"
+                  onClick={resetAllFilters}
+                  className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                >
+                  {language === 'bn' ? 'সব টিউশন দেখুন' : 'Show All Tuitions'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setAuthModalMode('login');
+                      setIsAuthModalOpen(true);
+                      return;
+                    }
+                    openCreateTuitionModal();
+                  }}
+                  className="h-10 px-6 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs sm:text-sm font-bold cursor-pointer"
+                >
+                  {language === 'bn' ? 'টিউশন পোস্ট করুন' : 'Post Tuition Need'}
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -1043,8 +1123,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   onOpenFullDetail={(p) => {
                     trackAnalyticsEvent('tuition_view', {
                       district: p.district,
-                      medium: p.medium,
-                      is_sample: Boolean(p.isSample)
+                      medium: p.medium
                     });
                     viewTuitionDetail(p);
                   }}
@@ -1096,8 +1175,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                     onClick={(e) => {
                       e.preventDefault();
                       trackAnalyticsEvent('tutor_profile_view', {
-                        district: activeTutor.district,
-                        is_sample: Boolean(activeTutor.isSample)
+                        district: activeTutor.district
                       });
                       viewTutorDetail(activeTutor);
                     }}
@@ -1357,6 +1435,31 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   )}
                 </div>
               </div>
+            ) : tutors.length === 0 && !hasFilters ? (
+              <div className="ivory-card p-10 text-center space-y-3">
+                <div className="text-base font-bold text-[#252525]">
+                  {language === 'bn' ? 'টিউটর ডিরেক্টরি প্রস্তুত' : 'Join as a Verified Tutor'}
+                </div>
+                <p className="text-sm text-[#858585]">
+                  {language === 'bn'
+                    ? 'আপনার বিশ্ববিদ্যালয় ও বিষয় যোগ করে নিজের টিউটর প্রোফাইল পাবলিশ করুন।'
+                    : 'Publish your university background, subjects, and availability to connect directly with guardians.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      setAuthModalMode('register');
+                      setIsAuthModalOpen(true);
+                      return;
+                    }
+                    activateDualRole('tutor');
+                  }}
+                  className="h-10 px-5 rounded-full bg-[#F47C68] hover:bg-[#EB6A55] text-[#252525] text-xs font-bold cursor-pointer"
+                >
+                  {language === 'bn' ? 'টিউটর পেজ খুলুন' : 'Create Tutor Page'}
+                </button>
+              </div>
             ) : (
               <div className="ivory-card p-10 text-center space-y-2">
                 <div className="text-base font-bold text-[#252525]">Select a tutor to inspect</div>
@@ -1398,8 +1501,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                       e.preventDefault();
                       trackAnalyticsEvent('tuition_view', {
                         district: activeTuition.district,
-                        medium: activeTuition.medium,
-                        is_sample: Boolean(activeTuition.isSample)
+                        medium: activeTuition.medium
                       });
                       viewTuitionDetail(activeTuition);
                     }}

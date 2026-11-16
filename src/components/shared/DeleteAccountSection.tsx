@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { BrandWordmark } from './BrandWordmark';
 
 export const DeleteAccountSection: React.FC = () => {
   const { currentRole, deleteMyAccount, language } = useApp();
@@ -57,11 +58,16 @@ export const DeleteAccountSection: React.FC = () => {
             <span>{isBn ? 'অ্যাকাউন্ট ডিলিট করুন' : 'Delete Account'}</span>
           </h2>
           <p className="text-[#858585] leading-relaxed max-w-xl">
-            {isBn
-              ? 'আপনার FeLoW WebStaR অ্যাকাউন্ট, প্রোফাইল, সংরক্ষিত তথ্য এবং সংশ্লিষ্ট সব ডেটা স্থায়ীভাবে মুছে ফেলুন। এই কাজটি আর ফিরিয়ে আনা যাবে না।'
-              : `Permanently delete your FeLoW WebStaR ${
-                  currentRole === 'tutor' ? 'tutor' : 'student / guardian'
-                } account, saved contacts, posts, and profile data. This action cannot be undone.`}
+            {isBn ? (
+              <>
+                আপনার <BrandWordmark /> অ্যাকাউন্ট, প্রোফাইল, সংরক্ষিত তথ্য এবং সংশ্লিষ্ট সব ডেটা স্থায়ীভাবে মুছে ফেলুন। এই কাজটি আর ফিরিয়ে আনা যাবে না।
+              </>
+            ) : (
+              <>
+                Permanently delete your <BrandWordmark />{' '}
+                {currentRole === 'tutor' ? 'tutor' : 'student / guardian'} account, saved contacts, posts, and profile data. This action cannot be undone.
+              </>
+            )}
           </p>
         </div>
 

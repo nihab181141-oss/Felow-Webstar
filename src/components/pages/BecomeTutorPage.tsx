@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight, GraduationCap, ShieldCheck, Briefcase, MessageCircle, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { RouteView } from '../../utils/routing';
+import { BrandWordmark } from '../shared/BrandWordmark';
 
 export const BecomeTutorPage: React.FC = () => {
   const { setActiveView, setDirectoryTab, setIsAuthModalOpen, setAuthModalMode, isAuthenticated, activateDualRole, currentRole, language } = useApp();
@@ -27,39 +28,47 @@ export const BecomeTutorPage: React.FC = () => {
     await activateDualRole('tutor');
   };
 
-  const faqs = isBn
+  const faqs: Array<{ id: string; q: React.ReactNode; a: React.ReactNode }> = isBn
     ? [
         {
+          id: 'bn-jobs',
           q: 'বাংলাদেশে বিশ্ববিদ্যালয়ের শিক্ষার্থীরা কীভাবে টিউশনির কাজ খুঁজতে পারেন?',
-          a: 'FeLoW WebStaR-এ Google দিয়ে সাইন ইন করে আপনার বিশ্ববিদ্যালয়, বিভাগ, পড়ানোর বিষয় ও পছন্দের এলাকা যুক্ত করে একটি সম্পূর্ণ টিউটর পেজ তৈরি করুন এবং খোলা টিউশন বোর্ডে সরাসরি আবেদন করুন।'
+          a: <><BrandWordmark />-এ Google দিয়ে সাইন ইন করে আপনার বিশ্ববিদ্যালয়, বিভাগ, পড়ানোর বিষয় ও পছন্দের এলাকা যুক্ত করে একটি সম্পূর্ণ টিউটর পেজ তৈরি করুন এবং খোলা টিউশন বোর্ডে সরাসরি আবেদন করুন।</>
         },
         {
+          id: 'bn-details',
           q: 'টিউটর প্রোফাইলে কী কী তথ্য থাকা জরুরি?',
           a: 'প্রদর্শিত নাম, জেলা ও পছন্দের এলাকা, বিশ্ববিদ্যালয় ও বিভাগ, পড়ানোর মাধ্যম ও শ্রেণি, বিষয়সমূহ, প্রত্যাশিত মাসিক সম্মানী এবং আপনার শিক্ষাদানের সংক্ষিপ্ত বিবরণ দিলে অভিভাবকেরা সহজেই আপনাকে খুঁজে পান।'
         },
         {
+          id: 'bn-verify',
           q: 'আমি কীভাবে প্রোফাইলে ভেরিফায়েড ব্যাজ পাব?',
           a: 'টিউটর ড্যাশবোর্ড থেকে জাতীয় পরিচয়পত্র, বিশ্ববিদ্যালয় আইডি কার্ড অথবা একাডেমিক সনদ নিরাপদে জমা দিলে অ্যাডমিন যাচাইয়ের পর ভেরিফিকেশন ব্যাজ যুক্ত করা হয়।'
         },
         {
+          id: 'bn-dual',
           q: 'আমি কি একই অ্যাকাউন্ট থেকে শিক্ষার্থী ও টিউটর দুইভাবেই ব্যবহার করতে পারব?',
-          a: 'হ্যাঁ। FeLoW WebStaR-এ আপনি প্রয়োজনে টিউটর মোড ও স্টুডেন্ট/গার্জিয়ান মোডের মধ্যে সহজেই সুইচ করতে পারেন।'
+          a: <>হ্যাঁ। <BrandWordmark />-এ আপনি প্রয়োজনে টিউটর মোড ও স্টুডেন্ট/গার্জিয়ান মোডের মধ্যে সহজেই সুইচ করতে পারেন।</>
         }
       ]
     : [
         {
+          id: 'en-jobs',
           q: 'How can university students find tuition jobs in Bangladesh?',
-          a: 'Create a complete tutor profile on FeLoW WebStaR using your Google account, list your university, department, preferred teaching areas, and subjects, and submit tailored proposals to open tuition posts in your district or online.'
+          a: <>Create a complete tutor profile on <BrandWordmark /> using your Google account, list your university, department, preferred teaching areas, and subjects, and submit tailored proposals to open tuition posts in your district or online.</>
         },
         {
+          id: 'en-details',
           q: 'What details should a strong tutor profile include?',
           a: 'Include your university, department, current academic year, SSC/HSC background, mediums and classes you teach, subjects, weekly availability, expected monthly honorarium range in BDT, and a clear bio describing your teaching approach.'
         },
         {
-          q: 'How does tutor verification work on FeLoW WebStaR?',
+          id: 'en-verify',
+          q: <>How does tutor verification work on <BrandWordmark />?</>,
           a: 'After publishing your profile, upload your student ID, national ID, or academic certificate in your Tutor Dashboard. Verification documents stay strictly private to you and moderation admins while verified badges appear on your public profile.'
         },
         {
+          id: 'en-comm',
           q: 'How do tutors and guardians communicate once an application is accepted?',
           a: 'Communication happens directly over WhatsApp—no internal chat friction. You also control your contact visibility settings and WhatsApp consent in your profile preferences.'
         }
@@ -87,7 +96,7 @@ export const BecomeTutorPage: React.FC = () => {
             </h1>
             <p className="text-sm sm:text-base text-[#555555] leading-relaxed">
               {isBn
-                ? 'বিশ্ববিদ্যালয়ের শিক্ষার্থী এবং অভিজ্ঞ শিক্ষকদের জন্য FeLoW WebStaR-এ পেশাদার টিউটর প্রোফাইল তৈরি, খোলা টিউশনে আবেদন এবং অভিভাবকদের সাথে সরাসরি WhatsApp-এ যুক্ত হওয়ার সম্পূর্ণ সুযোগ।'
+                ? <>বিশ্ববিদ্যালয়ের শিক্ষার্থী এবং অভিজ্ঞ শিক্ষকদের জন্য <BrandWordmark />-এ পেশাদার টিউটর প্রোফাইল তৈরি, খোলা টিউশনে আবেদন এবং অভিভাবকদের সাথে সরাসরি WhatsApp-এ যুক্ত হওয়ার সম্পূর্ণ সুযোগ।</>
                 : 'Built for university students and experienced educators across Dhaka, Rajshahi, Chattogram, Sylhet, Khulna, and all 64 districts of Bangladesh. Publish your academic credentials, discover open tuition circulars, and connect directly with guardians.'}
             </p>
             <div className="flex flex-wrap gap-3 pt-2">
@@ -172,7 +181,7 @@ export const BecomeTutorPage: React.FC = () => {
             </div>
             <div className="space-y-4">
               {faqs.map(item => (
-                <div key={item.q} className="border-b border-[#F1E1DC]/70 pb-4 last:border-none last:pb-0 space-y-1.5">
+                <div key={item.id} className="border-b border-[#F1E1DC]/70 pb-4 last:border-none last:pb-0 space-y-1.5">
                   <h3 className="font-display text-sm sm:text-base font-bold text-[#252525]">{item.q}</h3>
                   <p className="text-xs sm:text-sm text-[#555555] leading-relaxed">{item.a}</p>
                 </div>

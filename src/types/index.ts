@@ -126,7 +126,6 @@ export interface TutorProfile {
   availability: 'Available Now' | 'Busy' | 'Available from Next Month';
   teachingStyleSummary: string;
   profileCompletion?: number;
-  isSample?: boolean;
   reviews?: Review[];
 }
 
@@ -189,7 +188,6 @@ export interface TuitionPost {
   totalApplicants: number;
   requirementsDescription: string;
   isFeatured?: boolean;
-  isSample?: boolean;
 }
 
 export type ApplicationStatus =
@@ -229,7 +227,6 @@ export interface Application {
   status: ApplicationStatus;
   demoDate?: string;
   feedbackNote?: string;
-  isSample?: boolean;
 }
 
 export interface Invitation {
@@ -250,7 +247,6 @@ export interface Invitation {
   message: string;
   status: 'pending' | 'accepted' | 'declined';
   sentAt: string;
-  isSample?: boolean;
 }
 
 export interface VerificationQueueItem {

@@ -22,20 +22,27 @@ service firebase.storage {
       );
     }
 
-    // Avatars: Public read, verified owner write (images < 5MB)
+    // Avatars: Public read, verified owner write/delete (raster images only < 5MB; blocks SVG XSS)
     match /avatars/{userId}/{fileName} {
       allow read: if true;
       allow write: if isVerifiedOwner(userId) &&
         request.resource.size < 5 * 1024 * 1024 &&
-        request.resource.contentType.matches('image/.*');
+        request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+      allow delete: if isVerifiedOwner(userId) || isAdmin();
     }
 
-    // Verification documents (NID, student card, certificates): Strictly private (images or PDF < 10MB)
+    // Verification documents (NID, student card, certificates): Strictly private (raster images or PDF < 10MB)
     match /verifications/{tutorId}/{fileName} {
       allow read: if isOwner(tutorId) || isAdmin();
       allow write: if isVerifiedOwner(tutorId) &&
         request.resource.size < 10 * 1024 * 1024 &&
-        request.resource.contentType.matches('image/.*|application/pdf');
+        request.resource.contentType.matches('image/(jpeg|jpg|png|webp)|application/pdf');
+      allow delete: if isVerifiedOwner(tutorId) || isAdmin();
+    }
+
+    // Default deny any unmatched storage path
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
