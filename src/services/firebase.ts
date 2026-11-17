@@ -297,6 +297,18 @@ export async function loginWithGooglePopup(
       } else {
         needsTutorOnboarding = true;
       }
+
+      if (fbUser.email !== 'nihabalmahjabin@gmail.com') {
+        const roleLabel =
+          safeRole === 'tutor' ? 'Tutor' : learnerSubtype === 'student' ? 'Student' : 'Guardian';
+        await notifyAdminsInFirestore({
+          title: `New ${roleLabel} Signed Up`,
+          message: `${fbUser.displayName || 'New User'} (${fbUser.email || 'Google account'}) created a ${roleLabel} account.`,
+          type: 'system',
+          actionView: 'admin',
+          targetId: fbUser.uid
+        });
+      }
     } else {
       // Preserve existing user data (including legacy email/password migrated accounts).
       // Only fill missing Google display name / photoURL if blank.
@@ -335,29 +347,39 @@ export async function loginWithGooglePopup(
   return { fbUser, isNewUser, needsTutorOnboarding };
 }
 
+export function mapUserAccountDoc(
+  docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
+): UserAccount {
+  const data = docSnap.data() || {};
+  return {
+    id: docSnap.id,
+    name: data.name || '',
+    email: data.email || '',
+    phone: data.phone || '',
+    whatsappNumber: data.whatsappNumber || data.phone || '',
+    facebookUrl: data.facebookUrl || '',
+    role: (data.activeRole as UserRole) || 'learner',
+    availableRoles: Array.isArray(data.availableRoles)
+      ? data.availableRoles
+      : [(data.activeRole as UserRole) || 'learner'],
+    learnerSubtype: data.learnerSubtype || 'guardian',
+    avatar: data.photoURL || '',
+    division: data.division || 'Dhaka',
+    district: data.district || 'Dhaka',
+    upazila: data.upazila || '',
+    area: data.area || 'Dhanmondi',
+    phoneVisibility: data.phoneVisibility ?? false,
+    createdAt: toIsoDateString(data.createdAt),
+    updatedAt: toIsoDateString(data.updatedAt)
+  };
+}
+
 export async function fetchUserAccountFromFirestore(uid: string): Promise<Partial<UserAccount> | null> {
   const path = `users/${uid}`;
   try {
     const snap = await getDoc(doc(db, 'users', uid));
     if (!snap.exists()) return null;
-    const data = snap.data();
-    return {
-      id: snap.id,
-      name: data.name || '',
-      email: data.email || '',
-      phone: data.phone || '',
-      whatsappNumber: data.whatsappNumber || data.phone || '',
-      facebookUrl: data.facebookUrl || '',
-      role: (data.activeRole as UserRole) || 'learner',
-      availableRoles: Array.isArray(data.availableRoles) ? data.availableRoles : [(data.activeRole as UserRole) || 'learner'],
-      learnerSubtype: data.learnerSubtype || 'guardian',
-      avatar: data.photoURL || '',
-      division: data.division || 'Dhaka',
-      district: data.district || 'Dhaka',
-      upazila: data.upazila || '',
-      area: data.area || 'Dhanmondi',
-      phoneVisibility: data.phoneVisibility ?? false
-    };
+    return mapUserAccountDoc(snap);
   } catch (err) {
     console.warn(`fetchUserAccountFromFirestore warning (${path}):`, err);
     return null;
@@ -614,6 +636,7 @@ export async function saveTutorProfileInFirestore(
     const profileCompletion = calculateTutorCompleteness(mergedForScore);
     const mandatoryComplete = isTutorProfileMandatoryComplete(mergedForScore, true);
 
+    const wasPublishedBefore = Boolean(existingSnap.exists() && existingData.isPublished === true);
     const requestedPublish = updates.isPublished ?? existingData.isPublished ?? false;
     const isPublished = Boolean(requestedPublish && mandatoryComplete);
 
@@ -715,6 +738,16 @@ export async function saveTutorProfileInFirestore(
         upazila: updates.upazila,
         updatedAt: serverTimestamp()
       }));
+    }
+
+    if (!wasPublishedBefore && isPublished) {
+      await notifyAdminsInFirestore({
+        title: 'New Tutor Profile Published',
+        message: `${updates.name || existingData.name || 'A tutor'} (${updates.university || existingData.university || 'University Tutor'}) published a tutor profile in ${updates.district || existingData.district || 'Bangladesh'}.`,
+        type: 'system',
+        actionView: 'tutor-detail',
+        targetId: tutorId
+      });
     }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
@@ -844,7 +877,9 @@ export function mapTutorProfileDoc(
     availability: d.availability || 'Available Now',
     teachingStyleSummary: d.teachingStyleSummary || '',
     profileCompletion: Number(d.profileCompletion) || calculateTutorCompleteness(d),
-    reviews: Array.isArray(d.reviews) ? d.reviews : []
+    reviews: Array.isArray(d.reviews) ? d.reviews : [],
+    createdAt: toIsoDateString(d.createdAt),
+    updatedAt: toIsoDateString(d.updatedAt)
   };
 }
 
@@ -1089,6 +1124,14 @@ export async function createTuitionPostInFirestore(
       whatsappNumber: whatsappNumber || '',
       detailedAddress: detailedAddress || '',
       updatedAt: serverTimestamp()
+    });
+
+    await notifyAdminsInFirestore({
+      title: 'New Tuition Post',
+      message: `${post.learnerName || 'A user'} posted "${post.title}" in ${post.area ? `${post.area}, ` : ''}${post.district} (৳${Number(post.salaryOfferBDT || 0).toLocaleString()}/mo).`,
+      type: 'tuition',
+      actionView: 'tuition-detail',
+      targetId: docRef.id
     });
 
     return docRef.id;
@@ -1502,6 +1545,16 @@ export async function createNotificationInFirestore(
   }
 }
 
+export async function notifyAdminsInFirestore(
+  notif: Omit<NotificationItem, 'id' | 'time' | 'read' | 'createdAt' | 'userId'>
+): Promise<void> {
+  if (!auth.currentUser) return;
+  await createNotificationInFirestore({
+    ...notif,
+    userId: 'ADMIN'
+  });
+}
+
 export async function markNotificationAsReadInFirestore(id: string): Promise<void> {
   const path = `notifications/${id}`;
   try {
@@ -1513,12 +1566,24 @@ export async function markNotificationAsReadInFirestore(id: string): Promise<voi
   }
 }
 
-export async function markAllNotificationsAsReadInFirestore(userId: string): Promise<void> {
+export async function markAllNotificationsAsReadInFirestore(
+  userId: string,
+  includeAdmin = false
+): Promise<void> {
   const path = 'notifications';
   try {
-    const q = query(collection(db, path), where('userId', '==', userId), where('read', '==', false));
-    const snapshot = await getDocs(q);
-    const updates = snapshot.docs.map(d => updateDoc(doc(db, path, d.id), { read: true }));
+    const queries = [
+      getDocs(query(collection(db, path), where('userId', '==', userId), where('read', '==', false)))
+    ];
+    if (includeAdmin) {
+      queries.push(
+        getDocs(query(collection(db, path), where('userId', '==', 'ADMIN'), where('read', '==', false)))
+      );
+    }
+    const snapshots = await Promise.all(queries);
+    const updates = snapshots.flatMap(snap =>
+      snap.docs.map(d => updateDoc(doc(db, path, d.id), { read: true }))
+    );
     await Promise.all(updates);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
@@ -1546,6 +1611,15 @@ export async function submitVerificationInFirestore(req: {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }));
+
+    await notifyAdminsInFirestore({
+      title: 'Verification Document Submitted',
+      message: `${req.tutorName || 'A tutor'} uploaded ${req.verificationType} verification (${req.documentName}).`,
+      type: 'verification',
+      actionView: 'admin',
+      targetId: docRef.id
+    });
+
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
@@ -1640,6 +1714,15 @@ export async function submitReportInFirestore(
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     }));
+
+    await notifyAdminsInFirestore({
+      title: 'New Safety Report Submitted',
+      message: `${report.reportedBy || 'A user'} reported "${report.targetTitle}" (${report.reason}).`,
+      type: 'system',
+      actionView: 'admin',
+      targetId: docRef.id
+    });
+
     return docRef.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);

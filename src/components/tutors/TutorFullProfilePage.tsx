@@ -13,6 +13,7 @@ import {
   MapPin,
   MessageCircle,
   Send,
+  Share2,
   ShieldCheck,
   Star,
   UserCheck
@@ -30,6 +31,8 @@ import {
   sanitizeFacebookUrl,
   DEFAULT_TUTOR_WHATSAPP_MESSAGE
 } from '../../utils/contactLinks';
+import { buildTutorSharePayload } from '../../utils/shareLinks';
+import { ShareModal } from '../shared/ShareModal';
 import { TutorReviewsSection } from './TutorReviewsSection';
 
 export const TutorFullProfilePage: React.FC = () => {
@@ -64,6 +67,7 @@ export const TutorFullProfilePage: React.FC = () => {
   const [inviteSubject, setInviteSubject] = useState('');
   const [inviteOfferBDT, setInviteOfferBDT] = useState(8000);
   const [inviteMessage, setInviteMessage] = useState('');
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -226,18 +230,29 @@ export const TutorFullProfilePage: React.FC = () => {
             <span>Back to Tutors</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => toggleSaveTutor(tutor.id)}
-            className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
-              isSaved
-                ? 'bg-[#EB624B] text-white'
-                : 'bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B]'
-            }`}
-          >
-            <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
-            <span>{isSaved ? 'Saved' : 'Save Tutor'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsShareOpen(true)}
+              className="h-10 px-4 rounded-full bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B] text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+            >
+              <Share2 className="w-4 h-4 shrink-0" />
+              <span>Share</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => toggleSaveTutor(tutor.id)}
+              className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
+                isSaved
+                  ? 'bg-[#EB624B] text-white'
+                  : 'bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B]'
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
+              <span>{isSaved ? 'Saved' : 'Save Tutor'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -718,6 +733,12 @@ export const TutorFullProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        {...buildTutorSharePayload(tutor)}
+      />
     </div>
   );
 };

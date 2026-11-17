@@ -8,11 +8,14 @@ import {
   MapPin,
   MessageCircle,
   Send,
+  Share2,
   Trash2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { DEFAULT_PLACEHOLDER_AVATAR } from '../../types';
 import { buildWhatsAppUrl } from '../../utils/contactLinks';
+import { buildTuitionSharePayload } from '../../utils/shareLinks';
+import { ShareModal } from '../shared/ShareModal';
 import { trackAnalyticsEvent } from '../../utils/analytics';
 
 export const TuitionFullDetailPage: React.FC = () => {
@@ -48,6 +51,7 @@ export const TuitionFullDetailPage: React.FC = () => {
     tuitionPosts.find(p => p.id === selectedTuition?.id) || selectedTuition || null;
 
   const [guardianPrivateWa, setGuardianPrivateWa] = useState('');
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const canViewGuardianWa = post ? canViewLearnerWhatsApp(post.learnerId) : false;
 
   useEffect(() => {
@@ -120,18 +124,29 @@ export const TuitionFullDetailPage: React.FC = () => {
             <span>Back to Tuition Posts</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => toggleSaveTuition(post.id)}
-            className={`h-10 px-4 rounded-full border text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs ${
-              isSaved
-                ? 'bg-[#EB624B] border-[#EB624B] text-white'
-                : 'bg-white border-[#EFEAE7] hover:bg-[#F6F4F3] text-[#18181B]'
-            }`}
-          >
-            <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
-            <span>{isSaved ? 'Saved' : 'Save Post'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsShareOpen(true)}
+              className="h-10 px-4 rounded-full bg-white border border-[#EFEAE7] hover:bg-[#F6F4F3] text-xs sm:text-sm font-bold text-[#18181B] inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+            >
+              <Share2 className="w-4 h-4 shrink-0" />
+              <span>Share</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => toggleSaveTuition(post.id)}
+              className={`h-10 px-4 rounded-full border text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-2xs ${
+                isSaved
+                  ? 'bg-[#EB624B] border-[#EB624B] text-white'
+                  : 'bg-white border-[#EFEAE7] hover:bg-[#F6F4F3] text-[#18181B]'
+              }`}
+            >
+              <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
+              <span>{isSaved ? 'Saved' : 'Save Post'}</span>
+            </button>
+          </div>
         </div>
 
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-[#6B6B6B] flex-wrap">
@@ -458,6 +473,12 @@ export const TuitionFullDetailPage: React.FC = () => {
           )}
         </article>
       </div>
+
+      <ShareModal
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        {...buildTuitionSharePayload(post)}
+      />
     </div>
   );
 };

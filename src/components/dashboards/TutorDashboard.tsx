@@ -7,12 +7,15 @@ import {
   CheckCircle2,
   Globe,
   Repeat,
-  ShieldCheck
+  ShieldCheck,
+  Share2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TuitionPostCard } from '../shared/TuitionPostCard';
 import { DeleteAccountSection } from '../shared/DeleteAccountSection';
+import { ShareModal } from '../shared/ShareModal';
 import { buildWhatsAppUrl } from '../../utils/contactLinks';
+import { buildTutorSharePayload } from '../../utils/shareLinks';
 import { DEFAULT_PLACEHOLDER_AVATAR } from '../../types';
 
 export const TutorDashboard: React.FC = () => {
@@ -41,6 +44,7 @@ export const TutorDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'applications' | 'invitations' | 'saved' | 'settings'>('applications');
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [guardianContacts, setGuardianContacts] = useState<Record<string, string>>({});
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const myApps = applications.filter(
     a => a.tutorId === currentUser.id || a.tutorId === currentUser.tutorProfileId
@@ -140,14 +144,24 @@ export const TutorDashboard: React.FC = () => {
 
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {myTutorProfile && (
-                  <button
-                    type="button"
-                    onClick={() => viewTutorDetail(myTutorProfile)}
-                    className="h-10 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0 shadow-xs"
-                  >
-                    <Eye className="w-3.5 h-3.5 shrink-0" />
-                    <span>View My Profile</span>
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => viewTutorDetail(myTutorProfile)}
+                      className="h-10 px-4 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0 shadow-xs"
+                    >
+                      <Eye className="w-3.5 h-3.5 shrink-0" />
+                      <span>View My Profile</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsShareOpen(true)}
+                      className="h-10 px-4 rounded-full bg-[#EFEAFF] hover:bg-[#E1D8FF] border border-[#E1D8FF] text-[#18181B] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
+                    >
+                      <Share2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>{isBn ? 'শেয়ার করুন' : 'Share Profile'}</span>
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"
@@ -532,6 +546,14 @@ export const TutorDashboard: React.FC = () => {
           className="w-[300px] sm:w-[420px] md:w-[500px] max-w-full h-auto block select-none"
         />
       </div>
+
+      {myTutorProfile && (
+        <ShareModal
+          isOpen={isShareOpen}
+          onClose={() => setIsShareOpen(false)}
+          {...buildTutorSharePayload(myTutorProfile)}
+        />
+      )}
     </div>
   );
 };

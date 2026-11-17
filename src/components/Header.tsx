@@ -9,7 +9,9 @@ import {
   Shield,
   Repeat,
   Globe,
-  X
+  X,
+  BellRing,
+  CheckCircle2
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION } from '../data/bangladeshData';
@@ -38,6 +40,8 @@ export const Header: React.FC = () => {
     notifications,
     markAllNotificationsRead,
     handleNotificationClick,
+    browserNotifPermission,
+    requestBrowserNotifications,
     language,
     setLanguage
   } = useApp();
@@ -256,28 +260,72 @@ export const Header: React.FC = () => {
                 </button>
 
                 {openDropdown === 'notif' && (
-                  <div className="absolute right-0 top-12 w-[min(92vw,320px)] bg-white rounded-[24px] shadow-[0_12px_36px_rgba(24,24,27,0.08)] border border-[#EFEAE7] overflow-hidden z-50">
-                    <div className="px-4 py-3 border-b border-[#EFEAE7] flex items-center justify-between">
+                  <div className="absolute right-0 top-12 w-[min(92vw,340px)] bg-white rounded-[24px] shadow-[0_12px_36px_rgba(24,24,27,0.08)] border border-[#EFEAE7] overflow-hidden z-50">
+                    <div className="px-4 py-3 border-b border-[#EFEAE7] flex items-center justify-between gap-2">
                       <span className="font-bold text-sm text-[#18181B]">
                         {language === 'bn' ? 'নোটিফিকেশন' : 'Notifications'}
                       </span>
-                      {unreadCount > 0 && (
+                      <div className="flex items-center gap-2.5">
+                        {currentRole === 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveView('admin');
+                              setOpenDropdown(null);
+                            }}
+                            className="text-xs font-bold text-[#18181B] hover:text-[#EB624B] cursor-pointer"
+                          >
+                            {language === 'bn' ? 'অ্যাডমিন প্যানেল' : 'Admin Portal'}
+                          </button>
+                        )}
+                        {unreadCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={markAllNotificationsRead}
+                            className="text-xs font-semibold text-[#C94A35] hover:underline cursor-pointer"
+                          >
+                            {language === 'bn' ? 'সব পড়া হয়েছে' : 'Mark all read'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {browserNotifPermission === 'default' && (
+                      <div className="px-4 py-2.5 bg-[#EFEAFF]/65 border-b border-[#E1D8FF] flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-medium text-[#18181B]">
+                          {language === 'bn'
+                            ? 'ট্যাবের বাইরেও লাইভ অ্যালার্ট পান'
+                            : 'Get live alerts outside this tab'}
+                        </span>
                         <button
                           type="button"
-                          onClick={markAllNotificationsRead}
-                          className="text-xs font-semibold text-[#C94A35] hover:underline cursor-pointer"
+                          onClick={requestBrowserNotifications}
+                          className="h-7 px-3 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer shrink-0"
                         >
-                          {language === 'bn' ? 'সব পড়া হয়েছে' : 'Mark all read'}
+                          <BellRing className="w-3 h-3" />
+                          <span>{language === 'bn' ? 'চালু করুন' : 'Enable'}</span>
                         </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
+
+                    {browserNotifPermission === 'granted' && (
+                      <div className="px-4 py-1.5 bg-[#E8F8EE]/80 border-b border-[#C6EBD5] flex items-center gap-1.5 text-[11px] font-semibold text-[#15803D]">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {language === 'bn'
+                            ? 'ব্রাউজার ও ইন-অ্যাপ নোটিফিকেশন চালু আছে'
+                            : 'In-app & browser alerts active'}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="max-h-80 overflow-y-auto divide-y divide-[#FFF3EF]">
                       {notifications.length === 0 ? (
                         <div className="p-6 text-center text-sm text-[#858585]">
                           {language === 'bn' ? 'কোনো নোটিফিকেশন নেই।' : 'No notifications yet.'}
                         </div>
                       ) : (
-                        notifications.slice(0, 8).map(n => (
+                        notifications.slice(0, 15).map(n => (
                           <button
                             key={n.id}
                             type="button"
@@ -289,7 +337,12 @@ export const Header: React.FC = () => {
                               !n.read ? 'bg-[#DCEBFA]/45' : ''
                             }`}
                           >
-                            <div className="text-xs font-semibold text-[#252525]">{n.title}</div>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="text-xs font-semibold text-[#252525]">{n.title}</div>
+                              {!n.read && (
+                                <span className="w-2 h-2 rounded-full bg-[#EB624B] mt-1 shrink-0" />
+                              )}
+                            </div>
                             <div className="text-xs text-[#858585] line-clamp-2 mt-0.5">{n.message}</div>
                             <div className="text-[11px] text-[#C94A35] font-medium mt-1">{n.time}</div>
                           </button>

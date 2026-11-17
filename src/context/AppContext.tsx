@@ -29,6 +29,7 @@ import {
   isAdminUserInFirestore,
   extractFriendlyErrorMessage,
   fetchUserAccountFromFirestore,
+  mapUserAccountDoc,
   updateUserRoleSettingsInFirestore,
   saveLearnerProfileInFirestore,
   fetchLearnerProfileFromFirestore,
@@ -64,6 +65,13 @@ import {
   uploadAvatarToStorage,
   toIsoDateString
 } from '../services/firebase';
+import {
+  BrowserNotifPermission,
+  formatRelativeTime,
+  getBrowserNotificationPermission,
+  requestBrowserNotificationPermission,
+  showBrowserNotification
+} from '../utils/notifications';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { collection, doc, onSnapshot, query, where, limit } from 'firebase/firestore';
 import {
@@ -111,7 +119,12 @@ interface AppContextType {
   verificationQueue: VerificationQueueItem[];
   notifications: NotificationItem[];
   reports: ReportItem[];
+  adminUsers: UserAccount[];
+  adminTutorProfiles: TutorProfile[];
+  adminTuitionPosts: TuitionPost[];
   isMarketplaceLoading: boolean;
+  browserNotifPermission: BrowserNotifPermission;
+  requestBrowserNotifications: () => Promise<BrowserNotifPermission>;
 
   savedTutorIds: string[];
   toggleSaveTutor: (tutorId: string) => Promise<void>;
@@ -342,7 +355,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [reports, setReports] = useState<ReportItem[]>([]);
+  const [adminUsers, setAdminUsers] = useState<UserAccount[]>([]);
+  const [adminTutorProfiles, setAdminTutorProfiles] = useState<TutorProfile[]>([]);
+  const [adminTuitionPosts, setAdminTuitionPosts] = useState<TuitionPost[]>([]);
   const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(true);
+  const [browserNotifPermission, setBrowserNotifPermission] = useState<BrowserNotifPermission>(() =>
+    getBrowserNotificationPermission()
+  );
 
   const [savedTutorIds, setSavedTutorIds] = useState<string[]>([]);
   const [savedTuitionIds, setSavedTuitionIds] = useState<string[]>([]);
@@ -379,6 +398,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const myPrivateContactRef = useRef<TutorPrivateContact | null>(null);
   const reviewsCacheRef = useRef<Record<string, Review[]>>({});
+  const seenNotifIdsRef = useRef<Set<string>>(new Set());
+  const notifInitializedRef = useRef<boolean>(false);
 
   const t = TRANSLATIONS[language];
   const isAuthenticated = Boolean(firebaseUser);
@@ -388,7 +409,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToast({ id, text, type });
     setTimeout(() => {
       setToast(current => (current?.id === id ? null : current));
-    }, 4000);
+    }, 4500);
+  }, []);
+
+  const showToastRef = useRef(showToast);
+  showToastRef.current = showToast;
+  const handleNotificationClickRef = useRef<(notif: NotificationItem) => void>(() => {});
+
+  const requestBrowserNotifications = useCallback(async () => {
+    const result = await requestBrowserNotificationPermission();
+    setBrowserNotifPermission(result);
+    if (result === 'granted') {
+      showToastRef.current(
+        'Desktop / browser alerts enabled! You will receive live notifications here and outside the tab.',
+        'success'
+      );
+    } else if (result === 'denied') {
+      showToastRef.current(
+        'Browser notifications are blocked. You can allow them in your browser site settings.',
+        'info'
+      );
+    }
+    return result;
   }, []);
 
   // Boot connection & persistent Google Auth state sync
@@ -795,6 +837,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setApplications(Array.from(merged.values()));
     };
 
+    const mapNotifDoc = (docSnap: any): NotificationItem => {
+      const data = docSnap.data() || {};
+      const createdAt = toIsoDateString(data.createdAt);
+      return {
+        id: docSnap.id,
+        userId: data.userId,
+        title: data.title || 'Notification',
+        message: data.message || '',
+        time: formatRelativeTime(createdAt, data.time || 'Recently'),
+        read: Boolean(data.read),
+        type: data.type || 'system',
+        actionView: data.actionView,
+        targetId: data.targetId,
+        createdAt
+      };
+    };
+
+    seenNotifIdsRef.current = new Set();
+    notifInitializedRef.current = false;
+    const personalNotifsMap = new Map<string, NotificationItem>();
+    const adminNotifsMap = new Map<string, NotificationItem>();
+    let personalReady = false;
+    let adminReady = false;
+
+    const syncMergedNotifications = (expectAdmin: boolean) => {
+      const mergedMap = new Map<string, NotificationItem>();
+      personalNotifsMap.forEach((v, k) => mergedMap.set(k, v));
+      if (expectAdmin) {
+        adminNotifsMap.forEach((v, k) => mergedMap.set(k, v));
+      }
+      const sorted = Array.from(mergedMap.values()).sort((a, b) => {
+        const tb = Date.parse(b.createdAt || '') || 0;
+        const ta = Date.parse(a.createdAt || '') || 0;
+        return tb - ta;
+      });
+      setNotifications(sorted);
+
+      if (!personalReady || (expectAdmin && !adminReady)) {
+        return;
+      }
+
+      if (!notifInitializedRef.current) {
+        sorted.forEach(n => seenNotifIdsRef.current.add(n.id));
+        notifInitializedRef.current = true;
+        return;
+      }
+
+      const newlyArrived = sorted.filter(n => !n.read && !seenNotifIdsRef.current.has(n.id));
+      sorted.forEach(n => seenNotifIdsRef.current.add(n.id));
+
+      newlyArrived.slice(0, 3).forEach(n => {
+        showToastRef.current(`${n.title} — ${n.message}`, 'info');
+        void showBrowserNotification(n.title, n.message, {
+          tag: `felow-${n.id}`,
+          onClick: () => handleNotificationClickRef.current(n)
+        });
+      });
+    };
+
     isAdminUserInFirestore(uid, firebaseUser.email, firebaseUser.emailVerified).then((isUserAdmin) => {
       if (cancelled) return;
 
@@ -822,7 +923,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setReports(items);
           }, err => console.warn('reports listener:', err))
         );
+        unsubs.push(
+          onSnapshot(query(collection(db, 'users'), limit(500)), snap => {
+            const list = snap.docs
+              .map(mapUserAccountDoc)
+              .sort((a, b) => (Date.parse(b.createdAt || '') || 0) - (Date.parse(a.createdAt || '') || 0));
+            setAdminUsers(list);
+          }, err => console.warn('admin users listener:', err))
+        );
+        unsubs.push(
+          onSnapshot(query(collection(db, 'tutorProfiles'), limit(500)), snap => {
+            const list = snap.docs
+              .map(mapTutorProfileDoc)
+              .sort((a, b) => (Date.parse(b.createdAt || b.updatedAt || '') || 0) - (Date.parse(a.createdAt || a.updatedAt || '') || 0));
+            setAdminTutorProfiles(list);
+          }, err => console.warn('admin tutorProfiles listener:', err))
+        );
+        unsubs.push(
+          onSnapshot(query(collection(db, 'tuitionPosts'), limit(500)), snap => {
+            const list = snap.docs
+              .map(mapTuitionPostDoc)
+              .sort((a, b) => (Date.parse(b.createdAt || b.postedDate || '') || 0) - (Date.parse(a.createdAt || a.postedDate || '') || 0));
+            setAdminTuitionPosts(list);
+          }, err => console.warn('admin tuitionPosts listener:', err))
+        );
+        unsubs.push(
+          onSnapshot(query(collection(db, 'notifications'), where('userId', '==', 'ADMIN'), limit(60)), snap => {
+            adminNotifsMap.clear();
+            snap.docs.forEach(d => adminNotifsMap.set(d.id, mapNotifDoc(d)));
+            adminReady = true;
+            syncMergedNotifications(true);
+          }, err => console.warn('admin notifications listener:', err))
+        );
       } else {
+        setAdminUsers([]);
+        setAdminTutorProfiles([]);
+        setAdminTuitionPosts([]);
         unsubs.push(
           onSnapshot(query(collection(db, 'applications'), where('tutorId', '==', uid), limit(100)), snap => {
             tutorAppsMap.clear();
@@ -847,6 +983,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }, err => console.warn('my verificationRequests listener:', err))
         );
       }
+
+      unsubs.push(
+        onSnapshot(query(collection(db, 'notifications'), where('userId', '==', uid), limit(50)), snap => {
+          personalNotifsMap.clear();
+          snap.docs.forEach(d => personalNotifsMap.set(d.id, mapNotifDoc(d)));
+          personalReady = true;
+          syncMergedNotifications(isUserAdmin);
+        }, err => console.warn('notifications listener:', err))
+      );
     });
 
     // Invitations (scoped to tutorId or learnerId)
@@ -909,28 +1054,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       onSnapshot(query(collection(db, 'savedTuitions'), where('userId', '==', uid), limit(100)), snap => {
         setSavedTuitionIds(snap.docs.map(d => d.data().tuitionPostId).filter(Boolean));
       }, err => console.warn('savedTuitions listener:', err))
-    );
-
-    // Notifications
-    unsubs.push(
-      onSnapshot(query(collection(db, 'notifications'), where('userId', '==', uid), limit(50)), snap => {
-        const items: NotificationItem[] = snap.docs.map(d => {
-          const data = d.data();
-          return {
-            id: d.id,
-            userId: data.userId,
-            title: data.title || 'Notification',
-            message: data.message || '',
-            time: data.time || toIsoDateString(data.createdAt, 'Recently').split('T')[0],
-            read: Boolean(data.read),
-            type: data.type || 'system',
-            actionView: data.actionView,
-            targetId: data.targetId,
-            createdAt: toIsoDateString(data.createdAt)
-          };
-        });
-        setNotifications(items);
-      }, err => console.warn('notifications listener:', err))
     );
 
     return () => {
@@ -1793,7 +1916,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!firebaseUser) return;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     try {
-      await markAllNotificationsAsReadInFirestore(firebaseUser.uid);
+      await markAllNotificationsAsReadInFirestore(firebaseUser.uid, currentRole === 'admin');
     } catch (e) {
       console.warn('All notifications read sync skipped:', e);
     }
@@ -1801,22 +1924,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const handleNotificationClick = (notif: NotificationItem) => {
     markNotificationRead(notif.id);
+    if (notif.actionView === 'admin') {
+      setActiveView(currentRole === 'admin' ? 'admin' : 'dashboard');
+      return;
+    }
     if (notif.actionView === 'tuition-detail' && notif.targetId) {
-      const post = tuitionPosts.find(p => p.id === notif.targetId);
+      const post =
+        tuitionPosts.find(p => p.id === notif.targetId) ||
+        adminTuitionPosts.find(p => p.id === notif.targetId);
       if (post) {
         viewTuitionDetail(post);
         return;
       }
+      fetchTuitionPostById(notif.targetId).then(fetched => {
+        if (fetched) {
+          viewTuitionDetail(fetched);
+        } else {
+          setActiveView(currentRole === 'admin' ? 'admin' : 'dashboard');
+        }
+      });
+      return;
     }
     if (notif.actionView === 'tutor-detail' && notif.targetId) {
-      const tutor = tutors.find(t => t.id === notif.targetId);
+      const tutor =
+        tutors.find(t => t.id === notif.targetId || t.uid === notif.targetId) ||
+        adminTutorProfiles.find(t => t.id === notif.targetId || t.uid === notif.targetId);
       if (tutor) {
         viewTutorDetail(tutor);
         return;
       }
+      fetchTutorProfileById(notif.targetId).then(fetched => {
+        if (fetched) {
+          viewTutorDetail(fetched);
+        } else {
+          setActiveView(currentRole === 'admin' ? 'admin' : 'dashboard');
+        }
+      });
+      return;
     }
-    setActiveView('dashboard');
+    setActiveView(currentRole === 'admin' ? 'admin' : 'dashboard');
   };
+  handleNotificationClickRef.current = handleNotificationClick;
 
   const submitReport = async (report: Omit<ReportItem, 'id' | 'submittedAt' | 'status'>) => {
     if (!firebaseUser) {
@@ -2049,6 +2197,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setNotifications([]);
       setVerificationQueue([]);
       setReports([]);
+      setAdminUsers([]);
+      setAdminTutorProfiles([]);
+      setAdminTuitionPosts([]);
       setSavedTutorIds([]);
       setSavedTuitionIds([]);
       showToast('Signed out of FeLoW WebStaR.', 'info');
@@ -2078,6 +2229,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setNotifications([]);
       setVerificationQueue([]);
       setReports([]);
+      setAdminUsers([]);
+      setAdminTutorProfiles([]);
+      setAdminTuitionPosts([]);
       setSavedTutorIds([]);
       setSavedTuitionIds([]);
       setActiveView('landing');
@@ -2149,7 +2303,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         verificationQueue,
         notifications,
         reports,
+        adminUsers,
+        adminTutorProfiles,
+        adminTuitionPosts,
         isMarketplaceLoading,
+        browserNotifPermission,
+        requestBrowserNotifications,
         savedTutorIds,
         toggleSaveTutor,
         savedTuitionIds,

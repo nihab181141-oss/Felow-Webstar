@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Search,
   Send,
+  Share2,
   ShieldCheck,
   Star,
   Trash2,
@@ -22,6 +23,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION, POPULAR_SUBJECTS } from '../../data/bangladeshData';
 import { BrandWordmark } from '../shared/BrandWordmark';
+import { ShareModal } from '../shared/ShareModal';
 import { HomeBentoHero } from './HomeBentoHero';
 import { TuitionBentoHero } from './TuitionBentoHero';
 import {
@@ -37,6 +39,7 @@ import {
   sanitizeFacebookUrl,
   DEFAULT_TUTOR_WHATSAPP_MESSAGE
 } from '../../utils/contactLinks';
+import { buildTutorSharePayload, buildTuitionSharePayload } from '../../utils/shareLinks';
 import { TutorReviewsSection } from '../tutors/TutorReviewsSection';
 import { trackAnalyticsEvent } from '../../utils/analytics';
 import { getLocationByDistrict } from '../../utils/routing';
@@ -500,6 +503,9 @@ export const SplitDirectoryWorkspace: React.FC = () => {
   const [inviteSubject, setInviteSubject] = useState('');
   const [inviteOfferBDT, setInviteOfferBDT] = useState(8000);
   const [inviteMessage, setInviteMessage] = useState('');
+  const [shareTarget, setShareTarget] = useState<
+    { kind: 'tutor'; tutor: TutorProfile } | { kind: 'tuition'; post: TuitionPost } | null
+  >(null);
 
   const q = searchQuery.trim().toLowerCase();
 
@@ -1216,7 +1222,15 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             activeTutor ? (
               <div className="ivory-card overflow-hidden">
                 {/* Warm Pastel Bento Cover Header */}
-                <div className="h-24 bg-gradient-to-r from-[#FFF5F2] via-[#F2EEFF] to-[#E2F0FF] px-5 pt-3.5 flex justify-end items-start border-b border-[#EFEAE7]">
+                <div className="h-24 bg-gradient-to-r from-[#FFF5F2] via-[#F2EEFF] to-[#E2F0FF] px-5 pt-3.5 flex justify-end items-start gap-2 border-b border-[#EFEAE7]">
+                  <button
+                    type="button"
+                    onClick={() => setShareTarget({ kind: 'tutor', tutor: activeTutor })}
+                    className="h-8 px-3.5 rounded-full bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B] text-xs font-bold inline-flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Share</span>
+                  </button>
                   <a
                     href={`/tutors/${encodeURIComponent(activeTutor.id)}`}
                     onClick={(e) => {
@@ -1542,6 +1556,15 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShareTarget({ kind: 'tuition', post: activeTuition })}
+                    aria-label="Share tuition post"
+                    className="w-9 h-9 rounded-full bg-white border border-[#EFEAE7] hover:bg-[#F6F4F3] text-[#18181B] flex items-center justify-center cursor-pointer"
+                  >
+                    <Share2 className="w-4 h-4" />
+                  </button>
+
                   <a
                     href={`/tuitions/${encodeURIComponent(activeTuition.id)}`}
                     onClick={(e) => {
@@ -1956,6 +1979,16 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {shareTarget && (
+        <ShareModal
+          isOpen={true}
+          onClose={() => setShareTarget(null)}
+          {...(shareTarget.kind === 'tutor'
+            ? buildTutorSharePayload(shareTarget.tutor)
+            : buildTuitionSharePayload(shareTarget.post))}
+        />
       )}
     </div>
   );

@@ -127,6 +127,8 @@ export interface TutorProfile {
   teachingStyleSummary: string;
   profileCompletion?: number;
   reviews?: Review[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface LearnerProfile {
@@ -308,6 +310,8 @@ export interface UserAccount {
   tutorProfileId?: string;
   phoneVisibility: boolean;
   joinedDate?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export const DEFAULT_PLACEHOLDER_AVATAR =

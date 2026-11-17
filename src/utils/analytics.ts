@@ -16,7 +16,8 @@ export type AnalyticsEventName =
   | 'tutor_search'
   | 'tuition_view'
   | 'tuition_application'
-  | 'whatsapp_contact_click';
+  | 'whatsapp_contact_click'
+  | 'share_content';
 
 const GA_MEASUREMENT_ID =
   typeof import.meta !== 'undefined' && import.meta.env
