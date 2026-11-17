@@ -43,6 +43,7 @@ import { buildTutorSharePayload, buildTuitionSharePayload } from '../../utils/sh
 import { TutorReviewsSection } from '../tutors/TutorReviewsSection';
 import { trackAnalyticsEvent } from '../../utils/analytics';
 import { getLocationByDistrict } from '../../utils/routing';
+import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../../utils/tutorSearch';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -510,26 +511,15 @@ export const SplitDirectoryWorkspace: React.FC = () => {
   const q = searchQuery.trim().toLowerCase();
 
   const filteredTutors = useMemo(() => {
-    return tutors.filter(tutor => {
+    const matched = tutors.filter(tutor => {
       if (tutor.isPublished === false || tutor.profileVisibility === 'hidden') return false;
       if (districtFilter !== 'All' && tutor.district !== districtFilter) return false;
       if (subjectFilter !== 'All' && !tutor.subjects.includes(subjectFilter)) return false;
-      if (q) {
-        const hay = [
-          tutor.name,
-          tutor.university,
-          tutor.department,
-          tutor.district,
-          ...tutor.preferredAreas,
-          ...tutor.subjects,
-          ...tutor.classes
-        ]
-          .join(' ')
-          .toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
+      if (q && !matchesTutorSearchQuery(tutor, q)) return false;
       return true;
     });
+    if (!q) return matched;
+    return [...matched].sort((a, b) => scoreTutorSearchMatch(b, q) - scoreTutorSearchMatch(a, q));
   }, [tutors, districtFilter, subjectFilter, q]);
 
   const filteredTuitions = useMemo(() => {
@@ -542,13 +532,19 @@ export const SplitDirectoryWorkspace: React.FC = () => {
           post.title,
           post.learnerName,
           post.classGrade,
+          post.curriculum,
+          post.medium,
+          post.tuitionType,
+          post.preferredUniversity,
+          post.requirementsDescription,
           post.district,
           post.area,
           ...post.subjects
         ]
+          .filter(Boolean)
           .join(' ')
           .toLowerCase();
-        if (!hay.includes(q)) return false;
+        if (!q.split(/\s+/).every(tok => hay.includes(tok))) return false;
       }
       return true;
     });
@@ -874,8 +870,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile Full-Width Search + District Filter (Hero already includes search above) */}
-          <div className="hidden space-y-2.5">
+          {/* Mobile Full-Width Search + District Filter */}
+          <div className="md:hidden space-y-2.5">
             <div className="flex items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white px-3.5 h-11 transition-colors">
               <Search className="w-4 h-4 text-[#6B6B6B] shrink-0 pointer-events-none" />
               <input
@@ -884,8 +880,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={
                   language === 'bn'
-                    ? 'টিউটর, বিষয় বা এলাকা খুঁজুন...'
-                    : 'Search tutor, subject, area...'
+                    ? 'টিউটরের নাম, প্রোফাইল, বিষয় বা এলাকা খুঁজুন...'
+                    : 'Search tutor name, profile, subject, area...'
                 }
                 className="flex-1 min-w-0 bg-transparent px-2.5 text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
               />

@@ -16,6 +16,7 @@ import { useApp } from '../../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION } from '../../data/bangladeshData';
 import { DEFAULT_PLACEHOLDER_AVATAR, TuitionPost, TutorProfile, isTutorVerified } from '../../types';
 import { getLocationByDistrict } from '../../utils/routing';
+import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../../utils/tutorSearch';
 import heroTutorBento from '../../assets/images/hero_tutor_bento_1794837005690.jpg';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
@@ -76,11 +77,32 @@ export const HomeBentoHero: React.FC<HomeBentoHeroProps> = ({
 
   const isBn = language === 'bn';
   const activeLocationInfo = getLocationByDistrict(districtFilter);
+  const [heroSearchFocused, setHeroSearchFocused] = React.useState(false);
+  const heroSearchRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const onOutside = (e: MouseEvent) => {
+      if (heroSearchRef.current && !heroSearchRef.current.contains(e.target as Node)) {
+        setHeroSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', onOutside);
+    return () => document.removeEventListener('mousedown', onOutside);
+  }, []);
 
   const publishedTutors = React.useMemo(
     () => tutors.filter(t => t.isPublished !== false && t.profileVisibility !== 'hidden'),
     [tutors]
   );
+
+  const quickMatchedTutors = React.useMemo(() => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) return [];
+    return publishedTutors
+      .filter(t => matchesTutorSearchQuery(t, trimmed))
+      .sort((a, b) => scoreTutorSearchMatch(b, trimmed) - scoreTutorSearchMatch(a, trimmed))
+      .slice(0, 5);
+  }, [publishedTutors, searchQuery]);
 
   const openTuitions = React.useMemo(
     () => tuitionPosts.filter(p => p.status === 'open'),
@@ -181,63 +203,145 @@ export const HomeBentoHero: React.FC<HomeBentoHeroProps> = ({
               </p>
             </div>
 
-            {/* Integrated Search + District Filter Bar */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                onScrollToDirectory();
-              }}
-              className="bg-[#F6F4F3] rounded-2xl sm:rounded-full p-1.5 border border-[#EAE4E1] flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5"
-            >
-              <div className="flex-1 min-w-0 flex items-center px-3 h-10">
-                <Search className="w-4 h-4 text-[#858585] shrink-0 pointer-events-none" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={
-                    isBn ? 'টিউটর, বিষয় বা এলাকা...' : 'Search tutor, subject, area...'
-                  }
-                  className="w-full min-w-0 bg-transparent px-2.5 text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Clear search"
-                    className="w-6 h-6 rounded-full hover:bg-white flex items-center justify-center text-[#858585] hover:text-[#18181B] cursor-pointer shrink-0"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              <span className="hidden sm:block w-px h-6 bg-[#E2DCD8] shrink-0" aria-hidden="true" />
-
-              <div className="flex items-center gap-1.5 px-1 sm:px-0">
-                <div className="flex-1 sm:flex-initial flex items-center gap-1.5 px-2.5 h-10 rounded-xl sm:rounded-full bg-white/80 sm:bg-transparent">
-                  <MapPin className="w-3.5 h-3.5 text-[#EB624B] shrink-0 pointer-events-none" />
-                  <select
-                    value={districtFilter}
-                    onChange={(e) => setDistrictFilter(e.target.value)}
-                    aria-label="Select district"
-                    className="w-full sm:w-auto bg-transparent text-xs font-semibold text-[#18181B] focus:outline-none cursor-pointer pr-1"
-                  >
-                    <option value="All">{isBn ? 'সকল জেলা' : 'All Districts'}</option>
-                    {ALL_DISTRICTS.map(d => (
-                      <option key={d} value={d}>{d}</option>
-                    ))}
-                  </select>
+            {/* Integrated Search + District Filter Bar + Instant Tutor Profile Quick-Jump */}
+            <div ref={heroSearchRef} className="relative">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  setHeroSearchFocused(false);
+                  setDirectoryTab('tutors');
+                  onScrollToDirectory();
+                }}
+                className="bg-[#F6F4F3] rounded-2xl sm:rounded-full p-1.5 border border-[#EAE4E1] flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5"
+              >
+                <div className="flex-1 min-w-0 flex items-center px-3 h-10">
+                  <Search className="w-4 h-4 text-[#858585] shrink-0 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onFocus={() => setHeroSearchFocused(true)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setHeroSearchFocused(true);
+                    }}
+                    placeholder={
+                      isBn
+                        ? 'টিউটরের নাম, প্রোফাইল, বিষয় বা এলাকা...'
+                        : 'Search tutor name, profile, subject, area...'
+                    }
+                    className="w-full min-w-0 bg-transparent px-2.5 text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      aria-label="Clear search"
+                      className="w-6 h-6 rounded-full hover:bg-white flex items-center justify-center text-[#858585] hover:text-[#18181B] cursor-pointer shrink-0"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
 
-                <button
-                  type="submit"
-                  className="h-10 px-5 rounded-xl sm:rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-display text-xs sm:text-sm font-bold cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
-                >
-                  {isBn ? 'খুঁজুন' : 'Search'}
-                </button>
-              </div>
-            </form>
+                <span className="hidden sm:block w-px h-6 bg-[#E2DCD8] shrink-0" aria-hidden="true" />
+
+                <div className="flex items-center gap-1.5 px-1 sm:px-0">
+                  <div className="flex-1 sm:flex-initial flex items-center gap-1.5 px-2.5 h-10 rounded-xl sm:rounded-full bg-white/80 sm:bg-transparent">
+                    <MapPin className="w-3.5 h-3.5 text-[#EB624B] shrink-0 pointer-events-none" />
+                    <select
+                      value={districtFilter}
+                      onChange={(e) => setDistrictFilter(e.target.value)}
+                      aria-label="Select district"
+                      className="w-full sm:w-auto bg-transparent text-xs font-semibold text-[#18181B] focus:outline-none cursor-pointer pr-1"
+                    >
+                      <option value="All">{isBn ? 'সকল জেলা' : 'All Districts'}</option>
+                      {ALL_DISTRICTS.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="h-10 px-5 rounded-xl sm:rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-display text-xs sm:text-sm font-bold cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
+                  >
+                    {isBn ? 'খুঁজুন' : 'Search'}
+                  </button>
+                </div>
+              </form>
+
+              {heroSearchFocused && searchQuery.trim().length > 0 && (
+                <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-white rounded-2xl border border-[#EFEAE7] shadow-[0_14px_36px_rgba(24,24,27,0.12)] z-30 overflow-hidden">
+                  <div className="px-3.5 py-2 bg-[#F8F6F5] border-b border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
+                    <span>
+                      {isBn
+                        ? `টিউটর অ্যাকাউন্ট (${quickMatchedTutors.length})`
+                        : `Matching Tutor Profiles (${quickMatchedTutors.length})`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHeroSearchFocused(false);
+                        setDirectoryTab('tutors');
+                        onScrollToDirectory();
+                      }}
+                      className="text-[#C94A35] hover:underline cursor-pointer"
+                    >
+                      {isBn ? 'সব দেখুন →' : 'See all →'}
+                    </button>
+                  </div>
+                  {quickMatchedTutors.length === 0 ? (
+                    <div className="px-3.5 py-3 text-xs text-[#6B6B6B]">
+                      {isBn
+                        ? 'এই নামে কোনো টিউটর প্রোফাইল পাওয়া যায়নি।'
+                        : 'No matching tutor accounts found.'}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-[#F6F4F3] max-h-64 overflow-y-auto">
+                      {quickMatchedTutors.map(tutor => (
+                        <button
+                          key={tutor.id}
+                          type="button"
+                          onClick={() => {
+                            setHeroSearchFocused(false);
+                            onOpenTutorProfile(tutor);
+                          }}
+                          className="w-full px-3.5 py-2.5 hover:bg-[#FFF6F3] flex items-center justify-between gap-2.5 text-left cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img
+                              src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
+                              alt={tutor.name}
+                              referrerPolicy="no-referrer"
+                              className="w-8 h-8 rounded-full object-cover border border-[#EFEAE7] shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="text-xs font-bold text-[#18181B] flex items-center gap-1 truncate">
+                                <span className="truncate">{tutor.name}</span>
+                                {isTutorVerified(tutor) && (
+                                  <BadgeCheck className="w-3.5 h-3.5 text-[#F47C68] shrink-0" />
+                                )}
+                              </div>
+                              <div className="text-[11px] text-[#6B6B6B] truncate">
+                                {[
+                                  tutor.university,
+                                  tutor.department,
+                                  tutor.subjects.slice(0, 2).join(', '),
+                                  tutor.district
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </div>
+                            </div>
+                          </div>
+                          <ArrowUpRight className="w-3.5 h-3.5 text-[#858585] shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Interactive Subject Filter Tiles (Dribbble Image 4 Style) */}
             <div className="space-y-2.5">

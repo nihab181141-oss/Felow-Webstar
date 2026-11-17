@@ -305,7 +305,7 @@ export async function loginWithGooglePopup(
           title: `New ${roleLabel} Signed Up`,
           message: `${fbUser.displayName || 'New User'} (${fbUser.email || 'Google account'}) created a ${roleLabel} account.`,
           type: 'system',
-          actionView: 'admin',
+          actionView: 'user-profile',
           targetId: fbUser.uid
         });
       }
@@ -466,6 +466,16 @@ export async function saveLearnerProfileInFirestore(
       await updateDoc(lpRef, payload);
     } else {
       await setDoc(lpRef, payload);
+      if (auth.currentUser?.email !== 'nihabalmahjabin@gmail.com') {
+        const roleLabel = sanitizedInput.learnerType === 'student' ? 'Student' : 'Guardian';
+        await notifyAdminsInFirestore({
+          title: `New ${roleLabel} Profile Created`,
+          message: `${cleanName || auth.currentUser?.displayName || 'A user'} created a ${roleLabel} profile in ${cleanDistrict || 'Bangladesh'}.`,
+          type: 'system',
+          actionView: 'user-profile',
+          targetId: uid
+        });
+      }
     }
 
     // Sync contact basics on users doc if it exists
@@ -491,26 +501,32 @@ export async function saveLearnerProfileInFirestore(
   }
 }
 
+export function mapLearnerProfileDoc(
+  docSnap: QueryDocumentSnapshot<DocumentData> | DocumentSnapshot<DocumentData>
+): LearnerProfile {
+  const d = docSnap.data() || {};
+  return {
+    uid: d.uid || docSnap.id,
+    name: d.name || '',
+    learnerType: d.learnerType || 'guardian',
+    phone: d.phone || '',
+    whatsappNumber: d.whatsappNumber || d.phone || '',
+    facebookUrl: d.facebookUrl || '',
+    division: d.division || 'Dhaka',
+    district: d.district || 'Dhaka',
+    upazila: d.upazila || '',
+    area: d.area || '',
+    phoneVisibility: d.phoneVisibility ?? false,
+    profileCompletion: d.profileCompletion || 50,
+    updatedAt: toIsoDateString(d.updatedAt)
+  };
+}
+
 export async function fetchLearnerProfileFromFirestore(uid: string): Promise<LearnerProfile | null> {
   try {
     const snap = await getDoc(doc(db, 'learnerProfiles', uid));
     if (!snap.exists()) return null;
-    const d = snap.data();
-    return {
-      uid: d.uid || uid,
-      name: d.name || '',
-      learnerType: d.learnerType || 'guardian',
-      phone: d.phone || '',
-      whatsappNumber: d.whatsappNumber || d.phone || '',
-      facebookUrl: d.facebookUrl || '',
-      division: d.division || 'Dhaka',
-      district: d.district || 'Dhaka',
-      upazila: d.upazila || '',
-      area: d.area || '',
-      phoneVisibility: d.phoneVisibility ?? false,
-      profileCompletion: d.profileCompletion || 50,
-      updatedAt: toIsoDateString(d.updatedAt)
-    };
+    return mapLearnerProfileDoc(snap);
   } catch (err) {
     console.warn('fetchLearnerProfileFromFirestore warning:', err);
     return null;
@@ -746,6 +762,14 @@ export async function saveTutorProfileInFirestore(
         message: `${updates.name || existingData.name || 'A tutor'} (${updates.university || existingData.university || 'University Tutor'}) published a tutor profile in ${updates.district || existingData.district || 'Bangladesh'}.`,
         type: 'system',
         actionView: 'tutor-detail',
+        targetId: tutorId
+      });
+    } else if (!existingSnap.exists() && auth.currentUser?.email !== 'nihabalmahjabin@gmail.com') {
+      await notifyAdminsInFirestore({
+        title: 'New Tutor Profile Started',
+        message: `${updates.name || auth.currentUser?.displayName || 'A tutor'} started creating a tutor profile.`,
+        type: 'system',
+        actionView: 'user-profile',
         targetId: tutorId
       });
     }

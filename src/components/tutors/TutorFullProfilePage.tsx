@@ -38,6 +38,7 @@ import { TutorReviewsSection } from './TutorReviewsSection';
 export const TutorFullProfilePage: React.FC = () => {
   const {
     tutors,
+    adminTutorProfiles,
     selectedTutor,
     setSelectedTutor,
     setActiveView,
@@ -49,6 +50,8 @@ export const TutorFullProfilePage: React.FC = () => {
     sendInvitation,
     tuitionPosts,
     currentUser,
+    currentRole,
+    openAdminUserProfile,
     isAuthenticated,
     setIsAuthModalOpen,
     setAuthModalMode,
@@ -57,7 +60,10 @@ export const TutorFullProfilePage: React.FC = () => {
   } = useApp();
 
   const tutor =
-    tutors.find(t => t.id === selectedTutor?.id) || selectedTutor || null;
+    tutors.find(t => t.id === selectedTutor?.id) ||
+    adminTutorProfiles.find(t => t.id === selectedTutor?.id) ||
+    selectedTutor ||
+    null;
 
   const [openingWa, setOpeningWa] = useState(false);
   const [privateContact, setPrivateContact] = useState<TutorPrivateContact | null>(null);
@@ -231,6 +237,16 @@ export const TutorFullProfilePage: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-2">
+            {currentRole === 'admin' && (
+              <button
+                type="button"
+                onClick={() => openAdminUserProfile(tutor.uid || tutor.id)}
+                className="h-10 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>Admin Inspect</span>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setIsShareOpen(true)}

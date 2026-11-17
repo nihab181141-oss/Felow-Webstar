@@ -33,6 +33,7 @@ import {
   updateUserRoleSettingsInFirestore,
   saveLearnerProfileInFirestore,
   fetchLearnerProfileFromFirestore,
+  mapLearnerProfileDoc,
   saveTutorProfileInFirestore,
   fetchTutorProfileById,
   fetchTutorContactDetails,
@@ -120,8 +121,12 @@ interface AppContextType {
   notifications: NotificationItem[];
   reports: ReportItem[];
   adminUsers: UserAccount[];
+  adminLearnerProfiles: LearnerProfile[];
   adminTutorProfiles: TutorProfile[];
   adminTuitionPosts: TuitionPost[];
+  inspectedAdminUserId: string | null;
+  setInspectedAdminUserId: (uid: string | null) => void;
+  openAdminUserProfile: (uid: string) => void;
   isMarketplaceLoading: boolean;
   browserNotifPermission: BrowserNotifPermission;
   requestBrowserNotifications: () => Promise<BrowserNotifPermission>;
@@ -356,8 +361,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [adminUsers, setAdminUsers] = useState<UserAccount[]>([]);
+  const [adminLearnerProfiles, setAdminLearnerProfiles] = useState<LearnerProfile[]>([]);
   const [adminTutorProfiles, setAdminTutorProfiles] = useState<TutorProfile[]>([]);
   const [adminTuitionPosts, setAdminTuitionPosts] = useState<TuitionPost[]>([]);
+  const [inspectedAdminUserId, setInspectedAdminUserId] = useState<string | null>(null);
   const [isMarketplaceLoading, setIsMarketplaceLoading] = useState(true);
   const [browserNotifPermission, setBrowserNotifPermission] = useState<BrowserNotifPermission>(() =>
     getBrowserNotificationPermission()
@@ -515,6 +522,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setReports([]);
         setSavedTutorIds([]);
         setSavedTuitionIds([]);
+        setAdminUsers([]);
+        setAdminLearnerProfiles([]);
+        setAdminTutorProfiles([]);
+        setAdminTuitionPosts([]);
+        setInspectedAdminUserId(null);
       }
       setIsAuthReady(true);
     });
@@ -568,9 +580,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Resolve deep-linked /tutors/:id and /tuitions/:id from loaded state or Firestore
   useEffect(() => {
     if (activeView !== 'tutor-detail' || !pendingRouteTutorId) return;
-    const existing = tutors.find(
-      t => t.id === pendingRouteTutorId || t.uid === pendingRouteTutorId
-    );
+    const existing =
+      tutors.find(t => t.id === pendingRouteTutorId || t.uid === pendingRouteTutorId) ||
+      adminTutorProfiles.find(t => t.id === pendingRouteTutorId || t.uid === pendingRouteTutorId);
     if (existing) {
       if (selectedTutor?.id !== existing.id) {
         setSelectedTutor(existing);
@@ -588,7 +600,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => {
       cancelled = true;
     };
-  }, [activeView, pendingRouteTutorId, tutors, selectedTutor?.id]);
+  }, [activeView, pendingRouteTutorId, tutors, adminTutorProfiles, selectedTutor?.id]);
 
   useEffect(() => {
     if (activeView !== 'tuition-detail' || !pendingRouteTuitionId) return;
@@ -932,6 +944,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }, err => console.warn('admin users listener:', err))
         );
         unsubs.push(
+          onSnapshot(query(collection(db, 'learnerProfiles'), limit(500)), snap => {
+            const list = snap.docs.map(mapLearnerProfileDoc);
+            setAdminLearnerProfiles(list);
+          }, err => console.warn('admin learnerProfiles listener:', err))
+        );
+        unsubs.push(
           onSnapshot(query(collection(db, 'tutorProfiles'), limit(500)), snap => {
             const list = snap.docs
               .map(mapTutorProfileDoc)
@@ -957,6 +975,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         );
       } else {
         setAdminUsers([]);
+        setAdminLearnerProfiles([]);
         setAdminTutorProfiles([]);
         setAdminTuitionPosts([]);
         unsubs.push(
@@ -1922,9 +1941,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const openAdminUserProfile = useCallback((uid: string) => {
+    if (!uid) return;
+    setInspectedAdminUserId(uid);
+    setActiveView('admin');
+  }, [setActiveView]);
+
   const handleNotificationClick = (notif: NotificationItem) => {
     markNotificationRead(notif.id);
+    if (notif.actionView === 'user-profile' && notif.targetId) {
+      if (currentRole === 'admin') {
+        openAdminUserProfile(notif.targetId);
+      } else {
+        setActiveView('dashboard');
+      }
+      return;
+    }
     if (notif.actionView === 'admin') {
+      if (currentRole === 'admin' && notif.targetId) {
+        const matchesUser =
+          adminUsers.some(u => u.id === notif.targetId) ||
+          adminLearnerProfiles.some(l => l.uid === notif.targetId) ||
+          adminTutorProfiles.some(t => t.id === notif.targetId || t.uid === notif.targetId);
+        if (matchesUser) {
+          openAdminUserProfile(notif.targetId);
+          return;
+        }
+      }
       setActiveView(currentRole === 'admin' ? 'admin' : 'dashboard');
       return;
     }
@@ -1956,6 +1999,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fetchTutorProfileById(notif.targetId).then(fetched => {
         if (fetched) {
           viewTutorDetail(fetched);
+        } else if (currentRole === 'admin' && notif.targetId) {
+          openAdminUserProfile(notif.targetId);
         } else {
           setActiveView(currentRole === 'admin' ? 'admin' : 'dashboard');
         }
@@ -2304,8 +2349,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         reports,
         adminUsers,
+        adminLearnerProfiles,
         adminTutorProfiles,
         adminTuitionPosts,
+        inspectedAdminUserId,
+        setInspectedAdminUserId,
+        openAdminUserProfile,
         isMarketplaceLoading,
         browserNotifPermission,
         requestBrowserNotifications,

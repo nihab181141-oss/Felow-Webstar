@@ -11,10 +11,15 @@ import {
   Globe,
   X,
   BellRing,
-  CheckCircle2
+  CheckCircle2,
+  ArrowUpRight,
+  BadgeCheck,
+  Briefcase
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION } from '../data/bangladeshData';
+import { DEFAULT_PLACEHOLDER_AVATAR, TutorProfile, isTutorVerified } from '../types';
+import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../utils/tutorSearch';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -42,23 +47,84 @@ export const Header: React.FC = () => {
     handleNotificationClick,
     browserNotifPermission,
     requestBrowserNotifications,
+    tutors,
+    adminTutorProfiles,
+    tuitionPosts,
+    viewTutorDetail,
+    viewTuitionDetail,
+    openAdminUserProfile,
     language,
     setLanguage
   } = useApp();
 
   const [openDropdown, setOpenDropdown] = useState<'notif' | 'account' | null>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const rightControlsRef = useRef<HTMLDivElement>(null);
+  const searchBoxRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const trimmedQuery = searchQuery.trim();
+
+  const matchingTutorResults = React.useMemo(() => {
+    if (!trimmedQuery) return [];
+    const poolMap = new Map<string, TutorProfile>();
+    tutors.forEach(t => {
+      if (t.isPublished !== false && t.profileVisibility !== 'hidden') {
+        poolMap.set(t.id, t);
+      }
+    });
+    if (currentRole === 'admin') {
+      adminTutorProfiles.forEach(t => {
+        poolMap.set(t.id, t);
+      });
+    }
+    return Array.from(poolMap.values())
+      .filter(t => matchesTutorSearchQuery(t, trimmedQuery, currentRole === 'admin' ? t.email : undefined))
+      .sort((a, b) => scoreTutorSearchMatch(b, trimmedQuery) - scoreTutorSearchMatch(a, trimmedQuery))
+      .slice(0, 6);
+  }, [trimmedQuery, tutors, adminTutorProfiles, currentRole]);
+
+  const matchingTuitionResults = React.useMemo(() => {
+    if (!trimmedQuery) return [];
+    const q = trimmedQuery.toLowerCase();
+    return tuitionPosts
+      .filter(post => {
+        if (post.status !== 'open') return false;
+        const hay = [
+          post.title,
+          post.learnerName,
+          post.classGrade,
+          post.district,
+          post.area,
+          ...post.subjects
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return q.split(/\s+/).every(tok => hay.includes(tok));
+      })
+      .slice(0, 3);
+  }, [trimmedQuery, tuitionPosts]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (rightControlsRef.current && !rightControlsRef.current.contains(e.target as Node)) {
         setOpenDropdown(null);
       }
+      const inDesktopSearch = searchBoxRef.current?.contains(e.target as Node);
+      const inMobileSearch = mobileSearchRef.current?.contains(e.target as Node);
+      if (!inDesktopSearch && !inMobileSearch) {
+        setIsSearchFocused(false);
+      }
     };
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenDropdown(null);
+      if (e.key === 'Escape') {
+        setOpenDropdown(null);
+        setIsSearchFocused(false);
+        setIsMobileSearchOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleEscape);
@@ -172,54 +238,208 @@ export const Header: React.FC = () => {
           </nav>
         </div>
 
-        {/* Zone 2: Desktop / Tablet Search + District Filter */}
-        <div className="hidden md:flex flex-1 max-w-xl items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white transition-all overflow-hidden">
-          <div className="relative flex-1 flex items-center min-w-0">
-            <Search className="w-4 h-4 text-[#6B6B6B] ml-4 shrink-0 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                ensureDirectoryView();
-              }}
-              placeholder={
-                language === 'bn' ? 'টিউটর, বিষয় বা এলাকা খুঁজুন...' : 'Search tutor, subject, area...'
-              }
-              className="w-full h-10 pl-2.5 pr-8 bg-transparent text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
-                className="mr-2 w-6 h-6 rounded-full hover:bg-[#EAE4E1] flex items-center justify-center text-[#6B6B6B] hover:text-[#18181B] cursor-pointer"
+        {/* Zone 2: Desktop / Tablet Search + Instant Tutor Account Results + District Filter */}
+        <div ref={searchBoxRef} className="hidden md:block flex-1 max-w-xl relative">
+          <div className="flex items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white transition-all overflow-hidden">
+            <div className="relative flex-1 flex items-center min-w-0">
+              <Search className="w-4 h-4 text-[#6B6B6B] ml-4 shrink-0 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setIsSearchFocused(true)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchFocused(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && trimmedQuery) {
+                    setIsSearchFocused(false);
+                    if (matchingTutorResults.length > 0 && matchingTuitionResults.length === 0) {
+                      setDirectoryTab('tutors');
+                      setActiveView('tutors');
+                    } else {
+                      ensureDirectoryView();
+                    }
+                  }
+                }}
+                placeholder={
+                  language === 'bn'
+                    ? 'টিউটরের নাম, প্রোফাইল, বিষয় বা এলাকা খুঁজুন...'
+                    : 'Search tutor name, profile, subject, area...'
+                }
+                className="w-full h-10 pl-2.5 pr-8 bg-transparent text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                  className="mr-2 w-6 h-6 rounded-full hover:bg-[#EAE4E1] flex items-center justify-center text-[#6B6B6B] hover:text-[#18181B] cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center border-l border-[#EAE4E1] pl-2.5 pr-3.5 shrink-0">
+              <select
+                value={districtFilter}
+                onChange={(e) => {
+                  setDistrictFilter(e.target.value);
+                  ensureDirectoryView();
+                }}
+                aria-label="Filter by district"
+                className="h-10 bg-transparent text-xs font-bold text-[#18181B] focus:outline-none cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+                <option value="All">{language === 'bn' ? 'সকল জেলা' : 'All Districts'}</option>
+                {ALL_DISTRICTS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center border-l border-[#EAE4E1] pl-2.5 pr-3.5 shrink-0">
-            <select
-              value={districtFilter}
-              onChange={(e) => {
-                setDistrictFilter(e.target.value);
-                ensureDirectoryView();
-              }}
-              aria-label="Filter by district"
-              className="h-10 bg-transparent text-xs font-bold text-[#18181B] focus:outline-none cursor-pointer"
-            >
-              <option value="All">{language === 'bn' ? 'সকল জেলা' : 'All Districts'}</option>
-              {ALL_DISTRICTS.map(d => (
-                <option key={d} value={d}>{d}</option>
-              ))}
-            </select>
-          </div>
+          {/* Live Instant Tutor Accounts & Posts Dropdown */}
+          {isSearchFocused && trimmedQuery.length > 0 && (
+            <div className="absolute left-0 right-0 top-12 bg-white rounded-[24px] shadow-[0_14px_40px_rgba(24,24,27,0.12)] border border-[#EFEAE7] overflow-hidden z-50 max-h-[75vh] overflow-y-auto">
+              <div className="px-4 py-2.5 bg-[#F8F6F5] border-b border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
+                <span className="inline-flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-[#EB624B]" />
+                  <span>
+                    {language === 'bn' ? 'টিউটর অ্যাকাউন্ট ও প্রোফাইল' : 'Tutor Accounts & Profiles'} ({matchingTutorResults.length})
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSearchFocused(false);
+                    setDirectoryTab('tutors');
+                    setActiveView('tutors');
+                  }}
+                  className="text-[#C94A35] hover:underline cursor-pointer"
+                >
+                  {language === 'bn' ? 'ডিরেক্টরিতে দেখুন →' : 'View in Tutors →'}
+                </button>
+              </div>
+
+              {matchingTutorResults.length === 0 ? (
+                <div className="px-4 py-3 text-xs text-[#6B6B6B]">
+                  {language === 'bn'
+                    ? `"${trimmedQuery}" নামে কোনো টিউটর প্রোফাইল পাওয়া যায়নি।`
+                    : `No tutor accounts or profiles matched "${trimmedQuery}".`}
+                </div>
+              ) : (
+                <div className="divide-y divide-[#F6F4F3]">
+                  {matchingTutorResults.map(tutor => (
+                    <button
+                      key={tutor.id}
+                      type="button"
+                      onClick={() => {
+                        setIsSearchFocused(false);
+                        if (tutor.isPublished === false && currentRole === 'admin') {
+                          openAdminUserProfile(tutor.uid || tutor.id);
+                        } else {
+                          viewTutorDetail(tutor);
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 hover:bg-[#FFF6F3] flex items-center justify-between gap-3 text-left cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
+                          alt={tutor.name}
+                          referrerPolicy="no-referrer"
+                          className="w-9 h-9 rounded-full object-cover border border-[#EFEAE7] shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1 text-xs font-bold text-[#18181B]">
+                            <span className="truncate">{tutor.name}</span>
+                            {isTutorVerified(tutor) && (
+                              <BadgeCheck className="w-3.5 h-3.5 text-[#F47C68] shrink-0" />
+                            )}
+                            {tutor.isPublished === false && (
+                              <span className="text-[10px] font-semibold text-[#C94A35] ml-1">Draft</span>
+                            )}
+                          </div>
+                          <div className="text-[11px] text-[#6B6B6B] truncate">
+                            {[
+                              tutor.university,
+                              tutor.department,
+                              tutor.subjects.slice(0, 2).join(', '),
+                              tutor.district
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </div>
+                        </div>
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {matchingTuitionResults.length > 0 && (
+                <>
+                  <div className="px-4 py-2 bg-[#F8F6F5] border-y border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-[#15803D]" />
+                      <span>{language === 'bn' ? 'টিউশন পোস্ট' : 'Tuition Posts'}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchFocused(false);
+                        setDirectoryTab('tuitions');
+                        setActiveView('tuitions');
+                      }}
+                      className="text-[#15803D] hover:underline cursor-pointer"
+                    >
+                      {language === 'bn' ? 'টিউশনে দেখুন →' : 'View in Tuitions →'}
+                    </button>
+                  </div>
+                  <div className="divide-y divide-[#F6F4F3]">
+                    {matchingTuitionResults.map(post => (
+                      <button
+                        key={post.id}
+                        type="button"
+                        onClick={() => {
+                          setIsSearchFocused(false);
+                          viewTuitionDetail(post);
+                        }}
+                        className="w-full px-4 py-2.5 hover:bg-[#DCEBFA]/35 flex items-center justify-between gap-3 text-left cursor-pointer transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-[#18181B] truncate">{post.title}</div>
+                          <div className="text-[11px] text-[#6B6B6B] truncate">
+                            {post.classGrade} · {[post.area, post.district].filter(Boolean).join(', ')} · ৳
+                            {post.salaryOfferBDT.toLocaleString()}/mo
+                          </div>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Zone 3: Primary Post CTA + Account Controls */}
+        {/* Zone 3: Mobile Search Trigger + Primary Post CTA + Account Controls */}
         <div className="flex items-center gap-2 shrink-0 relative" ref={rightControlsRef}>
+          <button
+            type="button"
+            onClick={() => {
+              setOpenDropdown(null);
+              setIsMobileSearchOpen(prev => !prev);
+            }}
+            aria-label="Search tutors"
+            className="md:hidden w-10 h-10 rounded-full bg-[#F6F4F3] hover:bg-[#EFEAFF] text-[#18181B] flex items-center justify-center cursor-pointer transition-colors"
+          >
+            {isMobileSearchOpen ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+          </button>
+
           <button
             type="button"
             onClick={() => {
@@ -512,6 +732,105 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Expandable Mobile Global Tutor Search Drawer */}
+      {isMobileSearchOpen && (
+        <div
+          ref={mobileSearchRef}
+          className="md:hidden bg-white border-b border-[#EFEAE7] px-3 py-3 space-y-2.5 shadow-lg"
+        >
+          <div className="flex items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white px-3.5 h-11">
+            <Search className="w-4 h-4 text-[#6B6B6B] shrink-0 pointer-events-none" />
+            <input
+              type="text"
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={
+                language === 'bn'
+                  ? 'টিউটরের নাম, প্রোফাইল, বিষয় খুঁজুন...'
+                  : 'Search tutor name, profile, subject...'
+              }
+              className="flex-1 min-w-0 bg-transparent px-2.5 text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear mobile search"
+                className="w-7 h-7 rounded-full hover:bg-[#EAE4E1] flex items-center justify-center text-[#52525B]"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {trimmedQuery.length > 0 && (
+            <div className="max-h-72 overflow-y-auto rounded-2xl border border-[#EFEAE7] divide-y divide-[#F6F4F3] bg-white">
+              {matchingTutorResults.length === 0 && matchingTuitionResults.length === 0 ? (
+                <div className="p-3 text-xs text-[#6B6B6B]">
+                  {language === 'bn'
+                    ? `"${trimmedQuery}" নামে কোনো টিউটর বা পোস্ট পাওয়া যায়নি।`
+                    : `No matching tutors or posts for "${trimmedQuery}".`}
+                </div>
+              ) : (
+                <>
+                  {matchingTutorResults.map(tutor => (
+                    <button
+                      key={tutor.id}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileSearchOpen(false);
+                        if (tutor.isPublished === false && currentRole === 'admin') {
+                          openAdminUserProfile(tutor.uid || tutor.id);
+                        } else {
+                          viewTutorDetail(tutor);
+                        }
+                      }}
+                      className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-left hover:bg-[#FFF6F3]"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <img
+                          src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
+                          alt={tutor.name}
+                          referrerPolicy="no-referrer"
+                          className="w-8 h-8 rounded-full object-cover shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-[#18181B] truncate">{tutor.name}</div>
+                          <div className="text-[11px] text-[#6B6B6B] truncate">
+                            {[tutor.university, tutor.district].filter(Boolean).join(' · ')}
+                          </div>
+                        </div>
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
+                    </button>
+                  ))}
+                  {matchingTuitionResults.map(post => (
+                    <button
+                      key={post.id}
+                      type="button"
+                      onClick={() => {
+                        setIsMobileSearchOpen(false);
+                        viewTuitionDetail(post);
+                      }}
+                      className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-left hover:bg-[#DCEBFA]/35"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-[#18181B] truncate">{post.title}</div>
+                        <div className="text-[11px] text-[#6B6B6B] truncate">
+                          Tuition · {post.district} · ৳{post.salaryOfferBDT.toLocaleString()}/mo
+                        </div>
+                      </div>
+                      <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
+                    </button>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </header>
   );
 };
