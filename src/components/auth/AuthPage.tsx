@@ -25,6 +25,7 @@ export const AuthPage: React.FC = () => {
   } = useApp();
 
   const [selectedRole, setSelectedRole] = useState<RoleChoice>('learner');
+  const [learnerSubtype, setLearnerSubtype] = useState<'guardian' | 'student'>('guardian');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPolicyModal, setShowPolicyModal] = useState(false);
@@ -35,7 +36,7 @@ export const AuthPage: React.FC = () => {
     setIsSubmitting(true);
     setErrorMessage('');
     try {
-      await loginWithGoogleUser(selectedRole, 'guardian');
+      await loginWithGoogleUser(selectedRole, learnerSubtype);
     } catch (err: any) {
       setErrorMessage(err?.message || 'Google Sign-In failed. Please try again.');
     } finally {
@@ -216,6 +217,38 @@ export const AuthPage: React.FC = () => {
               );
             })}
           </div>
+
+          {selectedRole === 'learner' && (
+            <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-xs">
+              <span className="text-white/95 font-medium pl-1">
+                {language === 'bn' ? 'আমি একজন:' : 'Account type:'}
+              </span>
+              <div className="inline-flex items-center gap-1">
+                {(
+                  [
+                    { id: 'guardian' as const, en: 'Guardian', bn: 'অভিভাবক' },
+                    { id: 'student' as const, en: 'Student', bn: 'শিক্ষার্থী' }
+                  ] as const
+                ).map(item => {
+                  const active = learnerSubtype === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setLearnerSubtype(item.id)}
+                      className={`h-7 px-3 rounded-full font-bold transition-colors cursor-pointer ${
+                        active
+                          ? 'bg-white text-[#18181B] shadow-2xs'
+                          : 'text-white/95 hover:bg-white/15'
+                      }`}
+                    >
+                      {language === 'bn' ? item.bn : item.en}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {errorMessage && (
             <div className="p-3 rounded-2xl bg-white text-rose-700 text-xs font-medium flex items-start gap-2 shadow-sm">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Camera, CheckCircle2, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
   BD_DIVISIONS,
@@ -41,17 +41,27 @@ export const TutorOnboardingWizard: React.FC = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+  const [saveError, setSaveError] = useState('');
   const [showOptional, setShowOptional] = useState(false);
+
+  const initialSavedPhoto = useMemo(() => {
+    const candidates = [
+      myTutorProfile?.profilePhotoURL,
+      myTutorProfile?.avatar,
+      currentUser.avatar
+    ];
+    return (
+      candidates.find(src => Boolean(src && !isPlaceholderAvatar(src))) ||
+      DEFAULT_PLACEHOLDER_AVATAR
+    );
+  }, [myTutorProfile?.profilePhotoURL, myTutorProfile?.avatar, currentUser.avatar]);
 
   // Mandatory Personal & Contact
   const [fullName, setFullName] = useState(myTutorProfile?.name || currentUser.name || '');
   const [gender, setGender] = useState<'Male' | 'Female'>(myTutorProfile?.gender || 'Male');
-  const [photoUrl, setPhotoUrl] = useState(
-    myTutorProfile?.profilePhotoURL ||
-      myTutorProfile?.avatar ||
-      currentUser.avatar ||
-      DEFAULT_PLACEHOLDER_AVATAR
-  );
+  const [photoUrl, setPhotoUrl] = useState(initialSavedPhoto);
+  const previewObjectUrlRef = useRef<string | null>(null);
   const [whatsappInput, setWhatsappInput] = useState(
     myTutorProfile?.whatsappNumber || currentUser.whatsappNumber || currentUser.phone || ''
   );
@@ -137,18 +147,40 @@ export const TutorOnboardingWizard: React.FC = () => {
   const hydratedProfileKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
+    return () => {
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+        previewObjectUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!myTutorProfile) {
       setFullName(prev => prev || currentUser.name || '');
+      if (!uploadingPhoto && !previewObjectUrlRef.current && isPlaceholderAvatar(photoUrl) && !isPlaceholderAvatar(currentUser.avatar)) {
+        setPhotoUrl(currentUser.avatar);
+      }
       return;
     }
-    const syncKey = `${myTutorProfile.id}:${myTutorProfile.whatsappNumber || ''}:${myTutorProfile.facebookUrl || ''}:${myTutorProfile.university || ''}`;
+    const remotePhoto = myTutorProfile.profilePhotoURL || myTutorProfile.avatar || '';
+    const syncKey = `${myTutorProfile.id}:${myTutorProfile.university || ''}:${remotePhoto}`;
+
+    // Backfill contact inputs safely if private contact resolved slightly after initial mount
+    if (myTutorProfile.whatsappNumber) {
+      setWhatsappInput(prev => prev || myTutorProfile.whatsappNumber || '');
+    }
+    if (myTutorProfile.facebookUrl) {
+      setFacebookInput(prev => prev || myTutorProfile.facebookUrl || '');
+    }
+
     if (hydratedProfileKeyRef.current === syncKey) return;
     hydratedProfileKeyRef.current = syncKey;
 
     setFullName(myTutorProfile.name || currentUser.name || '');
     if (myTutorProfile.gender) setGender(myTutorProfile.gender);
-    if (myTutorProfile.profilePhotoURL || myTutorProfile.avatar) {
-      setPhotoUrl(myTutorProfile.profilePhotoURL || myTutorProfile.avatar);
+    if (!uploadingPhoto && !previewObjectUrlRef.current && remotePhoto && !isPlaceholderAvatar(remotePhoto)) {
+      setPhotoUrl(remotePhoto);
     }
     if (myTutorProfile.whatsappNumber) setWhatsappInput(myTutorProfile.whatsappNumber);
     if (myTutorProfile.whatsappConsent !== undefined) setWhatsappConsent(myTutorProfile.whatsappConsent);
@@ -178,7 +210,7 @@ export const TutorOnboardingWizard: React.FC = () => {
     if (myTutorProfile.tuitionTypes?.length) setSelectedTuitionTypes(myTutorProfile.tuitionTypes);
     if (myTutorProfile.expectedSalaryMin) setExpectedMin(myTutorProfile.expectedSalaryMin);
     if (myTutorProfile.expectedSalaryMax) setExpectedMax(myTutorProfile.expectedSalaryMax);
-  }, [myTutorProfile, currentUser.name]);
+  }, [myTutorProfile, currentUser.name, currentUser.avatar, uploadingPhoto, photoUrl]);
 
   const normalizedWa = useMemo(() => normalizeBdPhoneForWhatsApp(whatsappInput), [whatsappInput]);
   const validWa = isValidBdWhatsAppNumber(whatsappInput);
@@ -291,21 +323,54 @@ export const TutorOnboardingWizard: React.FC = () => {
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const previousSavedPhoto = photoUrl;
+    setPhotoError('');
     setUploadingPhoto(true);
+
+    let localPreviewUrl = '';
+    try {
+      localPreviewUrl = URL.createObjectURL(file);
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+      }
+      previewObjectUrlRef.current = localPreviewUrl;
+      setPhotoUrl(localPreviewUrl);
+    } catch {
+      // Continue without local preview if browser restricts createObjectURL
+    }
+
     try {
       const uploadedUrl = await uploadTutorAvatar(file);
-      if (uploadedUrl) setPhotoUrl(uploadedUrl);
-    } catch {
-      // Error toast already shown by uploadTutorAvatar
+      if (uploadedUrl) {
+        setPhotoUrl(uploadedUrl);
+      }
+    } catch (err: any) {
+      setPhotoUrl(previousSavedPhoto || DEFAULT_PLACEHOLDER_AVATAR);
+      setPhotoError(
+        err?.message || 'Profile photo could not be uploaded. Please choose a JPG, PNG, or WebP photo.'
+      );
     } finally {
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+        previewObjectUrlRef.current = null;
+      }
       e.target.value = '';
       setUploadingPhoto(false);
     }
   };
 
   const handleSave = async (publish: boolean) => {
+    setSaveError('');
+    if (uploadingPhoto) {
+      setSaveError('Please wait a moment for your profile photo upload to finish.');
+      showToast('Please wait for your profile photo upload to finish.', 'info');
+      return;
+    }
     if (publish && !isReadyToPublish) {
-      showToast(`Complete required fields: ${missingFields.join(', ')}`, 'error');
+      const msg = `Complete required fields: ${missingFields.join(', ')}`;
+      setSaveError(msg);
+      showToast(msg, 'error');
       return;
     }
     setIsSaving(true);
@@ -318,6 +383,8 @@ export const TutorOnboardingWizard: React.FC = () => {
       if (publish) {
         setActiveView('dashboard');
       }
+    } catch (err: any) {
+      setSaveError(err?.message || 'Could not save your tutor profile. Please check your inputs and try again.');
     } finally {
       setIsSaving(false);
     }
@@ -328,6 +395,19 @@ export const TutorOnboardingWizard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FCFBFA] py-6 px-3 sm:px-6 text-left animate-fade-up">
       <div className="max-w-2xl mx-auto space-y-4">
+        {myTutorProfile && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setActiveView('dashboard')}
+              className="h-9 px-4 rounded-full bg-white hover:bg-[#F6F4F3] border border-[#EFEAE7] text-xs font-semibold text-[#18181B] inline-flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Tutor Dashboard</span>
+            </button>
+          </div>
+        )}
+
         {/* Header Card */}
         <div className="ivory-card p-5 sm:p-6 space-y-4">
           <div className="flex items-center justify-between gap-4">
@@ -366,7 +446,7 @@ export const TutorOnboardingWizard: React.FC = () => {
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             <div className="relative shrink-0">
               <img
                 src={photoUrl || DEFAULT_PLACEHOLDER_AVATAR}
@@ -374,25 +454,51 @@ export const TutorOnboardingWizard: React.FC = () => {
                 referrerPolicy="no-referrer"
                 className="w-20 h-20 rounded-full object-cover border-2 border-[#EFEAE7]"
               />
-              {hasRealPhoto && (
-                <CheckCircle2 className="w-5 h-5 text-[#15803D] bg-white rounded-full absolute bottom-0 right-0" />
+              {uploadingPhoto ? (
+                <div className="w-6 h-6 bg-[#18181B] text-white rounded-full absolute bottom-0 right-0 flex items-center justify-center shadow-xs">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                </div>
+              ) : (
+                hasRealPhoto && (
+                  <CheckCircle2 className="w-5 h-5 text-[#15803D] bg-white rounded-full absolute bottom-0 right-0" />
+                )
               )}
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 min-w-0 flex-1">
               <div className="font-semibold text-[#18181B]">
                 Profile Photo * {!hasRealPhoto && <span className="text-rose-700">(Upload required)</span>}
               </div>
-              <label className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#18181B] font-semibold cursor-pointer transition-colors">
-                <Camera className="w-4 h-4 shrink-0" />
-                <span>{uploadingPhoto ? 'Uploading...' : 'Upload Photo'}</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  disabled={uploadingPhoto}
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
-              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 h-10 px-4 rounded-full bg-[#DCEBFA] hover:bg-[#CBE0F7] text-[#18181B] font-semibold cursor-pointer transition-colors">
+                  {uploadingPhoto ? (
+                    <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4 shrink-0" />
+                  )}
+                  <span>{uploadingPhoto ? 'Uploading photo...' : hasRealPhoto ? 'Change Photo' : 'Upload Photo'}</span>
+                  <input
+                    type="file"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                    disabled={uploadingPhoto}
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </label>
+                {hasRealPhoto && !uploadingPhoto && (
+                  <span className="text-[11px] font-semibold text-[#15803D]">
+                    Saved to your account
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-[#6B6B6B]">
+                Supports mobile camera photos, JPG, PNG, and WebP (auto-optimized before upload).
+              </p>
+              {photoError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-medium flex items-start gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{photoError}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -862,19 +968,26 @@ export const TutorOnboardingWizard: React.FC = () => {
             </div>
           )}
 
+          {saveError && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{saveError}</span>
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center justify-between gap-2">
             <button
               type="button"
-              disabled={isSaving}
+              disabled={isSaving || uploadingPhoto}
               onClick={() => handleSave(false)}
-              className="h-10 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-bold cursor-pointer transition-colors whitespace-nowrap"
+              className="h-10 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] disabled:opacity-50 text-white text-xs font-bold cursor-pointer transition-colors whitespace-nowrap"
             >
               Save Draft
             </button>
 
             <button
               type="button"
-              disabled={isSaving || !isReadyToPublish}
+              disabled={isSaving || uploadingPhoto || !isReadyToPublish}
               onClick={() => handleSave(true)}
               className="h-11 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] disabled:opacity-50 text-white text-sm font-bold cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap"
             >

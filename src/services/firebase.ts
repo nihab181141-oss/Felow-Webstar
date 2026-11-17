@@ -34,7 +34,7 @@ import {
   DocumentData,
   Timestamp
 } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import firebaseConfig from '../../firebase-applet-config.json';
 import {
   UserAccount,
@@ -53,10 +53,12 @@ import {
   calculateTutorCompleteness,
   calculateLearnerCompleteness,
   isTutorProfileMandatoryComplete,
+  isPlaceholderAvatar,
   DEFAULT_PLACEHOLDER_AVATAR
 } from '../types';
 import { getDivisionByDistrict } from '../data/bangladeshData';
 import { normalizeBdPhoneForWhatsApp, sanitizeFacebookUrl } from '../utils/contactLinks';
+import { prepareAvatarImageFile, prepareDocumentFileForUpload } from '../utils/imageUpload';
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -253,6 +255,10 @@ export async function loginWithGooglePopup(
 
   const userRef = doc(db, 'users', fbUser.uid);
   const safeRole: 'learner' | 'tutor' = intendedRole === 'tutor' ? 'tutor' : 'learner';
+  const safeDisplayName = (fbUser.displayName || 'FeLoW WebStaR User').trim().slice(0, 128) || 'FeLoW WebStaR User';
+  const safeEmail = (fbUser.email || '').trim().slice(0, 128);
+  const safePhone = (fbUser.phoneNumber || '').trim().slice(0, 32);
+  const safePhotoUrl = (fbUser.photoURL || '').trim().slice(0, 512);
   let isNewUser = false;
   let needsTutorOnboarding = false;
 
@@ -262,11 +268,11 @@ export async function loginWithGooglePopup(
       isNewUser = true;
       await setDoc(userRef, {
         uid: fbUser.uid,
-        name: fbUser.displayName || 'FeLoW WebStaR User',
-        email: fbUser.email || '',
-        phone: fbUser.phoneNumber || '',
-        whatsappNumber: fbUser.phoneNumber || '',
-        photoURL: fbUser.photoURL || '',
+        name: safeDisplayName,
+        email: safeEmail,
+        phone: safePhone,
+        whatsappNumber: safePhone,
+        photoURL: safePhotoUrl,
         activeRole: safeRole,
         availableRoles: [safeRole],
         learnerSubtype,
@@ -282,10 +288,10 @@ export async function loginWithGooglePopup(
       if (safeRole === 'learner') {
         await setDoc(doc(db, 'learnerProfiles', fbUser.uid), {
           uid: fbUser.uid,
-          name: fbUser.displayName || 'FeLoW WebStaR User',
+          name: safeDisplayName,
           learnerType: learnerSubtype,
-          phone: fbUser.phoneNumber || '',
-          whatsappNumber: fbUser.phoneNumber || '',
+          phone: safePhone,
+          whatsappNumber: safePhone,
           division: 'Dhaka',
           district: 'Dhaka',
           area: 'Dhanmondi',
@@ -303,19 +309,18 @@ export async function loginWithGooglePopup(
           safeRole === 'tutor' ? 'Tutor' : learnerSubtype === 'student' ? 'Student' : 'Guardian';
         await notifyAdminsInFirestore({
           title: `New ${roleLabel} Signed Up`,
-          message: `${fbUser.displayName || 'New User'} (${fbUser.email || 'Google account'}) created a ${roleLabel} account.`,
+          message: `${safeDisplayName} (${safeEmail || 'Google account'}) created a ${roleLabel} account.`,
           type: 'system',
           actionView: 'user-profile',
           targetId: fbUser.uid
-        });
+        }).catch(() => undefined);
       }
     } else {
-      // Preserve existing user data (including legacy email/password migrated accounts).
-      // Only fill missing Google display name / photoURL if blank.
+      // Preserve existing user data. Only fill missing Google display name / photoURL if blank.
       const existingData = snap.data();
       const updates: Record<string, any> = {};
-      if (!existingData.name && fbUser.displayName) updates.name = fbUser.displayName;
-      if (!existingData.photoURL && fbUser.photoURL) updates.photoURL = fbUser.photoURL;
+      if (!existingData.name && safeDisplayName) updates.name = safeDisplayName;
+      if (!existingData.photoURL && safePhotoUrl) updates.photoURL = safePhotoUrl;
 
       // Respect user's role selection on sign-in when switching to tutor/learner
       const currentRoles: string[] = Array.isArray(existingData.availableRoles)
@@ -341,7 +346,7 @@ export async function loginWithGooglePopup(
       }
     }
   } catch (e) {
-    console.warn('Could not sync Google user profile to Firestore:', e);
+    handleFirestoreError(e, OperationType.WRITE, `users/${fbUser.uid}`);
   }
 
   return { fbUser, isNewUser, needsTutorOnboarding };
@@ -393,14 +398,34 @@ export async function updateUserRoleSettingsInFirestore(
 ): Promise<void> {
   const path = `users/${uid}`;
   const filteredRoles = availableRoles.filter(r => r === 'learner' || r === 'tutor');
-  const safeActiveRole = activeRole === 'admin' ? 'learner' : activeRole;
+  const safeActiveRole: 'learner' | 'tutor' = activeRole === 'tutor' ? 'tutor' : 'learner';
+  const finalRoles = filteredRoles.length > 0 ? filteredRoles : [safeActiveRole];
   try {
     const userRef = doc(db, 'users', uid);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
       await updateDoc(userRef, {
         activeRole: safeActiveRole,
-        availableRoles: filteredRoles.length > 0 ? filteredRoles : [safeActiveRole],
+        availableRoles: finalRoles,
+        updatedAt: serverTimestamp()
+      });
+    } else if (auth.currentUser && auth.currentUser.uid === uid) {
+      await setDoc(userRef, {
+        uid,
+        name: (auth.currentUser.displayName || 'FeLoW WebStaR User').trim().slice(0, 128),
+        email: (auth.currentUser.email || '').trim().slice(0, 128),
+        phone: (auth.currentUser.phoneNumber || '').trim().slice(0, 32),
+        whatsappNumber: (auth.currentUser.phoneNumber || '').trim().slice(0, 32),
+        photoURL: (auth.currentUser.photoURL || '').trim().slice(0, 512),
+        activeRole: safeActiveRole,
+        availableRoles: finalRoles,
+        learnerSubtype: 'guardian',
+        division: 'Dhaka',
+        district: 'Dhaka',
+        area: 'Dhanmondi',
+        phoneVisibility: false,
+        accountStatus: 'active',
+        createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
     }
@@ -673,14 +698,39 @@ export async function saveTutorProfileInFirestore(
     delete sanitized.facebookUrl;
     delete sanitized.createdAt;
 
-    if (updates.avatar || updates.profilePhotoURL) {
-      const photo = updates.profilePhotoURL || updates.avatar || '';
-      sanitized.avatar = photo;
-      sanitized.profilePhotoURL = photo;
+    if (updates.avatar !== undefined || updates.profilePhotoURL !== undefined) {
+      const candidatePhoto = (updates.profilePhotoURL || updates.avatar || '').trim();
+      if (candidatePhoto && !isPlaceholderAvatar(candidatePhoto)) {
+        const cleanPhoto = candidatePhoto.slice(0, 512);
+        sanitized.avatar = cleanPhoto;
+        sanitized.profilePhotoURL = cleanPhoto;
+      } else {
+        delete sanitized.avatar;
+        delete sanitized.profilePhotoURL;
+      }
     }
 
+    if (typeof sanitized.name === 'string') sanitized.name = sanitized.name.trim().slice(0, 128);
+    if (typeof sanitized.headline === 'string') sanitized.headline = sanitized.headline.trim().slice(0, 256);
+    if (typeof sanitized.bio === 'string') sanitized.bio = sanitized.bio.trim().slice(0, 2048);
+    if (typeof sanitized.experienceSummary === 'string') sanitized.experienceSummary = sanitized.experienceSummary.trim().slice(0, 1024);
+    if (typeof sanitized.university === 'string') sanitized.university = sanitized.university.trim().slice(0, 256);
+    if (typeof sanitized.degree === 'string') sanitized.degree = sanitized.degree.trim().slice(0, 128);
+    if (typeof sanitized.department === 'string') sanitized.department = sanitized.department.trim().slice(0, 128);
+    if (typeof sanitized.academicYear === 'string') sanitized.academicYear = sanitized.academicYear.trim().slice(0, 64);
+    if (typeof sanitized.passingYear === 'string') sanitized.passingYear = sanitized.passingYear.trim().slice(0, 16);
+    if (typeof sanitized.gpa === 'string') sanitized.gpa = sanitized.gpa.trim().slice(0, 32);
+    if (typeof sanitized.schoolName === 'string') sanitized.schoolName = sanitized.schoolName.trim().slice(0, 256);
+    if (typeof sanitized.collegeName === 'string') sanitized.collegeName = sanitized.collegeName.trim().slice(0, 256);
+    if (typeof sanitized.sscGpa === 'string') sanitized.sscGpa = sanitized.sscGpa.trim().slice(0, 32);
+    if (typeof sanitized.hscGpa === 'string') sanitized.hscGpa = sanitized.hscGpa.trim().slice(0, 32);
+    if (typeof sanitized.division === 'string') sanitized.division = sanitized.division.trim().slice(0, 64);
+    if (typeof sanitized.district === 'string') sanitized.district = sanitized.district.trim().slice(0, 64);
+    if (typeof sanitized.upazila === 'string') sanitized.upazila = sanitized.upazila.trim().slice(0, 64);
+    if (typeof sanitized.teachingStyleSummary === 'string') sanitized.teachingStyleSummary = sanitized.teachingStyleSummary.trim().slice(0, 1024);
+
     if (mergedForScore.semester) {
-      sanitized.semester = mergedForScore.semester;
+      sanitized.semester = String(mergedForScore.semester).trim().slice(0, 64);
     }
 
     sanitized.isPublished = isPublished;
@@ -708,6 +758,10 @@ export async function saveTutorProfileInFirestore(
       await setDoc(refDoc, stripUndefined({
         ...sanitized,
         uid: updates.uid || tutorId,
+        name: sanitized.name || (auth.currentUser?.displayName || 'Tutor').slice(0, 128),
+        university: sanitized.university ?? '',
+        department: sanitized.department ?? '',
+        district: sanitized.district || 'Dhaka',
         profileCompletion,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -725,13 +779,16 @@ export async function saveTutorProfileInFirestore(
     }
 
     // Store WhatsApp & Facebook contact in isolated /tutorProfiles/{uid}/private/contact
+    const safeRawWa = (finalRawWa || '').slice(0, 32);
+    const safeNormWa = (finalNormWa || '').slice(0, 20);
+    const safeFb = (finalFb || '').slice(0, 512);
     await setDoc(
       doc(db, 'tutorProfiles', tutorId, 'private', 'contact'),
       stripUndefined({
         uid: tutorId,
-        whatsappNumber: finalRawWa,
-        normalizedWhatsappNumber: finalNormWa,
-        facebookUrl: finalFb,
+        whatsappNumber: safeRawWa,
+        normalizedWhatsappNumber: safeNormWa,
+        facebookUrl: safeFb,
         whatsappConsent: Boolean(whatsappConsent),
         contactVisibility,
         updatedAt: serverTimestamp()
@@ -743,15 +800,16 @@ export async function saveTutorProfileInFirestore(
     const userRef = doc(db, 'users', tutorId);
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
+      const formattedPhone = (finalNormWa ? `+${finalNormWa}` : finalRawWa).slice(0, 32);
       await updateDoc(userRef, stripUndefined({
-        name: updates.name,
+        name: sanitized.name,
         photoURL: sanitized.profilePhotoURL,
-        whatsappNumber: finalNormWa ? `+${finalNormWa}` : finalRawWa,
-        phone: finalNormWa ? `+${finalNormWa}` : finalRawWa,
-        facebookUrl: finalFb,
-        division: updates.division,
-        district: updates.district,
-        upazila: updates.upazila,
+        whatsappNumber: formattedPhone,
+        phone: formattedPhone,
+        facebookUrl: safeFb,
+        division: sanitized.division,
+        district: sanitized.district,
+        upazila: sanitized.upazila,
         updatedAt: serverTimestamp()
       }));
     }
@@ -1131,8 +1189,19 @@ export async function createTuitionPostInFirestore(
   const path = 'tuitionPosts';
   try {
     const { whatsappNumber, detailedAddress, ...publicFields } = post as any;
-    const docRef = await addDoc(collection(db, path), stripUndefined({
+    const cleanPublic = stripUndefined({
       ...publicFields,
+      title: String(publicFields.title || 'Tuition Needed').trim().slice(0, 256),
+      learnerName: publicFields.learnerName ? String(publicFields.learnerName).trim().slice(0, 128) : undefined,
+      classGrade: String(publicFields.classGrade || '').trim().slice(0, 64),
+      medium: String(publicFields.medium || 'Bangla Medium').trim().slice(0, 64),
+      division: publicFields.division ? String(publicFields.division).trim().slice(0, 64) : undefined,
+      district: String(publicFields.district || 'Dhaka').trim().slice(0, 64),
+      upazila: publicFields.upazila ? String(publicFields.upazila).trim().slice(0, 64) : undefined,
+      area: publicFields.area ? String(publicFields.area).trim().slice(0, 128) : undefined,
+      requirementsDescription: publicFields.requirementsDescription
+        ? String(publicFields.requirementsDescription).trim().slice(0, 2048)
+        : undefined,
       subjects: Array.isArray(publicFields.subjects) ? publicFields.subjects.slice(0, 20) : [],
       status: 'open',
       totalApplicants: 0,
@@ -1140,19 +1209,20 @@ export async function createTuitionPostInFirestore(
       postedDate: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
-    }));
+    });
+    const docRef = await addDoc(collection(db, path), cleanPublic);
 
     // Store private guardian contact details in isolated subcollection
     await setDoc(doc(db, 'tuitionPosts', docRef.id, 'private', 'contact'), {
       learnerId: post.learnerId,
-      whatsappNumber: whatsappNumber || '',
-      detailedAddress: detailedAddress || '',
+      whatsappNumber: String(whatsappNumber || '').trim().slice(0, 32),
+      detailedAddress: String(detailedAddress || '').trim().slice(0, 256),
       updatedAt: serverTimestamp()
     });
 
     await notifyAdminsInFirestore({
       title: 'New Tuition Post',
-      message: `${post.learnerName || 'A user'} posted "${post.title}" in ${post.area ? `${post.area}, ` : ''}${post.district} (৳${Number(post.salaryOfferBDT || 0).toLocaleString()}/mo).`,
+      message: `${post.learnerName || 'A user'} posted "${cleanPublic.title}" in ${cleanPublic.area ? `${cleanPublic.area}, ` : ''}${cleanPublic.district} (৳${Number(post.salaryOfferBDT || 0).toLocaleString()}/mo).`,
       type: 'tuition',
       actionView: 'tuition-detail',
       targetId: docRef.id
@@ -1181,6 +1251,16 @@ export async function updateTuitionPostInFirestore(
     delete clean.postedDate;
     delete clean.whatsappNumber;
     delete clean.detailedAddress;
+    if (typeof clean.title === 'string') clean.title = clean.title.trim().slice(0, 256);
+    if (typeof clean.learnerName === 'string') clean.learnerName = clean.learnerName.trim().slice(0, 128);
+    if (typeof clean.classGrade === 'string') clean.classGrade = clean.classGrade.trim().slice(0, 64);
+    if (typeof clean.division === 'string') clean.division = clean.division.trim().slice(0, 64);
+    if (typeof clean.district === 'string') clean.district = clean.district.trim().slice(0, 64);
+    if (typeof clean.upazila === 'string') clean.upazila = clean.upazila.trim().slice(0, 64);
+    if (typeof clean.area === 'string') clean.area = clean.area.trim().slice(0, 128);
+    if (typeof clean.requirementsDescription === 'string') {
+      clean.requirementsDescription = clean.requirementsDescription.trim().slice(0, 2048);
+    }
     if (Array.isArray(clean.subjects)) clean.subjects = clean.subjects.slice(0, 20);
     clean.updatedAt = serverTimestamp();
 
@@ -1191,8 +1271,10 @@ export async function updateTuitionPostInFirestore(
         doc(db, 'tuitionPosts', postId, 'private', 'contact'),
         stripUndefined({
           learnerId: auth.currentUser?.uid || '',
-          whatsappNumber: privateWhatsapp,
-          detailedAddress: privateAddress,
+          whatsappNumber:
+            privateWhatsapp !== undefined ? String(privateWhatsapp).trim().slice(0, 32) : undefined,
+          detailedAddress:
+            privateAddress !== undefined ? String(privateAddress).trim().slice(0, 256) : undefined,
           updatedAt: serverTimestamp()
         }),
         { merge: true }
@@ -1326,6 +1408,21 @@ export async function submitApplicationInFirestore(
     // 3. Atomically create application & increment applicant counter
     const safeAppPayload = stripUndefined({ ...appData });
     delete (safeAppPayload as any).guardianWhatsApp;
+    if (typeof safeAppPayload.tuitionTitle === 'string') safeAppPayload.tuitionTitle = safeAppPayload.tuitionTitle.trim().slice(0, 256);
+    if (typeof safeAppPayload.learnerName === 'string') safeAppPayload.learnerName = safeAppPayload.learnerName.trim().slice(0, 128);
+    if (typeof safeAppPayload.tutorName === 'string') safeAppPayload.tutorName = safeAppPayload.tutorName.trim().slice(0, 128);
+    if (typeof safeAppPayload.tutorAvatar === 'string') safeAppPayload.tutorAvatar = safeAppPayload.tutorAvatar.trim().slice(0, 512);
+    if (typeof safeAppPayload.tutorUniversity === 'string') safeAppPayload.tutorUniversity = safeAppPayload.tutorUniversity.trim().slice(0, 128);
+    if (typeof safeAppPayload.tutorDepartment === 'string') safeAppPayload.tutorDepartment = safeAppPayload.tutorDepartment.trim().slice(0, 128);
+    if (typeof safeAppPayload.tutorAcademicYear === 'string') safeAppPayload.tutorAcademicYear = safeAppPayload.tutorAcademicYear.trim().slice(0, 64);
+    if (typeof safeAppPayload.tutorWhatsApp === 'string') safeAppPayload.tutorWhatsApp = safeAppPayload.tutorWhatsApp.trim().slice(0, 32);
+    if (typeof safeAppPayload.tutorFacebookUrl === 'string') safeAppPayload.tutorFacebookUrl = safeAppPayload.tutorFacebookUrl.trim().slice(0, 512);
+    if (typeof safeAppPayload.introduction === 'string') safeAppPayload.introduction = safeAppPayload.introduction.trim().slice(0, 1024);
+    if (typeof safeAppPayload.coverLetter === 'string') safeAppPayload.coverLetter = safeAppPayload.coverLetter.trim().slice(0, 2048);
+    if (typeof safeAppPayload.experienceSummary === 'string') safeAppPayload.experienceSummary = safeAppPayload.experienceSummary.trim().slice(0, 1024);
+    if (typeof safeAppPayload.suitabilityReason === 'string') safeAppPayload.suitabilityReason = safeAppPayload.suitabilityReason.trim().slice(0, 1024);
+    if (typeof safeAppPayload.availableSchedule === 'string') safeAppPayload.availableSchedule = safeAppPayload.availableSchedule.trim().slice(0, 256);
+    if (typeof safeAppPayload.additionalQualifications === 'string') safeAppPayload.additionalQualifications = safeAppPayload.additionalQualifications.trim().slice(0, 512);
 
     const batch = writeBatch(db);
     batch.set(appRef, {
@@ -1579,6 +1676,46 @@ export async function notifyAdminsInFirestore(
   });
 }
 
+export async function sendAdminDirectMessageInFirestore(params: {
+  userId: string;
+  title?: string;
+  message: string;
+}): Promise<void> {
+  const sender = auth.currentUser;
+  if (!sender) {
+    throw new Error('Please sign in with your admin account first.');
+  }
+  const recipientId = (params.userId || '').trim();
+  if (!recipientId || recipientId === 'ADMIN') {
+    throw new Error('Target user ID is missing.');
+  }
+  const cleanMessage = (params.message || '').trim().slice(0, 512);
+  if (!cleanMessage) {
+    throw new Error('Please enter a message before sending.');
+  }
+  const cleanTitle =
+    (params.title || 'Message from FeLoW WebStaR Admin').trim().slice(0, 128) ||
+    'Message from FeLoW WebStaR Admin';
+
+  const path = 'notifications';
+  try {
+    await addDoc(collection(db, path), {
+      userId: recipientId,
+      senderId: sender.uid,
+      title: cleanTitle,
+      message: cleanMessage,
+      time: 'Just now',
+      read: false,
+      type: 'system',
+      actionView: 'dashboard',
+      targetId: recipientId,
+      createdAt: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
 export async function markNotificationAsReadInFirestore(id: string): Promise<void> {
   const path = `notifications/${id}`;
   try {
@@ -1628,8 +1765,13 @@ export async function submitVerificationInFirestore(req: {
 }): Promise<string> {
   const path = 'verificationRequests';
   try {
+    const cleanDocName = (req.documentName || 'Verification Document').trim().slice(0, 256) || 'Verification Document';
     const docRef = await addDoc(collection(db, path), stripUndefined({
       ...req,
+      tutorName: (req.tutorName || '').trim().slice(0, 128),
+      university: (req.university || '').trim().slice(0, 256),
+      documentName: cleanDocName,
+      documentUrl: req.documentUrl ? req.documentUrl.trim().slice(0, 512) : undefined,
       status: 'pending',
       submittedAt: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp(),
@@ -1638,7 +1780,7 @@ export async function submitVerificationInFirestore(req: {
 
     await notifyAdminsInFirestore({
       title: 'Verification Document Submitted',
-      message: `${req.tutorName || 'A tutor'} uploaded ${req.verificationType} verification (${req.documentName}).`,
+      message: `${req.tutorName || 'A tutor'} uploaded ${req.verificationType} verification (${cleanDocName}).`,
       type: 'verification',
       actionView: 'admin',
       targetId: docRef.id
@@ -1663,7 +1805,7 @@ export async function updateVerificationInFirestore(
 
     await updateDoc(reqRef, {
       status,
-      rejectionReason: status === 'rejected' ? reason || 'Document unclear or invalid.' : '',
+      rejectionReason: status === 'rejected' ? (reason || 'Document unclear or invalid.').trim().slice(0, 512) : '',
       updatedAt: serverTimestamp()
     });
 
@@ -1731,8 +1873,14 @@ export async function submitReportInFirestore(
 ): Promise<string> {
   const path = 'reports';
   try {
+    const cleanTargetTitle = (report.targetTitle || 'Reported Item').trim().slice(0, 256) || 'Reported Item';
+    const cleanReason = (report.reason || 'Policy violation').trim().slice(0, 1024) || 'Policy violation';
     const docRef = await addDoc(collection(db, path), stripUndefined({
       ...report,
+      targetTitle: cleanTargetTitle,
+      targetId: report.targetId ? report.targetId.trim().slice(0, 128) : undefined,
+      reportedBy: report.reportedBy ? report.reportedBy.trim().slice(0, 128) : undefined,
+      reason: cleanReason,
       status: 'pending',
       submittedAt: new Date().toISOString().split('T')[0],
       createdAt: serverTimestamp(),
@@ -1741,7 +1889,7 @@ export async function submitReportInFirestore(
 
     await notifyAdminsInFirestore({
       title: 'New Safety Report Submitted',
-      message: `${report.reportedBy || 'A user'} reported "${report.targetTitle}" (${report.reason}).`,
+      message: `${report.reportedBy || 'A user'} reported "${cleanTargetTitle}" (${cleanReason}).`,
       type: 'system',
       actionView: 'admin',
       targetId: docRef.id
@@ -1773,39 +1921,114 @@ export async function updateTutorProfileInFirestore(
   return saveTutorProfileInFirestore(tutorId, updates);
 }
 
-const ALLOWED_IMAGE_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp'
-]);
+export function mapStorageError(error: unknown): string {
+  const code = (error as { code?: string })?.code || '';
+  switch (code) {
+    case 'storage/unauthorized':
+      return 'Upload permission denied by Cloud Storage rules. Verify you are signed in with a verified Google account and Firebase Storage rules are deployed.';
+    case 'storage/unauthenticated':
+      return 'Your login session expired. Please sign in again and retry the upload.';
+    case 'storage/canceled':
+      return 'Upload was cancelled. Please try again.';
+    case 'storage/quota-exceeded':
+      return 'Cloud Storage quota exceeded. Contact support or upgrade the Firebase Storage plan.';
+    case 'storage/retry-limit-exceeded':
+      return 'Network timeout while uploading photo. Check your connection and retry.';
+    case 'storage/unknown':
+      return 'Could not reach Cloud Storage. Ensure Firebase Storage is enabled and CORS/rules are configured.';
+    default:
+      return error instanceof Error ? error.message : 'File upload failed. Please try again.';
+  }
+}
 
 export async function uploadDocumentToStorage(tutorId: string, file: File): Promise<string> {
-  const isAllowedMime =
-    ALLOWED_IMAGE_MIME_TYPES.has(file.type) || file.type === 'application/pdf';
-  if (!isAllowedMime) {
-    throw new Error('Please upload an image (JPG, PNG, WebP) or PDF document.');
+  const prepared = await prepareDocumentFileForUpload(file);
+  const ext = prepared.contentType === 'application/pdf' ? 'pdf' : 'jpg';
+  const safeStem = (file.name || 'document')
+    .replace(/\.[^.]+$/, '')
+    .replace(/[^a-zA-Z0-9._\-]/g, '_')
+    .slice(0, 40) || 'document';
+  const fileRef = ref(storage, `verifications/${tutorId}/${Date.now()}_${safeStem}.${ext}`);
+  try {
+    const uploadResult = await uploadBytes(fileRef, prepared.file, {
+      contentType: prepared.contentType
+    });
+    return await getDownloadURL(uploadResult.ref);
+  } catch (err) {
+    throw new Error(mapStorageError(err));
   }
-  if (file.size > 10 * 1024 * 1024) {
-    throw new Error('Verification document must be smaller than 10 MB.');
-  }
-  const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, '_');
-  const fileRef = ref(storage, `verifications/${tutorId}/${Date.now()}_${safeName}`);
-  const uploadResult = await uploadBytes(fileRef, file, { contentType: file.type });
-  return await getDownloadURL(uploadResult.ref);
 }
 
 export async function uploadAvatarToStorage(userId: string, file: File): Promise<string> {
-  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
-    throw new Error('Please upload a valid image file (JPG, PNG, or WebP).');
+  const prepared = await prepareAvatarImageFile(file);
+  const ext = prepared.type === 'image/png' ? 'png' : prepared.type === 'image/webp' ? 'webp' : 'jpg';
+  const fileRef = ref(storage, `avatars/${userId}/${Date.now()}.${ext}`);
+  try {
+    const uploadResult = await uploadBytes(fileRef, prepared, {
+      contentType: prepared.type,
+      cacheControl: 'public,max-age=31536000'
+    });
+    return await getDownloadURL(uploadResult.ref);
+  } catch (err) {
+    throw new Error(mapStorageError(err));
   }
-  if (file.size > 5 * 1024 * 1024) {
-    throw new Error('Profile photo must be smaller than 5 MB.');
+}
+
+export async function deleteStorageFileByUrl(uid: string, fileUrl?: string | null): Promise<void> {
+  if (!uid || !fileUrl) return;
+  if (!fileUrl.includes('firebasestorage.googleapis.com') && !fileUrl.includes('firebasestorage.app')) {
+    return;
   }
-  const safeName = file.name.replace(/[^a-zA-Z0-9._\-]/g, '_');
-  const fileRef = ref(storage, `avatars/${userId}/${Date.now()}_${safeName}`);
-  const uploadResult = await uploadBytes(fileRef, file, { contentType: file.type });
-  return await getDownloadURL(uploadResult.ref);
+  // Only delete avatars owned by this user
+  if (!fileUrl.includes(`avatars%2F${encodeURIComponent(uid)}%2F`) && !fileUrl.includes(`avatars/${uid}/`)) {
+    return;
+  }
+  try {
+    const targetRef = ref(storage, fileUrl);
+    await deleteObject(targetRef);
+  } catch {
+    // Non-blocking best-effort cleanup of superseded avatar
+  }
+}
+
+export async function persistUserAvatarInFirestore(
+  uid: string,
+  photoUrl: string,
+  previousPhotoUrl?: string | null
+): Promise<void> {
+  const cleanPhotoUrl = photoUrl.trim().slice(0, 512);
+  if (!uid || !cleanPhotoUrl) return;
+
+  const userRef = doc(db, 'users', uid);
+  const tutorRef = doc(db, 'tutorProfiles', uid);
+  try {
+    const [userSnap, tutorSnap] = await Promise.all([getDoc(userRef), getDoc(tutorRef)]);
+    const ops: Promise<void>[] = [];
+    if (userSnap.exists()) {
+      ops.push(
+        updateDoc(userRef, {
+          photoURL: cleanPhotoUrl,
+          updatedAt: serverTimestamp()
+        })
+      );
+    }
+    if (tutorSnap.exists()) {
+      ops.push(
+        updateDoc(tutorRef, {
+          avatar: cleanPhotoUrl,
+          profilePhotoURL: cleanPhotoUrl,
+          updatedAt: serverTimestamp()
+        })
+      );
+    }
+    await Promise.all(ops);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `users/${uid}`);
+  }
+
+  if (previousPhotoUrl && previousPhotoUrl !== cleanPhotoUrl) {
+    void deleteStorageFileByUrl(uid, previousPhotoUrl);
+  }
 }
 
 async function deleteDocsFromQuery(q: ReturnType<typeof query>): Promise<void> {

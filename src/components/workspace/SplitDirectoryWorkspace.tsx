@@ -2,12 +2,14 @@ import React, { useMemo, useState, useEffect, useRef, memo } from 'react';
 import {
   ArrowUpRight,
   BadgeCheck,
+  BookOpen,
   Bookmark,
   CheckCircle2,
   Clock,
   Edit3,
   ExternalLink,
   GraduationCap,
+  History,
   MapPin,
   MessageCircle,
   Search,
@@ -44,6 +46,13 @@ import { TutorReviewsSection } from '../tutors/TutorReviewsSection';
 import { trackAnalyticsEvent } from '../../utils/analytics';
 import { getLocationByDistrict } from '../../utils/routing';
 import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../../utils/tutorSearch';
+import {
+  RecentSearchEntry,
+  clearRecentSearches,
+  loadRecentSearches,
+  removeRecentSearch,
+  saveRecentSearch
+} from '../../utils/recentSearches';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -485,6 +494,10 @@ export const SplitDirectoryWorkspace: React.FC = () => {
   } = useApp();
 
   const [subjectFilter, setSubjectFilter] = useState('All');
+  const [recentSearches, setRecentSearches] = useState<RecentSearchEntry[]>(() =>
+    loadRecentSearches()
+  );
+  const skipNextQuerySaveRef = useRef(false);
   const [openingWaId, setOpeningWaId] = useState<string | null>(null);
   const [inspectorTab, setInspectorTab] = useState<'about' | 'reviews'>('about');
   const [privateContact, setPrivateContact] = useState<TutorPrivateContact | null>(null);
@@ -566,6 +579,70 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     }, 650);
     return () => window.clearTimeout(timer);
   }, [directoryTab, districtFilter, subjectFilter, q]);
+
+  // Persist last 5 location selections
+  useEffect(() => {
+    if (districtFilter === 'All') return;
+    setRecentSearches(
+      saveRecentSearch({
+        kind: 'location',
+        label: districtFilter,
+        district: districtFilter
+      })
+    );
+  }, [districtFilter]);
+
+  // Persist last 5 subject selections
+  useEffect(() => {
+    if (subjectFilter === 'All') return;
+    setRecentSearches(
+      saveRecentSearch({
+        kind: 'subject',
+        label: subjectFilter,
+        subject: subjectFilter
+      })
+    );
+  }, [subjectFilter]);
+
+  // Persist settled search queries (debounced to avoid keystroke noise)
+  useEffect(() => {
+    const clean = searchQuery.trim();
+    if (clean.length < 2) return;
+    if (skipNextQuerySaveRef.current) {
+      skipNextQuerySaveRef.current = false;
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setRecentSearches(
+        saveRecentSearch({
+          kind: 'query',
+          label: clean,
+          query: clean
+        })
+      );
+    }, 850);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  const applyRecentSearch = (entry: RecentSearchEntry) => {
+    if (entry.kind === 'location' && entry.district) {
+      setDistrictFilter(entry.district);
+    } else if (entry.kind === 'subject' && entry.subject) {
+      setSubjectFilter(entry.subject);
+    } else if (entry.query) {
+      skipNextQuerySaveRef.current = true;
+      setSearchQuery(entry.query);
+    }
+    setRecentSearches(
+      saveRecentSearch({
+        kind: entry.kind,
+        label: entry.label,
+        query: entry.query,
+        district: entry.district,
+        subject: entry.subject
+      })
+    );
+  };
 
   const activeFeedLength =
     directoryTab === 'tutors' ? filteredTutors.length : filteredTuitions.length;
@@ -878,6 +955,22 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const clean = searchQuery.trim();
+                    if (clean.length >= 2) {
+                      skipNextQuerySaveRef.current = true;
+                      setRecentSearches(
+                        saveRecentSearch({
+                          kind: 'query',
+                          label: clean,
+                          query: clean
+                        })
+                      );
+                    }
+                    e.currentTarget.blur();
+                  }
+                }}
                 placeholder={
                   language === 'bn'
                     ? 'টিউটরের নাম, প্রোফাইল, বিষয় বা এলাকা খুঁজুন...'
@@ -1017,6 +1110,75 @@ export const SplitDirectoryWorkspace: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Recent Searches (Last 5 locations, subjects, or keyword queries in localStorage) */}
+          {recentSearches.length > 0 && (
+            <div
+              aria-label={language === 'bn' ? 'সাম্প্রতিক অনুসন্ধান' : 'Recent searches'}
+              className="bg-white rounded-[20px] border border-[#EFEAE7] px-3.5 py-3 space-y-2"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#52525B] uppercase tracking-wide">
+                  <History className="w-3.5 h-3.5 text-[#EB624B] shrink-0" />
+                  <span>{language === 'bn' ? 'সাম্প্রতিক অনুসন্ধান' : 'Recent Searches'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRecentSearches(clearRecentSearches())}
+                  className="text-[11px] font-semibold text-[#858585] hover:text-[#C94A35] cursor-pointer transition-colors whitespace-nowrap"
+                >
+                  {language === 'bn' ? 'সব মুছুন' : 'Clear all'}
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-1.5">
+                {recentSearches.map(entry => {
+                  const isActive =
+                    (entry.kind === 'location' && districtFilter === entry.district) ||
+                    (entry.kind === 'subject' && subjectFilter === entry.subject) ||
+                    (entry.kind === 'query' &&
+                      Boolean(entry.query) &&
+                      searchQuery.trim().toLowerCase() === entry.query?.toLowerCase());
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`inline-flex items-center rounded-xl border transition-colors ${
+                        isActive
+                          ? 'bg-[#FFF3EF] border-[#EB624B]/60 text-[#C94A35]'
+                          : 'bg-[#F8F6F5] border-[#EAE4E1] text-[#18181B] hover:border-[#D5CCC7]'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => applyRecentSearch(entry)}
+                        className="h-8 pl-2.5 pr-1.5 inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer whitespace-nowrap max-w-[190px]"
+                      >
+                        {entry.kind === 'location' ? (
+                          <MapPin className="w-3 h-3 text-[#EB624B] shrink-0" />
+                        ) : entry.kind === 'subject' ? (
+                          <BookOpen className="w-3 h-3 text-[#7C5DFA] shrink-0" />
+                        ) : (
+                          <Search className="w-3 h-3 text-[#6B6B6B] shrink-0" />
+                        )}
+                        <span className="truncate">{entry.label}</span>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${entry.label} from recent searches`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRecentSearches(removeRecentSearch(entry.id));
+                        }}
+                        className="h-8 w-6 flex items-center justify-center text-[#858585] hover:text-[#18181B] cursor-pointer shrink-0"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Detailed Feed Stream */}
           {directoryTab === 'tutors' ? (

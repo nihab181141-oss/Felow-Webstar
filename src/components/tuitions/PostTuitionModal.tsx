@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -43,8 +43,26 @@ export const PostTuitionModal: React.FC = () => {
   const [requirementsDescription, setRequirementsDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const initializedPostKeyRef = useRef<string | null>(null);
+  const waTouchedRef = useRef(false);
+
   useEffect(() => {
-    if (!isPostTuitionOpen) return;
+    if (!isPostTuitionOpen) {
+      initializedPostKeyRef.current = null;
+      waTouchedRef.current = false;
+      return;
+    }
+
+    const targetKey = editingTuition ? `edit:${editingTuition.id}` : 'create';
+    if (initializedPostKeyRef.current === targetKey) {
+      if (editingTuition && !waTouchedRef.current && editingTuition.whatsappNumber) {
+        setWhatsappNumber(editingTuition.whatsappNumber);
+      }
+      return;
+    }
+    initializedPostKeyRef.current = targetKey;
+    waTouchedRef.current = false;
+
     if (editingTuition) {
       setTitle(editingTuition.title);
       setClassGrade(editingTuition.classGrade);
@@ -129,10 +147,10 @@ export const PostTuitionModal: React.FC = () => {
 
       const payload = {
         title: finalTitle,
-        learnerType: currentUser.learnerSubtype || 'guardian',
-        studentGender: 'Male' as const,
+        learnerType: editingTuition?.learnerType || currentUser.learnerSubtype || 'guardian',
+        studentGender: editingTuition?.studentGender || ('Male' as const),
         classGrade,
-        curriculum: 'National Curriculum (NCTB)' as const,
+        curriculum: editingTuition?.curriculum || ('National Curriculum (NCTB)' as const),
         subjects: subjectsToSave,
         medium,
         tuitionType,
@@ -144,8 +162,8 @@ export const PostTuitionModal: React.FC = () => {
         daysPerWeek: Number(daysPerWeek),
         salaryOfferBDT: cleanSalary,
         isNegotiable,
-        preferredContactMethod: 'WhatsApp' as const,
-        whatsappNumber: cleanWa || undefined,
+        preferredContactMethod: editingTuition?.preferredContactMethod || ('WhatsApp' as const),
+        whatsappNumber: editingTuition ? cleanWa : cleanWa || undefined,
         requirementsDescription:
           requirementsDescription.trim() ||
           `Looking for an experienced tutor for ${classGrade} (${subjectsToSave.join(', ')}) in ${area}, ${district}.`
@@ -380,7 +398,10 @@ export const PostTuitionModal: React.FC = () => {
               <input
                 type="tel"
                 value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
+                onChange={(e) => {
+                  waTouchedRef.current = true;
+                  setWhatsappNumber(e.target.value);
+                }}
                 placeholder="017XXXXXXXX"
                 className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] placeholder:text-[#858585] outline-none focus:bg-white focus:border-[#18181B]"
               />

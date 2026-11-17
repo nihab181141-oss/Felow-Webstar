@@ -18,6 +18,7 @@ import { BrandWordmark } from '../shared/BrandWordmark';
 import { buildWhatsAppUrl, isValidBdWhatsAppNumber, sanitizeFacebookUrl } from '../../utils/contactLinks';
 import { BD_DISTRICTS_BY_DIVISION, getDivisionByDistrict, getAreasOrUpazilas } from '../../data/bangladeshData';
 import { DEFAULT_PLACEHOLDER_AVATAR, LearnerSubtype } from '../../types';
+import { extractFriendlyErrorMessage } from '../../services/firebase';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -39,8 +40,7 @@ export const LearnerDashboard: React.FC = () => {
     activateDualRole,
     viewTutorDetail,
     language,
-    setLanguage,
-    showToast
+    setLanguage
   } = useApp();
 
   const isBn = language === 'bn';
@@ -140,8 +140,13 @@ export const LearnerDashboard: React.FC = () => {
         facebookUrl: cleanFbInput ? sanitizeFacebookUrl(cleanFbInput) || '' : '',
         phoneVisibility
       });
-    } catch {
-      showToast(isBn ? 'সেটিংস সেভ করা যায়নি।' : 'Could not save settings.', 'error');
+    } catch (err: any) {
+      setSettingsError(
+        extractFriendlyErrorMessage(
+          err,
+          isBn ? 'সেটিংস সেভ করা যায়নি।' : 'Could not save settings.'
+        )
+      );
     } finally {
       setSavingSettings(false);
     }

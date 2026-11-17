@@ -64,6 +64,7 @@ import {
   markAllNotificationsAsReadInFirestore,
   uploadDocumentToStorage,
   uploadAvatarToStorage,
+  persistUserAvatarInFirestore,
   toIsoDateString
 } from '../services/firebase';
 import {
@@ -725,6 +726,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       setTutors(Array.from(merged.values()));
     };
+
+    fetchTutorContactDetails(uid)
+      .then((priv) => {
+        if (cancelled || !priv) return;
+        myPrivateContactRef.current = priv;
+        let changed = false;
+        if (myOwnTutor) {
+          myOwnTutor = enrichTutorRecord(myOwnTutor);
+          changed = true;
+        }
+        const publicMine = publicTutorsMap.get(uid);
+        if (publicMine) {
+          publicTutorsMap.set(uid, enrichTutorRecord(publicMine));
+          changed = true;
+        }
+        if (changed) syncTutorsState();
+      })
+      .catch(() => undefined);
 
     unsubs.push(
       onSnapshot(
@@ -1461,6 +1480,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ) => {
     if (!firebaseUser) return;
     const target = applications.find(a => a.id === appId);
+    const prevApplications = applications;
     setApplications(prev =>
       prev.map(app => {
         if (app.id === appId) {
@@ -1475,10 +1495,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    if (status === 'accepted' && closePostOnAccept && target?.tuitionPostId) {
-      await updateTuitionPostStatus(target.tuitionPostId, 'assigned');
-    }
-
     try {
       await updateApplicationStatusInFirestore(appId, status, note, {
         tutorId: target?.tutorId,
@@ -1489,9 +1505,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         guardianWhatsApp: currentUser.whatsappNumber || currentUser.phone
       });
     } catch (err: any) {
+      setApplications(prevApplications);
       showToast(extractFriendlyErrorMessage(err, 'Failed to update application status.'), 'error');
       return;
     }
+
+    if (status === 'accepted' && closePostOnAccept && target?.tuitionPostId) {
+      await updateTuitionPostStatus(target.tuitionPostId, 'assigned');
+    }
+
     showToast(`Application marked as ${status.toUpperCase()}`, 'success');
   };
 
@@ -1754,7 +1776,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     try {
-      await saveTutorProfileInFirestore(firebaseUser.uid, merged);
+      await saveTutorProfileInFirestore(tutorId, merged);
     } catch (err: any) {
       showToast(extractFriendlyErrorMessage(err, 'Failed to save tutor profile to Firestore.'), 'error');
       throw err;
@@ -2234,6 +2256,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await logout();
       myPrivateContactRef.current = null;
+      reviewsCacheRef.current = {};
       setLearnerProfile(null);
       setCurrentUser(GUEST_USER);
       setCurrentRole('learner');
@@ -2243,10 +2266,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setVerificationQueue([]);
       setReports([]);
       setAdminUsers([]);
+      setAdminLearnerProfiles([]);
       setAdminTutorProfiles([]);
       setAdminTuitionPosts([]);
+      setInspectedAdminUserId(null);
       setSavedTutorIds([]);
       setSavedTuitionIds([]);
+      setComparisonTutorIds([]);
+      setEditingTuition(null);
+      setIsPostTuitionOpen(false);
+      setIsApplyModalOpen(false);
       showToast('Signed out of FeLoW WebStaR.', 'info');
       setActiveView('landing');
     } catch (err: any) {
@@ -2275,10 +2304,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setVerificationQueue([]);
       setReports([]);
       setAdminUsers([]);
+      setAdminLearnerProfiles([]);
       setAdminTutorProfiles([]);
       setAdminTuitionPosts([]);
+      setInspectedAdminUserId(null);
       setSavedTutorIds([]);
       setSavedTuitionIds([]);
+      setComparisonTutorIds([]);
+      setEditingTuition(null);
+      setIsPostTuitionOpen(false);
+      setIsApplyModalOpen(false);
       setActiveView('landing');
       showToast('Your account and personal data have been permanently deleted.', 'success');
     } catch (err: any) {
@@ -2309,13 +2344,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!firebaseUser) {
       throw new Error('Please sign in with Google to upload a profile photo.');
     }
+    const uid = firebaseUser.uid;
+    const previousAvatar =
+      myTutorProfile?.profilePhotoURL || myTutorProfile?.avatar || currentUser.avatar || '';
     try {
-      showToast('Uploading profile photo...', 'info');
-      const url = await uploadAvatarToStorage(firebaseUser.uid, file);
-      showToast('Profile photo uploaded!', 'success');
+      showToast('Optimizing & uploading profile photo...', 'info');
+      const url = await uploadAvatarToStorage(uid, file);
+      await persistUserAvatarInFirestore(uid, url, previousAvatar);
+
+      setCurrentUser(prev => ({
+        ...prev,
+        avatar: url
+      }));
+      setTutors(prev =>
+        prev.map(t =>
+          t.id === uid || t.uid === uid
+            ? { ...t, avatar: url, profilePhotoURL: url }
+            : t
+        )
+      );
+      setSelectedTutor(prev =>
+        prev && (prev.id === uid || prev.uid === uid)
+          ? { ...prev, avatar: url, profilePhotoURL: url }
+          : prev
+      );
+
+      showToast('Profile photo uploaded and saved!', 'success');
       return url;
     } catch (err: any) {
-      showToast(err?.message || 'Profile photo upload failed.', 'error');
+      showToast(extractFriendlyErrorMessage(err, 'Profile photo upload failed.'), 'error');
       throw err;
     }
   };

@@ -13,7 +13,10 @@ import {
   ArrowUpRight,
   Search,
   Users,
-  X
+  X,
+  GraduationCap,
+  BookOpen,
+  UserCheck
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { sanitizeSafeHttpUrl } from '../../utils/contactLinks';
@@ -24,7 +27,7 @@ import { AdminGrowthChartCard } from './AdminGrowthChartCard';
 import { AdminProfileInspectorModal } from './AdminProfileInspectorModal';
 
 type AdminTab = 'activity' | 'directory' | 'notifications' | 'verifications' | 'reports';
-type DirectoryRoleFilter = 'all' | 'tutors' | 'learners' | 'drafts';
+type DirectoryRoleFilter = 'all' | 'tutors' | 'guardians' | 'students' | 'drafts';
 
 interface UnifiedAdminPerson {
   uid: string;
@@ -180,11 +183,36 @@ export const AdminDashboard: React.FC = () => {
       .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
   }, [adminUsers, adminTutorProfiles, adminLearnerProfiles]);
 
+  const platformMetrics = useMemo(() => {
+    const totalTuitionPosts = adminTuitionPosts.length;
+    const openTuitionPosts = adminTuitionPosts.filter(p => p.status === 'open').length;
+    const publishedTutorPosts = adminTutorProfiles.filter(t => t.isPublished !== false).length;
+    const draftTutorPosts = adminTutorProfiles.length - publishedTutorPosts;
+    const totalTutors = unifiedDirectory.filter(p => p.isTutor).length;
+    const totalGuardians = unifiedDirectory.filter(
+      p => !p.isTutor && p.roleLabel === 'Guardian'
+    ).length;
+    const totalStudents = unifiedDirectory.filter(
+      p => !p.isTutor && p.roleLabel === 'Student'
+    ).length;
+
+    return {
+      totalTuitionPosts,
+      openTuitionPosts,
+      publishedTutorPosts,
+      draftTutorPosts,
+      totalTutors,
+      totalGuardians,
+      totalStudents
+    };
+  }, [adminTuitionPosts, adminTutorProfiles, unifiedDirectory]);
+
   const filteredDirectory = useMemo(() => {
     const q = directorySearch.trim().toLowerCase();
     return unifiedDirectory.filter(person => {
       if (directoryRoleFilter === 'tutors' && !person.isTutor) return false;
-      if (directoryRoleFilter === 'learners' && person.isTutor) return false;
+      if (directoryRoleFilter === 'guardians' && (person.isTutor || person.roleLabel !== 'Guardian')) return false;
+      if (directoryRoleFilter === 'students' && (person.isTutor || person.roleLabel !== 'Student')) return false;
       if (directoryRoleFilter === 'drafts' && !person.isDraftTutor) return false;
 
       if (!q) return true;
@@ -244,6 +272,106 @@ export const AdminDashboard: React.FC = () => {
                 </button>
               ) : null}
             </div>
+          </div>
+
+          {/* Platform Totals Metric Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setActiveTab('activity')}
+              className="p-3.5 rounded-[20px] bg-[#DCEBFA]/55 hover:bg-[#DCEBFA]/85 border border-[#C6DDF5] text-left cursor-pointer transition-all"
+            >
+              <div className="text-[11px] font-medium text-[#52525B] flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[#18181B] shrink-0" />
+                <span className="truncate">Total Tuition Posts</span>
+              </div>
+              <div className="font-display text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-1">
+                {platformMetrics.totalTuitionPosts}
+              </div>
+              <div className="text-[10px] font-medium text-[#52525B] mt-0.5 tabular-nums">
+                {platformMetrics.openTuitionPosts} open now
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDirectoryRoleFilter('tutors');
+                setActiveTab('directory');
+              }}
+              className="p-3.5 rounded-[20px] bg-[#FFF6F3]/85 hover:bg-[#FFEBE6] border border-[#F5E4DF] text-left cursor-pointer transition-all"
+            >
+              <div className="text-[11px] font-medium text-[#52525B] flex items-center gap-1.5">
+                <FileText className="w-3.5 h-3.5 text-[#C94A35] shrink-0" />
+                <span className="truncate">Total Tutor Posts</span>
+              </div>
+              <div className="font-display text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-1">
+                {platformMetrics.publishedTutorPosts}
+              </div>
+              <div className="text-[10px] font-medium text-[#52525B] mt-0.5 tabular-nums">
+                {platformMetrics.draftTutorPosts} drafts
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDirectoryRoleFilter('tutors');
+                setActiveTab('directory');
+              }}
+              className="p-3.5 rounded-[20px] bg-[#EFEAFF]/70 hover:bg-[#EFEAFF] border border-[#E1D8FF] text-left cursor-pointer transition-all"
+            >
+              <div className="text-[11px] font-medium text-[#52525B] flex items-center gap-1.5">
+                <GraduationCap className="w-3.5 h-3.5 text-[#18181B] shrink-0" />
+                <span className="truncate">Total Tutors</span>
+              </div>
+              <div className="font-display text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-1">
+                {platformMetrics.totalTutors}
+              </div>
+              <div className="text-[10px] font-medium text-[#52525B] mt-0.5 tabular-nums">
+                {unifiedDirectory.length} total accounts
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDirectoryRoleFilter('guardians');
+                setActiveTab('directory');
+              }}
+              className="p-3.5 rounded-[20px] bg-[#FFF4D6]/65 hover:bg-[#FFF4D6] border border-[#F8E4AE] text-left cursor-pointer transition-all"
+            >
+              <div className="text-[11px] font-medium text-[#52525B] flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-[#18181B] shrink-0" />
+                <span className="truncate">Total Guardians</span>
+              </div>
+              <div className="font-display text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-1">
+                {platformMetrics.totalGuardians}
+              </div>
+              <div className="text-[10px] font-medium text-[#52525B] mt-0.5">
+                Guardian accounts
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setDirectoryRoleFilter('students');
+                setActiveTab('directory');
+              }}
+              className="col-span-2 sm:col-span-1 p-3.5 rounded-[20px] bg-[#E8F8EE]/70 hover:bg-[#E8F8EE] border border-[#C6EBD5] text-left cursor-pointer transition-all"
+            >
+              <div className="text-[11px] font-medium text-[#52525B] flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#15803D] shrink-0" />
+                <span className="truncate">Total Students</span>
+              </div>
+              <div className="font-display text-2xl font-extrabold text-[#18181B] font-mono tabular-nums mt-1">
+                {platformMetrics.totalStudents}
+              </div>
+              <div className="text-[10px] font-medium text-[#52525B] mt-0.5">
+                Student accounts
+              </div>
+            </button>
           </div>
 
           {/* 4-Card Bento KPI Strip */}
@@ -573,12 +701,13 @@ export const AdminDashboard: React.FC = () => {
                 </p>
               </div>
 
-              <div className="inline-flex items-center gap-1 p-1 rounded-full bg-[#F6F4F3] border border-[#EAE4E1] self-start">
+              <div className="inline-flex max-w-full overflow-x-auto no-scrollbar items-center gap-1 p-1 rounded-full bg-[#F6F4F3] border border-[#EAE4E1] self-start">
                 {(
                   [
                     ['all', 'All'],
                     ['tutors', 'Tutors'],
-                    ['learners', 'Students / Guardians'],
+                    ['guardians', 'Guardians'],
+                    ['students', 'Students'],
                     ['drafts', 'Draft Tutors']
                   ] as const
                 ).map(([key, label]) => (
@@ -586,7 +715,7 @@ export const AdminDashboard: React.FC = () => {
                     key={key}
                     type="button"
                     onClick={() => setDirectoryRoleFilter(key)}
-                    className={`h-7 px-3 rounded-full text-[11px] font-bold cursor-pointer transition-colors whitespace-nowrap ${
+                    className={`h-7 px-3 rounded-full text-[11px] font-bold cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
                       directoryRoleFilter === key
                         ? 'bg-[#18181B] text-white'
                         : 'text-[#6B6B6B] hover:text-[#18181B]'

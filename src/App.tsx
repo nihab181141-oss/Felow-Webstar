@@ -6,6 +6,7 @@ import { SplitDirectoryWorkspace } from './components/workspace/SplitDirectoryWo
 import { AuthModal } from './components/auth/AuthModal';
 import { SeoHead } from './components/seo/SeoHead';
 import { PublicFooter } from './components/shared/PublicFooter';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
 // Lazy-load secondary full-page views and modals for fast initial landing paint
@@ -64,6 +65,8 @@ const MainAppContent: React.FC = () => {
   const {
     activeView,
     currentRole,
+    isAuthReady,
+    isAuthenticated,
     selectedTuition,
     isPostTuitionOpen,
     isApplyModalOpen,
@@ -140,9 +143,15 @@ const MainAppContent: React.FC = () => {
           {activeView === 'become-a-tutor' && <BecomeTutorPage />}
           {activeView === 'not-found' && <NotFoundPage />}
           {activeView === 'login' && <AuthPage />}
-          {activeView === 'tutor-onboarding' && <TutorOnboardingWizard />}
-          {activeView === 'admin' && currentRole === 'admin' && <AdminDashboard />}
-          {activeView === 'dashboard' && (
+          {(activeView === 'tutor-onboarding' || activeView === 'admin' || activeView === 'dashboard') &&
+            !isAuthReady && <ViewFallback />}
+          {activeView === 'tutor-onboarding' && isAuthReady && isAuthenticated && (
+            <TutorOnboardingWizard />
+          )}
+          {activeView === 'admin' && isAuthReady && isAuthenticated && currentRole === 'admin' && (
+            <AdminDashboard />
+          )}
+          {activeView === 'dashboard' && isAuthReady && isAuthenticated && (
             <>
               {currentRole === 'learner' && <LearnerDashboard />}
               {currentRole === 'tutor' && <TutorDashboard />}
@@ -195,8 +204,10 @@ const MainAppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <MainAppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <MainAppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
