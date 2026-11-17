@@ -20,6 +20,7 @@ import { useApp } from '../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION } from '../data/bangladeshData';
 import { DEFAULT_PLACEHOLDER_AVATAR, TutorProfile, isTutorVerified } from '../types';
 import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../utils/tutorSearch';
+import { PWAInstallButton } from './shared/PWAInstallButton';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
 
@@ -691,6 +692,11 @@ export const Header: React.FC = () => {
                       </span>
                     </button>
 
+                    <PWAInstallButton
+                      variant="menu-item"
+                      onAction={() => setOpenDropdown(null)}
+                    />
+
                     <div className="border-t border-[#EFEAE7] my-1" />
 
                     <button
@@ -710,6 +716,7 @@ export const Header: React.FC = () => {
             </>
           ) : (
             <>
+              <PWAInstallButton variant="pill" className="hidden sm:inline-flex" />
               <button
                 type="button"
                 onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}

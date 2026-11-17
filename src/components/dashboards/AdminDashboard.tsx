@@ -25,6 +25,7 @@ import { matchesTutorSearchQuery } from '../../utils/tutorSearch';
 import { DEFAULT_PLACEHOLDER_AVATAR, LearnerProfile, TutorProfile, UserAccount } from '../../types';
 import { AdminGrowthChartCard } from './AdminGrowthChartCard';
 import { AdminProfileInspectorModal } from './AdminProfileInspectorModal';
+import { PushNotificationCard } from '../shared/PushNotificationCard';
 
 type AdminTab = 'activity' | 'directory' | 'notifications' | 'verifications' | 'reports';
 type DirectoryRoleFilter = 'all' | 'tutors' | 'guardians' | 'students' | 'drafts';
@@ -812,7 +813,9 @@ export const AdminDashboard: React.FC = () => {
 
         {/* TAB 3: ADMIN NOTIFICATIONS CENTER */}
         {activeTab === 'notifications' && (
-          <div className="ivory-card p-5 space-y-3.5">
+          <div className="space-y-4">
+            <PushNotificationCard />
+            <div className="ivory-card p-5 space-y-3.5">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="font-display text-base font-extrabold text-[#18181B]">
@@ -869,6 +872,7 @@ export const AdminDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+            </div>
           </div>
         )}
 

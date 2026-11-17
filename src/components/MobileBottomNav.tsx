@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BrandWordmark } from './shared/BrandWordmark';
+import { PWAInstallButton } from './shared/PWAInstallButton';
 
 type DockTabId = 'tutors' | 'tuitions' | 'post' | 'account';
 
@@ -333,6 +334,11 @@ export const MobileBottomNav: React.FC = () => {
                 </button>
               </div>
             )}
+
+            <PWAInstallButton
+              variant="tile"
+              onAction={() => setIsAccountOpen(false)}
+            />
 
             <div className="pt-6 pb-8 flex justify-center">
               <img

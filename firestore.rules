@@ -397,6 +397,21 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidPushSubscription(data) {
+      return data.keys().hasAll(['userId', 'endpoint', 'keys', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'endpoint', 'keys', 'userAgent', 'createdAt', 'updatedAt']) &&
+        isValidId(data.userId) &&
+        data.endpoint is string && data.endpoint.size() > 10 && data.endpoint.size() <= 1024 && data.endpoint.matches('^https://.*') &&
+        data.keys is map &&
+        data.keys.keys().hasAll(['p256dh', 'auth']) &&
+        data.keys.keys().hasOnly(['p256dh', 'auth']) &&
+        data.keys.p256dh is string && data.keys.p256dh.size() > 0 && data.keys.p256dh.size() <= 256 &&
+        data.keys.auth is string && data.keys.auth.size() > 0 && data.keys.auth.size() <= 128 &&
+        (!('userAgent' in data) || (data.userAgent is string && data.userAgent.size() <= 256)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
     // 4. Connection Health Check (Read-only single document)
     match /test/connection {
       allow get: if true;
@@ -894,6 +909,31 @@ service cloud.firestore {
         incoming().updatedAt == request.time &&
         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt', 'resolvedAt']);
       allow delete: if isAdmin() && isValidId(reportId);
+    }
+
+    // 17. Web Push Subscriptions (Owner & Admin Only)
+    match /pushSubscriptions/{subId} {
+      allow get: if isValidId(subId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() &&
+        isValidId(subId) &&
+        isValidPushSubscription(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() &&
+        isValidId(subId) &&
+        isValidPushSubscription(incoming()) &&
+        (
+          isAdmin() ||
+          (
+            existing().userId == request.auth.uid &&
+            incoming().userId == existing().userId &&
+            incoming().createdAt == existing().createdAt &&
+            incoming().updatedAt == request.time
+          )
+        );
+      allow delete: if isVerifiedUser() && isValidId(subId) && (existing().userId == request.auth.uid || isAdmin());
     }
   }
 }

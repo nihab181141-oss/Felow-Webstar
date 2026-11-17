@@ -14,6 +14,7 @@ import { useApp } from '../../context/AppContext';
 import { TuitionPostCard } from '../shared/TuitionPostCard';
 import { DeleteAccountSection } from '../shared/DeleteAccountSection';
 import { ShareModal } from '../shared/ShareModal';
+import { PushNotificationCard } from '../shared/PushNotificationCard';
 import { buildWhatsAppUrl } from '../../utils/contactLinks';
 import { buildTutorSharePayload } from '../../utils/shareLinks';
 import { DEFAULT_PLACEHOLDER_AVATAR } from '../../types';
@@ -533,6 +534,8 @@ export const TutorDashboard: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            <PushNotificationCard />
 
             <DeleteAccountSection />
           </div>

@@ -2093,6 +2093,7 @@ export async function deleteUserAccountFromFirebase(): Promise<void> {
     deleteDocsFromQuery(query(collection(db, 'invitations'), where('tutorId', '==', uid), limit(200))),
     deleteDocsFromQuery(query(collection(db, 'invitations'), where('learnerId', '==', uid), limit(200))),
     deleteDocsFromQuery(query(collection(db, 'verificationRequests'), where('tutorId', '==', uid), limit(100))),
+    deleteDocsFromQuery(query(collection(db, 'pushSubscriptions'), where('userId', '==', uid), limit(50))),
     deleteDocsFromQuery(query(collection(db, 'tutorProfiles', uid, 'reviews'), limit(200)))
   ]);
 
@@ -2118,4 +2119,79 @@ export async function deleteUserAccountFromFirebase(): Promise<void> {
     }
   }
 }
+
+// -------------------------------------------------------------
+// Web Push Subscription Helpers (Owner-Scoped in Firestore)
+// -------------------------------------------------------------
+
+function hashEndpointForDocId(uid: string, endpoint: string): string {
+  let hash = 5381;
+  for (let i = 0; i < endpoint.length; i += 1) {
+    hash = ((hash << 5) + hash) ^ endpoint.charCodeAt(i);
+  }
+  const suffix = Math.abs(hash >>> 0).toString(36);
+  return `${uid}_${suffix}`.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 128);
+}
+
+export async function getCurrentUserIdToken(): Promise<string | null> {
+  const user = auth.currentUser;
+  if (!user) return null;
+  try {
+    return await user.getIdToken();
+  } catch {
+    return null;
+  }
+}
+
+export async function savePushSubscriptionInFirestore(
+  uid: string,
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } }
+): Promise<void> {
+  if (!uid || !subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+    throw new Error('Invalid push subscription data.');
+  }
+  const subId = hashEndpointForDocId(uid, subscription.endpoint);
+  const subRef = doc(db, 'pushSubscriptions', subId);
+  const userAgent =
+    typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 256) : undefined;
+
+  try {
+    const existingSnap = await getDoc(subRef);
+    const payload: Record<string, unknown> = {
+      userId: uid,
+      endpoint: subscription.endpoint.slice(0, 1024),
+      keys: {
+        p256dh: subscription.keys.p256dh.slice(0, 256),
+        auth: subscription.keys.auth.slice(0, 128)
+      },
+      updatedAt: serverTimestamp()
+    };
+    if (userAgent) payload.userAgent = userAgent;
+
+    if (existingSnap.exists()) {
+      await updateDoc(subRef, payload);
+    } else {
+      await setDoc(subRef, {
+        ...payload,
+        createdAt: serverTimestamp()
+      });
+    }
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `pushSubscriptions/${subId}`);
+  }
+}
+
+export async function deletePushSubscriptionFromFirestore(
+  uid: string,
+  endpoint: string
+): Promise<void> {
+  if (!uid || !endpoint) return;
+  const subId = hashEndpointForDocId(uid, endpoint);
+  try {
+    await deleteDoc(doc(db, 'pushSubscriptions', subId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `pushSubscriptions/${subId}`);
+  }
+}
+
 

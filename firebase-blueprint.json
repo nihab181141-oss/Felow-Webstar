@@ -343,6 +343,27 @@
         "createdAt": { "type": "string" }
       },
       "required": ["uid", "email"]
+    },
+    "PushSubscription": {
+      "title": "PushSubscription",
+      "description": "Web Push VAPID subscription tied to an authenticated user device",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "endpoint": { "type": "string", "maxLength": 1024 },
+        "keys": {
+          "type": "object",
+          "properties": {
+            "p256dh": { "type": "string", "maxLength": 256 },
+            "auth": { "type": "string", "maxLength": 128 }
+          },
+          "required": ["p256dh", "auth"]
+        },
+        "userAgent": { "type": "string", "maxLength": 256 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "endpoint", "keys"]
     }
   },
   "firestore": {
@@ -405,6 +426,10 @@
     "/admins/{adminId}": {
       "schema": { "$ref": "#/entities/Admin" },
       "description": "Trusted platform admins"
+    },
+    "/pushSubscriptions/{subId}": {
+      "schema": { "$ref": "#/entities/PushSubscription" },
+      "description": "Web Push subscriptions scoped to authenticated owners"
     }
   }
 }

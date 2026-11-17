@@ -7,6 +7,7 @@ import { AuthModal } from './components/auth/AuthModal';
 import { SeoHead } from './components/seo/SeoHead';
 import { PublicFooter } from './components/shared/PublicFooter';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
+import { OfflineBanner } from './components/shared/OfflineBanner';
 import { CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
 // Lazy-load secondary full-page views and modals for fast initial landing paint
@@ -197,6 +198,7 @@ const MainAppContent: React.FC = () => {
         </div>
       )}
 
+      <OfflineBanner />
       {!isAuthView && <MobileBottomNav />}
     </div>
   );

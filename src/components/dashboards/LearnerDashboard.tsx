@@ -15,6 +15,7 @@ import { useApp } from '../../context/AppContext';
 import { TutorPageCard } from '../shared/TutorPageCard';
 import { DeleteAccountSection } from '../shared/DeleteAccountSection';
 import { BrandWordmark } from '../shared/BrandWordmark';
+import { PushNotificationCard } from '../shared/PushNotificationCard';
 import { buildWhatsAppUrl, isValidBdWhatsAppNumber, sanitizeFacebookUrl } from '../../utils/contactLinks';
 import { BD_DISTRICTS_BY_DIVISION, getDivisionByDistrict, getAreasOrUpazilas } from '../../data/bangladeshData';
 import { DEFAULT_PLACEHOLDER_AVATAR, LearnerSubtype } from '../../types';
@@ -726,6 +727,8 @@ export const LearnerDashboard: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
+                <PushNotificationCard />
               </div>
             </div>
 
