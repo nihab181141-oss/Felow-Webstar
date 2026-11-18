@@ -7,7 +7,7 @@ import {
   User,
   GraduationCap,
   Bookmark,
-  Repeat,
+  BookOpen,
   Shield,
   Globe,
   LogOut,
@@ -31,8 +31,8 @@ export const MobileBottomNav: React.FC = () => {
     currentUser,
     currentRole,
     isAuthenticated,
-    switchUserRole,
-    activateDualRole,
+    openLoginForPortal,
+    setIsUserManualOpen,
     openCreateTuitionModal,
     isPostTuitionOpen,
     logoutUser,
@@ -232,55 +232,51 @@ export const MobileBottomNav: React.FC = () => {
                 </div>
               </button>
 
-              <button
-                type="button"
-                onClick={() =>
-                  requireAuthOrRun(async () => {
-                    if (currentRole === 'tutor') {
-                      setActiveView('tutor-onboarding');
-                    } else {
-                      await activateDualRole('tutor');
-                    }
-                  })
-                }
-                className="p-3.5 rounded-[22px] bg-[#DCEBFA]/75 border border-[#C6DDF5] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
-              >
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
-                  <GraduationCap className="w-4 h-4 text-[#18181B]" />
-                </div>
-                <div className="text-xs font-bold text-[#18181B]">
-                  {currentRole === 'tutor'
-                    ? (isBn ? 'টিউটর পেজ এডিট' : 'Edit Tutor Page')
-                    : (isBn ? 'টিউটর পেজ তৈরি' : 'Create Tutor Page')}
-                </div>
-              </button>
-
-              {isAuthenticated && currentRole !== 'admin' && (
+              {(!isAuthenticated || currentRole === 'tutor') && (
                 <button
                   type="button"
-                  onClick={async () => {
-                    const nextRole = currentRole === 'tutor' ? 'learner' : 'tutor';
+                  onClick={() => {
                     setIsAccountOpen(false);
-                    await switchUserRole(nextRole);
+                    if (!isAuthenticated) {
+                      void openLoginForPortal('tutor', 'register');
+                    } else {
+                      setActiveView('tutor-onboarding');
+                    }
                   }}
-                  className="p-3.5 rounded-[22px] bg-[#FFF4D6] border border-[#F8E4AE] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
+                  className="p-3.5 rounded-[22px] bg-[#DCEBFA]/75 border border-[#C6DDF5] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
                 >
                   <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
-                    <Repeat className="w-4 h-4 text-[#C94A35]" />
+                    <GraduationCap className="w-4 h-4 text-[#18181B]" />
                   </div>
                   <div className="text-xs font-bold text-[#18181B]">
                     {currentRole === 'tutor'
-                      ? (isBn ? 'স্টুডেন্ট মোড' : 'Student Mode')
-                      : (isBn ? 'টিউটর মোড' : 'Tutor Mode')}
+                      ? (isBn ? 'টিউটর পেজ এডিট' : 'Edit Tutor Page')
+                      : (isBn ? 'টিউটর লগইন / পেজ' : 'Tutor Login Portal')}
                   </div>
                 </button>
               )}
 
               <button
                 type="button"
+                onClick={() => {
+                  setIsAccountOpen(false);
+                  setIsUserManualOpen(true);
+                }}
+                className="p-3.5 rounded-[22px] bg-[#FFF4D6] border border-[#F8E4AE] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform"
+              >
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                  <BookOpen className="w-4 h-4 text-[#C94A35]" />
+                </div>
+                <div className="text-xs font-bold text-[#18181B]">
+                  {isBn ? 'ইউজার ম্যানুয়াল' : 'User Manual'}
+                </div>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
                 className={`p-3.5 rounded-[22px] bg-[#FFF6F3] border border-[#F5E4DF] text-left space-y-1.5 cursor-pointer active:scale-[0.98] transition-transform ${
-                  !isAuthenticated || currentRole === 'admin' ? 'col-span-2 sm:col-span-1' : ''
+                  isAuthenticated && currentRole !== 'tutor' ? 'col-span-2 sm:col-span-1' : ''
                 }`}
               >
                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-2xs">

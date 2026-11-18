@@ -7,19 +7,26 @@ import {
   LogOut,
   User,
   Shield,
-  Repeat,
+  BookOpen,
   Globe,
   X,
   BellRing,
   CheckCircle2,
   ArrowUpRight,
   BadgeCheck,
-  Briefcase
+  Briefcase,
+  Clock
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION } from '../data/bangladeshData';
+import { fetchTutorProfileById } from '../services/firebase';
 import { DEFAULT_PLACEHOLDER_AVATAR, TutorProfile, isTutorVerified } from '../types';
-import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../utils/tutorSearch';
+import {
+  RecentTutorViewEntry,
+  loadRecentTutorViews,
+  removeRecentTutorView
+} from '../utils/recentTutorViews';
+import { filterAndRankTutors } from '../utils/tutorSearch';
 import { PWAInstallButton } from './shared/PWAInstallButton';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
@@ -37,8 +44,8 @@ export const Header: React.FC = () => {
     currentUser,
     currentRole,
     isAuthenticated,
-    switchUserRole,
-    activateDualRole,
+    openLoginForPortal,
+    setIsUserManualOpen,
     openCreateTuitionModal,
     logoutUser,
     setIsAuthModalOpen,
@@ -54,22 +61,23 @@ export const Header: React.FC = () => {
     viewTutorDetail,
     viewTuitionDetail,
     openAdminUserProfile,
+    setIsTutorSearchOpen,
     language,
     setLanguage
   } = useApp();
 
   const [openDropdown, setOpenDropdown] = useState<'notif' | 'account' | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const [recentViews, setRecentViews] = useState<RecentTutorViewEntry[]>(() =>
+    loadRecentTutorViews()
+  );
   const rightControlsRef = useRef<HTMLDivElement>(null);
   const searchBoxRef = useRef<HTMLDivElement>(null);
-  const mobileSearchRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
   const trimmedQuery = searchQuery.trim();
 
-  const matchingTutorResults = React.useMemo(() => {
-    if (!trimmedQuery) return [];
+  const tutorPool = React.useMemo(() => {
     const poolMap = new Map<string, TutorProfile>();
     tutors.forEach(t => {
       if (t.isPublished !== false && t.profileVisibility !== 'hidden') {
@@ -81,11 +89,30 @@ export const Header: React.FC = () => {
         poolMap.set(t.id, t);
       });
     }
-    return Array.from(poolMap.values())
-      .filter(t => matchesTutorSearchQuery(t, trimmedQuery, currentRole === 'admin' ? t.email : undefined))
-      .sort((a, b) => scoreTutorSearchMatch(b, trimmedQuery) - scoreTutorSearchMatch(a, trimmedQuery))
-      .slice(0, 6);
-  }, [trimmedQuery, tutors, adminTutorProfiles, currentRole]);
+    return Array.from(poolMap.values());
+  }, [tutors, adminTutorProfiles, currentRole]);
+
+  const allMatchingTutors = React.useMemo(() => {
+    if (!trimmedQuery) return [];
+    return filterAndRankTutors(tutorPool, trimmedQuery, {
+      includeHiddenAndDrafts: currentRole === 'admin'
+    });
+  }, [trimmedQuery, tutorPool, currentRole]);
+
+  const matchingTutorResults = React.useMemo(
+    () => allMatchingTutors.slice(0, 8),
+    [allMatchingTutors]
+  );
+
+  const suggestedTutors = React.useMemo(() => {
+    return [...tutorPool]
+      .sort((a, b) => {
+        const aScore = (isTutorVerified(a) ? 3 : 0) + (Number(a.rating) || 0);
+        const bScore = (isTutorVerified(b) ? 3 : 0) + (Number(b.rating) || 0);
+        return bScore - aScore;
+      })
+      .slice(0, 5);
+  }, [tutorPool]);
 
   const matchingTuitionResults = React.useMemo(() => {
     if (!trimmedQuery) return [];
@@ -115,8 +142,7 @@ export const Header: React.FC = () => {
         setOpenDropdown(null);
       }
       const inDesktopSearch = searchBoxRef.current?.contains(e.target as Node);
-      const inMobileSearch = mobileSearchRef.current?.contains(e.target as Node);
-      if (!inDesktopSearch && !inMobileSearch) {
+      if (!inDesktopSearch) {
         setIsSearchFocused(false);
       }
     };
@@ -124,7 +150,6 @@ export const Header: React.FC = () => {
       if (e.key === 'Escape') {
         setOpenDropdown(null);
         setIsSearchFocused(false);
-        setIsMobileSearchOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -147,7 +172,7 @@ export const Header: React.FC = () => {
     if (currentRole === 'tutor') {
       setActiveView('tutor-onboarding');
     } else {
-      await activateDualRole('tutor');
+      await openLoginForPortal('tutor', 'register');
     }
   };
 
@@ -247,7 +272,10 @@ export const Header: React.FC = () => {
               <input
                 type="text"
                 value={searchQuery}
-                onFocus={() => setIsSearchFocused(true)}
+                onFocus={() => {
+                  setRecentViews(loadRecentTutorViews());
+                  setIsSearchFocused(true);
+                }}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setIsSearchFocused(true);
@@ -255,7 +283,20 @@ export const Header: React.FC = () => {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && trimmedQuery) {
                     setIsSearchFocused(false);
-                    if (matchingTutorResults.length > 0 && matchingTuitionResults.length === 0) {
+                    if (allMatchingTutors.length === 1 && matchingTuitionResults.length === 0) {
+                      const onlyTutor = allMatchingTutors[0];
+                      if (onlyTutor.isPublished === false && currentRole === 'admin') {
+                        openAdminUserProfile(onlyTutor.uid || onlyTutor.id);
+                      } else {
+                        viewTutorDetail(onlyTutor);
+                      }
+                    } else if (
+                      activeView !== 'landing' &&
+                      activeView !== 'tutors' &&
+                      activeView !== 'tuitions'
+                    ) {
+                      setIsTutorSearchOpen(true);
+                    } else if (allMatchingTutors.length > 0 && matchingTuitionResults.length === 0) {
                       setDirectoryTab('tutors');
                       setActiveView('tutors');
                     } else {
@@ -300,6 +341,134 @@ export const Header: React.FC = () => {
             </div>
           </div>
 
+          {/* Empty-Query Instagram/Facebook-Style Recent & Suggested Profiles */}
+          {isSearchFocused && trimmedQuery.length === 0 && (
+            <div className="absolute left-0 right-0 top-12 bg-white rounded-[24px] shadow-[0_14px_40px_rgba(24,24,27,0.12)] border border-[#EFEAE7] overflow-hidden z-50 max-h-[75vh] overflow-y-auto">
+              {recentViews.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 bg-[#F8F6F5] border-b border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#EB624B]" />
+                      <span>{language === 'bn' ? 'সাম্প্রতিক দেখা টিউটর' : 'Recent Profile Searches'}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchFocused(false);
+                        setIsTutorSearchOpen(true);
+                      }}
+                      className="text-[#C94A35] hover:underline cursor-pointer"
+                    >
+                      {language === 'bn' ? 'সব খুঁজুন →' : 'Open People Search →'}
+                    </button>
+                  </div>
+                  <div className="divide-y divide-[#F6F4F3]">
+                    {recentViews.slice(0, 4).map(entry => (
+                      <div
+                        key={entry.id}
+                        className="px-4 py-2 hover:bg-[#FFF6F3] flex items-center justify-between gap-2 transition-colors"
+                      >
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            setIsSearchFocused(false);
+                            const existing = tutorPool.find(t => t.id === entry.id || t.uid === entry.id);
+                            if (existing) {
+                              viewTutorDetail(existing);
+                              return;
+                            }
+                            const remote = await fetchTutorProfileById(entry.id);
+                            if (remote) viewTutorDetail(remote);
+                          }}
+                          className="flex-1 min-w-0 flex items-center gap-3 text-left cursor-pointer"
+                        >
+                          <img
+                            src={entry.avatar || DEFAULT_PLACEHOLDER_AVATAR}
+                            alt={entry.name}
+                            referrerPolicy="no-referrer"
+                            className="w-8 h-8 rounded-full object-cover border border-[#EFEAE7] shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1 text-xs font-bold text-[#18181B]">
+                              <span className="truncate">{entry.name}</span>
+                              {entry.verified && <BadgeCheck className="w-3.5 h-3.5 text-[#EB624B] shrink-0" />}
+                            </div>
+                            <div className="text-[11px] text-[#6B6B6B] truncate">
+                              {[entry.university, entry.district].filter(Boolean).join(' · ') || 'Tutor Profile'}
+                            </div>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRecentViews(removeRecentTutorView(entry.id))}
+                          aria-label={`Remove ${entry.name}`}
+                          className="w-7 h-7 rounded-full hover:bg-[#EAE4E1] flex items-center justify-center text-[#858585] hover:text-[#18181B] cursor-pointer shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {suggestedTutors.length > 0 && (
+                <div>
+                  <div className="px-4 py-2 bg-[#F8F6F5] border-y border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
+                    <span className="inline-flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-[#EB624B]" />
+                      <span>{language === 'bn' ? 'টিউটর অ্যাকাউন্ট দেখুন' : 'Suggested Tutor Profiles'}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchFocused(false);
+                        setIsTutorSearchOpen(true);
+                      }}
+                      className="text-[#C94A35] hover:underline cursor-pointer"
+                    >
+                      {language === 'bn' ? `সব (${tutorPool.length}) →` : `Browse All (${tutorPool.length}) →`}
+                    </button>
+                  </div>
+                  <div className="divide-y divide-[#F6F4F3]">
+                    {suggestedTutors.map(tutor => (
+                      <button
+                        key={tutor.id}
+                        type="button"
+                        onClick={() => {
+                          setIsSearchFocused(false);
+                          viewTutorDetail(tutor);
+                        }}
+                        className="w-full px-4 py-2 hover:bg-[#FFF6F3] flex items-center justify-between gap-3 text-left cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
+                            alt={tutor.name}
+                            referrerPolicy="no-referrer"
+                            className="w-8 h-8 rounded-full object-cover border border-[#EFEAE7] shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1 text-xs font-bold text-[#18181B]">
+                              <span className="truncate">{tutor.name}</span>
+                              {isTutorVerified(tutor) && (
+                                <BadgeCheck className="w-3.5 h-3.5 text-[#EB624B] shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-[11px] text-[#6B6B6B] truncate">
+                              {[tutor.university, tutor.department, tutor.district].filter(Boolean).join(' · ')}
+                            </div>
+                          </div>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Live Instant Tutor Accounts & Posts Dropdown */}
           {isSearchFocused && trimmedQuery.length > 0 && (
             <div className="absolute left-0 right-0 top-12 bg-white rounded-[24px] shadow-[0_14px_40px_rgba(24,24,27,0.12)] border border-[#EFEAE7] overflow-hidden z-50 max-h-[75vh] overflow-y-auto">
@@ -307,19 +476,29 @@ export const Header: React.FC = () => {
                 <span className="inline-flex items-center gap-1.5">
                   <GraduationCap className="w-3.5 h-3.5 text-[#EB624B]" />
                   <span>
-                    {language === 'bn' ? 'টিউটর অ্যাকাউন্ট ও প্রোফাইল' : 'Tutor Accounts & Profiles'} ({matchingTutorResults.length})
+                    {language === 'bn' ? 'টিউটর অ্যাকাউন্ট ও প্রোফাইল' : 'Tutor Accounts & Profiles'} ({allMatchingTutors.length})
                   </span>
                 </span>
                 <button
                   type="button"
                   onClick={() => {
                     setIsSearchFocused(false);
-                    setDirectoryTab('tutors');
-                    setActiveView('tutors');
+                    if (allMatchingTutors.length > matchingTutorResults.length) {
+                      setIsTutorSearchOpen(true);
+                    } else {
+                      setDirectoryTab('tutors');
+                      setActiveView('tutors');
+                    }
                   }}
                   className="text-[#C94A35] hover:underline cursor-pointer"
                 >
-                  {language === 'bn' ? 'ডিরেক্টরিতে দেখুন →' : 'View in Tutors →'}
+                  {allMatchingTutors.length > matchingTutorResults.length
+                    ? language === 'bn'
+                      ? `সব ${allMatchingTutors.length} জন দেখুন →`
+                      : `See all ${allMatchingTutors.length} →`
+                    : language === 'bn'
+                      ? 'ডিরেক্টরিতে দেখুন →'
+                      : 'View in Tutors →'}
                 </button>
               </div>
 
@@ -433,12 +612,12 @@ export const Header: React.FC = () => {
             type="button"
             onClick={() => {
               setOpenDropdown(null);
-              setIsMobileSearchOpen(prev => !prev);
+              setIsTutorSearchOpen(true);
             }}
-            aria-label="Search tutors"
+            aria-label={language === 'bn' ? 'টিউটর অ্যাকাউন্ট খুঁজুন' : 'Search tutor accounts'}
             className="md:hidden w-10 h-10 rounded-full bg-[#F6F4F3] hover:bg-[#EFEAFF] text-[#18181B] flex items-center justify-center cursor-pointer transition-colors"
           >
-            {isMobileSearchOpen ? <X className="w-4 h-4" /> : <Search className="w-4 h-4" />}
+            <Search className="w-4 h-4" />
           </button>
 
           <button
@@ -632,37 +811,30 @@ export const Header: React.FC = () => {
                       <span>{language === 'bn' ? 'আমার প্রোফাইল ও সেভ' : 'My Profile & Saved'}</span>
                     </button>
 
-                    <button
-                      type="button"
-                      onClick={handleTutorPageAction}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EFEAFF]/70 text-sm font-medium text-[#18181B] cursor-pointer"
-                    >
-                      <GraduationCap className="w-4 h-4 text-[#EB624B] shrink-0" />
-                      <span>
-                        {currentRole === 'tutor'
-                          ? (language === 'bn' ? 'টিউটর পেজ এডিট করুন' : 'Edit My Tutor Page')
-                          : (language === 'bn' ? 'টিউটর পেজ তৈরি করুন' : 'Create Tutor Page')}
-                      </span>
-                    </button>
-
-                    {currentRole !== 'admin' && (
+                    {currentRole === 'tutor' && (
                       <button
                         type="button"
-                        onClick={async () => {
-                          const nextRole = currentRole === 'tutor' ? 'learner' : 'tutor';
-                          setOpenDropdown(null);
-                          await switchUserRole(nextRole);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF4D6]/60 text-sm font-medium text-[#18181B] cursor-pointer"
+                        onClick={handleTutorPageAction}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EFEAFF]/70 text-sm font-medium text-[#18181B] cursor-pointer"
                       >
-                        <Repeat className="w-4 h-4 text-[#C94A35] shrink-0" />
+                        <GraduationCap className="w-4 h-4 text-[#EB624B] shrink-0" />
                         <span>
-                          {currentRole === 'tutor'
-                            ? (language === 'bn' ? 'স্টুডেন্ট মোডে যান' : 'Switch to Student / Parent')
-                            : (language === 'bn' ? 'টিউটর মোডে যান' : 'Switch to Tutor Mode')}
+                          {language === 'bn' ? 'টিউটর পেজ এডিট করুন' : 'Edit My Tutor Page'}
                         </span>
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpenDropdown(null);
+                        setIsUserManualOpen(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#FFF6F3] text-sm font-medium text-[#18181B] cursor-pointer"
+                    >
+                      <BookOpen className="w-4 h-4 text-[#EB624B] shrink-0" />
+                      <span>{language === 'bn' ? 'ইউজার ম্যানুয়াল / গাইড' : 'User Manual & Guide'}</span>
+                    </button>
 
                     {currentRole === 'admin' && (
                       <button
@@ -739,105 +911,6 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Expandable Mobile Global Tutor Search Drawer */}
-      {isMobileSearchOpen && (
-        <div
-          ref={mobileSearchRef}
-          className="md:hidden bg-white border-b border-[#EFEAE7] px-3 py-3 space-y-2.5 shadow-lg"
-        >
-          <div className="flex items-center bg-[#F6F4F3] rounded-full border border-[#EAE4E1] focus-within:border-[#18181B] focus-within:bg-white px-3.5 h-11">
-            <Search className="w-4 h-4 text-[#6B6B6B] shrink-0 pointer-events-none" />
-            <input
-              type="text"
-              autoFocus
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={
-                language === 'bn'
-                  ? 'টিউটরের নাম, প্রোফাইল, বিষয় খুঁজুন...'
-                  : 'Search tutor name, profile, subject...'
-              }
-              className="flex-1 min-w-0 bg-transparent px-2.5 text-sm text-[#18181B] placeholder:text-[#858585] focus:outline-none"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear mobile search"
-                className="w-7 h-7 rounded-full hover:bg-[#EAE4E1] flex items-center justify-center text-[#52525B]"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-
-          {trimmedQuery.length > 0 && (
-            <div className="max-h-72 overflow-y-auto rounded-2xl border border-[#EFEAE7] divide-y divide-[#F6F4F3] bg-white">
-              {matchingTutorResults.length === 0 && matchingTuitionResults.length === 0 ? (
-                <div className="p-3 text-xs text-[#6B6B6B]">
-                  {language === 'bn'
-                    ? `"${trimmedQuery}" নামে কোনো টিউটর বা পোস্ট পাওয়া যায়নি।`
-                    : `No matching tutors or posts for "${trimmedQuery}".`}
-                </div>
-              ) : (
-                <>
-                  {matchingTutorResults.map(tutor => (
-                    <button
-                      key={tutor.id}
-                      type="button"
-                      onClick={() => {
-                        setIsMobileSearchOpen(false);
-                        if (tutor.isPublished === false && currentRole === 'admin') {
-                          openAdminUserProfile(tutor.uid || tutor.id);
-                        } else {
-                          viewTutorDetail(tutor);
-                        }
-                      }}
-                      className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-left hover:bg-[#FFF6F3]"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <img
-                          src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
-                          alt={tutor.name}
-                          referrerPolicy="no-referrer"
-                          className="w-8 h-8 rounded-full object-cover shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <div className="text-xs font-bold text-[#18181B] truncate">{tutor.name}</div>
-                          <div className="text-[11px] text-[#6B6B6B] truncate">
-                            {[tutor.university, tutor.district].filter(Boolean).join(' · ')}
-                          </div>
-                        </div>
-                      </div>
-                      <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
-                    </button>
-                  ))}
-                  {matchingTuitionResults.map(post => (
-                    <button
-                      key={post.id}
-                      type="button"
-                      onClick={() => {
-                        setIsMobileSearchOpen(false);
-                        viewTuitionDetail(post);
-                      }}
-                      className="w-full px-3.5 py-2.5 flex items-center justify-between gap-2.5 text-left hover:bg-[#DCEBFA]/35"
-                    >
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-[#18181B] truncate">{post.title}</div>
-                        <div className="text-[11px] text-[#6B6B6B] truncate">
-                          Tuition · {post.district} · ৳{post.salaryOfferBDT.toLocaleString()}/mo
-                        </div>
-                      </div>
-                      <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
-                    </button>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
     </header>
   );
 };

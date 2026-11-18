@@ -6,8 +6,9 @@ import {
   Trash2,
   CheckCircle2,
   Loader2,
-  GraduationCap,
+  BookOpen,
   Globe,
+  Search,
   ShieldCheck,
   UserCheck
 } from 'lucide-react';
@@ -38,8 +39,9 @@ export const LearnerDashboard: React.FC = () => {
     deleteTuitionPost,
     updateApplicationStatus,
     saveLearnerProfile,
-    activateDualRole,
+    setIsUserManualOpen,
     viewTutorDetail,
+    setIsTutorSearchOpen,
     language,
     setLanguage
   } = useApp();
@@ -180,6 +182,14 @@ export const LearnerDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsTutorSearchOpen(true)}
+                  className="h-10 px-4 rounded-full bg-[#EFEAFF] hover:bg-[#E1D8FF] border border-[#E1D8FF] text-[#18181B] text-xs sm:text-sm font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
+                >
+                  <Search className="w-4 h-4 shrink-0" />
+                  <span>{isBn ? 'টিউটর খুঁজুন' : 'Find Tutors'}</span>
+                </button>
                 <button
                   type="button"
                   onClick={openCreateTuitionModal}
@@ -707,25 +717,6 @@ export const LearnerDashboard: React.FC = () => {
                       {language === 'en' ? 'English' : 'বাংলা'}
                     </span>
                   </button>
-
-                  <div className="p-4 rounded-[20px] bg-[#DCEBFA]/70 border border-[#C6DDF5] space-y-2.5">
-                    <div className="font-display text-sm font-bold text-[#18181B]">
-                      {isBn ? 'টিউটর হিসেবে পড়াতে চান?' : <>Want to teach on <BrandWordmark />?</>}
-                    </div>
-                    <p className="text-[#52525B] leading-relaxed">
-                      {isBn
-                        ? 'একই Google অ্যাকাউন্ট ব্যবহার করে স্টুডেন্ট এবং টিউটর মোডের মধ্যে সহজেই পরিবর্তন করুন।'
-                        : 'Activate your Tutor Profile using the same account and switch between modes anytime.'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => activateDualRole('tutor')}
-                      className="h-10 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
-                    >
-                      <GraduationCap className="w-4 h-4 shrink-0" />
-                      <span>{isBn ? 'টিউটর মোড চালু করুন' : 'Switch / Create Tutor Page'}</span>
-                    </button>
-                  </div>
                 </div>
 
                 <PushNotificationCard />
@@ -736,6 +727,33 @@ export const LearnerDashboard: React.FC = () => {
             <DeleteAccountSection />
           </div>
         )}
+
+        {/* Account Page Bottom User Manual Card */}
+        <section className="ivory-card p-5 sm:p-6 bg-[#FFF6F3]/80 border-[#F5E4DF] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5 min-w-0">
+            <span className="w-10 h-10 rounded-full bg-white border border-[#F5E4DF] flex items-center justify-center shrink-0">
+              <BookOpen className="w-5 h-5 text-[#EB624B]" />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <h2 className="font-display text-sm sm:text-base font-extrabold text-[#18181B]">
+                {isBn ? 'ইউজার ম্যানুয়াল ও গাইড' : 'Platform User Manual'}
+              </h2>
+              <p className="text-xs text-[#52525B] leading-relaxed">
+                {isBn
+                  ? 'কিভাবে টিউটর খুঁজবেন, টিউশন পোস্ট করবেন ও WhatsApp-এ যোগাযোগ করবেন—ইংরেজি বা বাংলায় সহজ গাইড দেখুন।'
+                  : 'Read our complete step-by-step guide (English & বাংলা) on finding verified tutors, posting tuitions, and messaging safely.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsUserManualOpen(true)}
+            className="h-10 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+          >
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span>{isBn ? 'ইউজার ম্যানুয়াল খুলুন' : 'Open User Manual'}</span>
+          </button>
+        </section>
       </div>
 
       <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-12 pb-6 flex justify-center">

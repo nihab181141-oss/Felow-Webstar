@@ -59,9 +59,10 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
       }
     }
 
+    const subjectList = tutor.subjects.slice(0, 3).join(', ') || 'Tutoring';
     const url = buildWhatsAppUrl(
       phone,
-      `${DEFAULT_TUTOR_WHATSAPP_MESSAGE} (Tutor: ${tutor.name})`
+      `${DEFAULT_TUTOR_WHATSAPP_MESSAGE} (Tutor: ${tutor.name}, Subjects: ${subjectList}, District: ${tutor.district})`
     );
     if (url) {
       const opened = launchWhatsAppUrl(url);
@@ -96,7 +97,7 @@ export const TutorPageCard: React.FC<TutorPageCardProps> = ({ tutor }) => {
                 {tutor.name}
               </h3>
               {verified && (
-                <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#EB624B] shrink-0" aria-label="Verified Tutor" />
+                <BadgeCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#D97706] fill-[#FDE68A] shrink-0" aria-label="Verified Tutor" />
               )}
             </div>
             <div className="text-xs sm:text-[13px] font-semibold text-[#EB624B] leading-snug break-words">

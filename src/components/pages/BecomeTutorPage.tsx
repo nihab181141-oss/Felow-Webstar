@@ -5,7 +5,7 @@ import { RouteView } from '../../utils/routing';
 import { BrandWordmark } from '../shared/BrandWordmark';
 
 export const BecomeTutorPage: React.FC = () => {
-  const { setActiveView, setDirectoryTab, setIsAuthModalOpen, setAuthModalMode, isAuthenticated, activateDualRole, currentRole, language } = useApp();
+  const { setActiveView, setDirectoryTab, isAuthenticated, openLoginForPortal, currentRole, language } = useApp();
   const isBn = language === 'bn';
 
   const navigate = (e: React.MouseEvent<HTMLAnchorElement>, view: RouteView, tab?: 'tutors' | 'tuitions') => {
@@ -16,16 +16,11 @@ export const BecomeTutorPage: React.FC = () => {
   };
 
   const handleStartTutorSetup = async () => {
-    if (!isAuthenticated) {
-      setAuthModalMode('register');
-      setIsAuthModalOpen(true);
-      return;
-    }
-    if (currentRole === 'tutor') {
+    if (isAuthenticated && currentRole === 'tutor') {
       setActiveView('tutor-onboarding');
       return;
     }
-    await activateDualRole('tutor');
+    await openLoginForPortal('tutor', 'register');
   };
 
   const faqs: Array<{ id: string; q: React.ReactNode; a: React.ReactNode }> = isBn
@@ -46,9 +41,9 @@ export const BecomeTutorPage: React.FC = () => {
           a: 'টিউটর ড্যাশবোর্ড থেকে জাতীয় পরিচয়পত্র, বিশ্ববিদ্যালয় আইডি কার্ড অথবা একাডেমিক সনদ নিরাপদে জমা দিলে অ্যাডমিন যাচাইয়ের পর ভেরিফিকেশন ব্যাজ যুক্ত করা হয়।'
         },
         {
-          id: 'bn-dual',
-          q: 'আমি কি একই অ্যাকাউন্ট থেকে শিক্ষার্থী ও টিউটর দুইভাবেই ব্যবহার করতে পারব?',
-          a: <>হ্যাঁ। <BrandWordmark />-এ আপনি প্রয়োজনে টিউটর মোড ও স্টুডেন্ট/গার্জিয়ান মোডের মধ্যে সহজেই সুইচ করতে পারেন।</>
+          id: 'bn-separate',
+          q: 'আমি কি একই জিমেইল দিয়ে শিক্ষার্থী এবং টিউটর দুইভাবেই ব্যবহার করতে পারব?',
+          a: <>হ্যাঁ, একই জিমেইল ব্যবহার করলেও <BrandWordmark />-এ টিউটর লগইন এবং শিক্ষার্থী/অভিভাবক লগইন সম্পূর্ণ আলাদা পোর্টালে থাকে, যাতে কখনো অ্যাকাউন্ট মিশে না যায়।</>
         }
       ]
     : [

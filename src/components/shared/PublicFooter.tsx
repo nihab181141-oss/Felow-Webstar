@@ -38,7 +38,7 @@ export const PublicFooter: React.FC = () => {
     setDistrictFilter,
     setMobileDetailOpen,
     openCreateTuitionModal,
-    activateDualRole,
+    openLoginForPortal,
     isAuthenticated,
     currentRole,
     setIsAuthModalOpen,
@@ -74,17 +74,12 @@ export const PublicFooter: React.FC = () => {
   };
 
   const handleTutorEntry = async () => {
-    if (!isAuthenticated) {
-      setAuthModalMode('register');
-      setIsAuthModalOpen(true);
-      return;
-    }
-    if (currentRole === 'tutor') {
+    if (isAuthenticated && currentRole === 'tutor') {
       setActiveView('dashboard');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
-    await activateDualRole('tutor');
+    await openLoginForPortal('tutor', 'register');
   };
 
   const featuredCities = FEATURED_CITY_SLUGS.map(slug => SUPPORTED_LOCATIONS[slug]).filter(Boolean);

@@ -8,6 +8,7 @@ import {
   TuitionPostStatus,
   Application,
   Invitation,
+  TutorProfileView,
   VerificationQueueItem,
   NotificationItem,
   ReportItem,
@@ -30,7 +31,6 @@ import {
   extractFriendlyErrorMessage,
   fetchUserAccountFromFirestore,
   mapUserAccountDoc,
-  updateUserRoleSettingsInFirestore,
   saveLearnerProfileInFirestore,
   fetchLearnerProfileFromFirestore,
   mapLearnerProfileDoc,
@@ -75,7 +75,7 @@ import {
   showBrowserNotification
 } from '../utils/notifications';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { collection, doc, onSnapshot, query, where, limit } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import {
   RouteView,
   parseAppRoute,
@@ -83,6 +83,7 @@ import {
   normalizePathname
 } from '../utils/routing';
 import { trackAnalyticsEvent } from '../utils/analytics';
+import { recordRecentTutorView } from '../utils/recentTutorViews';
 
 export type AppView = RouteView;
 
@@ -100,8 +101,9 @@ interface AppContextType {
   currentUser: UserAccount;
   currentRole: UserRole;
   learnerProfile: LearnerProfile | null;
-  switchUserRole: (role: UserRole) => Promise<void>;
-  activateDualRole: (role: 'learner' | 'tutor') => Promise<void>;
+  authPortalChoice: 'learner' | 'tutor';
+  setAuthPortalChoice: (portal: 'learner' | 'tutor') => void;
+  openLoginForPortal: (portal: 'learner' | 'tutor', mode?: 'login' | 'register') => Promise<void>;
 
   activeView: AppView;
   setActiveView: (view: AppView) => void;
@@ -118,6 +120,7 @@ interface AppContextType {
   tuitionPosts: TuitionPost[];
   applications: Application[];
   invitations: Invitation[];
+  tutorProfileViews: TutorProfileView[];
   verificationQueue: VerificationQueueItem[];
   notifications: NotificationItem[];
   reports: ReportItem[];
@@ -168,6 +171,10 @@ interface AppContextType {
   setIsAuthModalOpen: (open: boolean) => void;
   authModalMode: 'login' | 'register';
   setAuthModalMode: (mode: 'login' | 'register') => void;
+  isTutorSearchOpen: boolean;
+  setIsTutorSearchOpen: (open: boolean) => void;
+  isUserManualOpen: boolean;
+  setIsUserManualOpen: (open: boolean) => void;
 
   postNewTuition: (post: Omit<TuitionPost, 'id' | 'learnerId' | 'learnerName' | 'postedDate' | 'status' | 'totalApplicants'>) => Promise<void>;
   updateTuitionPost: (postId: string, updates: Partial<TuitionPost>) => Promise<void>;
@@ -358,6 +365,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tuitionPosts, setTuitionPosts] = useState<TuitionPost[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [tutorProfileViews, setTutorProfileViews] = useState<TutorProfileView[]>([]);
   const [verificationQueue, setVerificationQueue] = useState<VerificationQueueItem[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [reports, setReports] = useState<ReportItem[]>([]);
@@ -391,6 +399,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [setActiveView]);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('register');
+  const [authPortalChoice, setAuthPortalChoice] = useState<'learner' | 'tutor'>('learner');
   const [directoryTab, setDirectoryTab] = useState<'tutors' | 'tuitions'>(
     initialParsedRoute.directoryTab
   );
@@ -399,6 +408,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isTutorSearchOpen, setIsTutorSearchOpen] = useState(false);
+  const [isUserManualOpen, setIsUserManualOpen] = useState(false);
 
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
@@ -479,9 +490,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
         }
 
+        let storedPortalRole: 'learner' | 'tutor' | null = null;
+        try {
+          const raw = localStorage.getItem(`felow_portal_role_${user.uid}`);
+          if (raw === 'learner' || raw === 'tutor') storedPortalRole = raw;
+        } catch {
+          // ignore storage access issues
+        }
+
         const resolvedRole: UserRole = isUserAdmin
           ? 'admin'
-          : (remoteAccount?.role as UserRole) || 'learner';
+          : storedPortalRole || (remoteAccount?.role === 'tutor' ? 'tutor' : 'learner');
 
         setCurrentUser(prev => ({
           ...prev,
@@ -518,6 +537,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentRole('learner');
         setApplications([]);
         setInvitations([]);
+        setTutorProfileViews([]);
         setVerificationQueue([]);
         setNotifications([]);
         setReports([]);
@@ -644,7 +664,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let isMounted = true;
     setIsMarketplaceLoading(true);
     Promise.all([
-      fetchTutorProfilesPage(500),
+      fetchTutorProfilesPage(1000),
       fetchPublicTuitionPostsPage(500)
     ])
       .then(([tutorPage, remotePosts]) => {
@@ -747,7 +767,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     unsubs.push(
       onSnapshot(
-        query(collection(db, 'tutorProfiles'), where('isPublished', '==', true), limit(500)),
+        query(collection(db, 'tutorProfiles'), where('isPublished', '==', true), limit(1000)),
         (snapshot) => {
           publicTutorsMap.clear();
           snapshot.docs.forEach(docSnap => {
@@ -1052,7 +1072,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         preferredSchedule: d.preferredSchedule || '',
         message: d.message || '',
         status: d.status || 'pending',
-        sentAt: d.sentAt || toIsoDateString(d.createdAt, '').split('T')[0]
+        sentAt: d.sentAt || toIsoDateString(d.createdAt, '').split('T')[0],
+        createdAt: toIsoDateString(d.createdAt)
       };
     };
 
@@ -1078,6 +1099,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         snap.docs.forEach(d => learnerInvs.set(d.id, mapInvDoc(d)));
         syncMergedInvs();
       }, err => console.warn('learner invitations listener:', err))
+    );
+
+    // Tutor Profile Views (strictly owner-scoped subcollection for Tutor Dashboard analytics)
+    unsubs.push(
+      onSnapshot(
+        query(collection(db, 'tutorProfiles', uid, 'profileViews'), orderBy('createdAt', 'desc'), limit(500)),
+        snap => {
+          const list: TutorProfileView[] = snap.docs.map(d => {
+            const data = d.data() || {};
+            return {
+              id: d.id,
+              tutorId: data.tutorId || uid,
+              viewerId: data.viewerId || '',
+              viewedDate: data.viewedDate || toIsoDateString(data.createdAt, '').split('T')[0],
+              source: data.source || 'profile',
+              createdAt: toIsoDateString(data.createdAt)
+            };
+          });
+          setTutorProfileViews(list);
+        },
+        err => console.warn('tutor profileViews listener:', err)
+      )
     );
 
     // Tutor Favourites
@@ -1107,68 +1150,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (!myTutorProfile || !myTutorProfile.isPublished)
   );
 
-  // Multi-Role Account Switching
-  const switchUserRole = async (role: UserRole) => {
-    setCurrentRole(role);
-    const updatedRoles = Array.from(new Set([...(currentUser.availableRoles || [currentUser.role]), role]));
-    setCurrentUser(prev => ({
-      ...prev,
-      role,
-      availableRoles: updatedRoles
-    }));
+  // Separate Portal Entry (No in-session role switching between Student/Guardian & Tutor)
+  const openLoginForPortal = async (
+    portal: 'learner' | 'tutor',
+    mode: 'login' | 'register' = 'login'
+  ) => {
+    setAuthPortalChoice(portal);
+    setAuthModalMode(mode);
 
-    if (firebaseUser && (role === 'learner' || role === 'tutor')) {
+    if (firebaseUser && currentRole !== portal && currentRole !== 'admin') {
       try {
-        await updateUserRoleSettingsInFirestore(firebaseUser.uid, role, updatedRoles);
-      } catch (e) {
-        console.warn('Could not persist role switch:', e);
+        await logout();
+        myPrivateContactRef.current = null;
+        reviewsCacheRef.current = {};
+        setLearnerProfile(null);
+        setCurrentUser(GUEST_USER);
+        setCurrentRole('learner');
+        setApplications([]);
+        setInvitations([]);
+        setNotifications([]);
+        setSavedTutorIds([]);
+        setSavedTuitionIds([]);
+        setComparisonTutorIds([]);
+      } catch {
+        // non-blocking
       }
-      if (role === 'tutor' && (!myTutorProfile || !myTutorProfile.isPublished)) {
-        setActiveView('tutor-onboarding');
-        showToast('Please complete your mandatory Tutor Profile setup to publish.', 'info');
-        return;
-      }
+      showToast(
+        portal === 'tutor'
+          ? 'Tutor & Guardian accounts are separate. Please sign in to the Tutor portal.'
+          : 'Guardian & Tutor accounts are separate. Please sign in to the Student / Guardian portal.',
+        'info'
+      );
     }
-    showToast(`Switched active mode to ${role.toUpperCase()}`, 'info');
-  };
 
-  const activateDualRole = async (role: 'learner' | 'tutor') => {
-    const updatedRoles = Array.from(new Set([...(currentUser.availableRoles || [currentUser.role]), role]));
-    setCurrentUser(prev => ({
-      ...prev,
-      role,
-      availableRoles: updatedRoles
-    }));
-    setCurrentRole(role);
-
-    if (firebaseUser) {
-      try {
-        await updateUserRoleSettingsInFirestore(firebaseUser.uid, role, updatedRoles);
-        if (role === 'tutor') {
-          const existingTutor = tutors.find(t => t.id === firebaseUser.uid || t.uid === firebaseUser.uid);
-          if (!existingTutor || !existingTutor.isPublished) {
-            setActiveView('tutor-onboarding');
-            showToast('Complete your mandatory Tutor Profile setup to go live!', 'info');
-            return;
-          }
-        } else if (role === 'learner' && !learnerProfile) {
-          await saveLearnerProfileInFirestore(firebaseUser.uid, {
-            uid: firebaseUser.uid,
-            name: currentUser.name,
-            learnerType: currentUser.learnerSubtype || 'guardian',
-            phone: currentUser.phone,
-            whatsappNumber: currentUser.whatsappNumber || currentUser.phone,
-            division: currentUser.division || 'Dhaka',
-            district: currentUser.district || 'Dhaka',
-            area: currentUser.area || 'Dhanmondi',
-            phoneVisibility: false
-          });
-        }
-      } catch (err) {
-        console.warn('Role activation persistence warning:', err);
-      }
-    }
-    showToast(`${role === 'tutor' ? 'Tutor' : 'Learner / Guardian'} mode activated on your account!`, 'success');
+    setActiveView('login');
   };
 
   const toggleSaveTutor = async (tutorId: string) => {
@@ -1208,6 +1223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const viewTutorDetail = (tutor: TutorProfile) => {
+    recordRecentTutorView(tutor);
     setSelectedTutor(tutor);
     setDirectoryTab('tutors');
     setMobileDetailOpen(false);
@@ -2210,11 +2226,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       myPrivateContactRef.current = remotePrivateContact;
       if (remoteLearner) setLearnerProfile(remoteLearner);
 
-      const role: UserRole = isUserAdmin
-        ? 'admin'
-        : intendedRole === 'tutor'
-        ? 'tutor'
-        : (remoteAccount?.role as UserRole) || intendedRole;
+      try {
+        localStorage.setItem(`felow_portal_role_${fbUser.uid}`, intendedRole);
+      } catch {
+        // ignore storage access issues
+      }
+
+      const role: UserRole = isUserAdmin ? 'admin' : intendedRole;
 
       setCurrentUser(prev => ({
         ...prev,
@@ -2386,8 +2404,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentUser,
         currentRole,
         learnerProfile,
-        switchUserRole,
-        activateDualRole,
+        authPortalChoice,
+        setAuthPortalChoice,
+        openLoginForPortal,
         activeView,
         setActiveView,
         directoryTab,
@@ -2402,6 +2421,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         tuitionPosts,
         applications,
         invitations,
+        tutorProfileViews,
         verificationQueue,
         notifications,
         reports,
@@ -2442,6 +2462,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsAuthModalOpen,
         authModalMode,
         setAuthModalMode,
+        isTutorSearchOpen,
+        setIsTutorSearchOpen,
+        isUserManualOpen,
+        setIsUserManualOpen,
         postNewTuition,
         updateTuitionPost,
         updateTuitionPostStatus,

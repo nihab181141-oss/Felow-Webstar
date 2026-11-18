@@ -20,15 +20,27 @@ export const AuthPage: React.FC = () => {
     setIsAuthModalOpen,
     authModalMode,
     setAuthModalMode,
+    authPortalChoice,
+    setAuthPortalChoice,
     language,
     setLanguage
   } = useApp();
 
-  const [selectedRole, setSelectedRole] = useState<RoleChoice>('learner');
+  const [selectedRole, setSelectedRole] = useState<RoleChoice>(authPortalChoice);
   const [learnerSubtype, setLearnerSubtype] = useState<'guardian' | 'student'>('guardian');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [showPolicyModal, setShowPolicyModal] = useState(false);
+
+  React.useEffect(() => {
+    setSelectedRole(authPortalChoice);
+  }, [authPortalChoice]);
+
+  const handleSelectPortal = (portal: RoleChoice) => {
+    setSelectedRole(portal);
+    setAuthPortalChoice(portal);
+    setErrorMessage('');
+  };
 
   const isSignInMode = authModalMode === 'login';
 
@@ -46,6 +58,8 @@ export const AuthPage: React.FC = () => {
 
   const roleOptions: Array<{
     id: RoleChoice;
+    portalTagEn: string;
+    portalTagBn: string;
     labelEn: string;
     labelBn: string;
     hintEn: string;
@@ -54,18 +68,22 @@ export const AuthPage: React.FC = () => {
   }> = [
     {
       id: 'learner',
-      labelEn: 'Student / Guardian',
-      labelBn: 'শিক্ষার্থী / অভিভাবক',
-      hintEn: 'Browse tutors, post tuition & contact on WhatsApp',
+      portalTagEn: 'Portal 01 · Learning',
+      portalTagBn: 'পোর্টাল ০১ · শিক্ষার্থী/অভিভাবক',
+      labelEn: 'Student / Guardian Login',
+      labelBn: 'শিক্ষার্থী / অভিভাবক লগইন',
+      hintEn: 'Find verified tutors, post tuitions & contact on WhatsApp',
       hintBn: 'টিউটর খুঁজুন, টিউশন পোস্ট করুন ও WhatsApp-এ যোগাযোগ করুন',
       Icon: Users
     },
     {
       id: 'tutor',
-      labelEn: "I'm a Tutor",
-      labelBn: 'আমি একজন টিউটর',
-      hintEn: 'Create your Tutor Page & apply for tuitions',
-      hintBn: 'টিউটর পেজ খুলুন ও টিউশনে আবেদন করুন',
+      portalTagEn: 'Portal 02 · Teaching',
+      portalTagBn: 'পোর্টাল ০২ · টিউটর',
+      labelEn: 'Tutor Login',
+      labelBn: 'টিউটর লগইন',
+      hintEn: 'Manage your Tutor Page, get verified & apply for tuitions',
+      hintBn: 'টিউটর পেজ পরিচালনা করুন, ভেরিফিকেশন নিন ও টিউশনে আবেদন করুন',
       Icon: GraduationCap
     }
   ];
@@ -105,8 +123,8 @@ export const AuthPage: React.FC = () => {
 
           <p className="text-base sm:text-lg text-[#252525] font-medium leading-relaxed text-balance">
             {language === 'bn'
-              ? 'বাংলাদেশের সেরা বিশ্ববিদ্যালয়ের যাচাইকৃত টিউটর খুঁজুন এবং সরাসরি WhatsApp-এ যোগাযোগ করুন।'
-              : 'Find trusted university tutors across Bangladesh and connect directly on WhatsApp.'}
+              ? 'শিক্ষার্থী/অভিভাবক এবং টিউটর অ্যাকাউন্ট সম্পূর্ণ আলাদা। একই জিমেইল ব্যবহার করলেও প্রতিটি অ্যাকাউন্ট নিজের পোর্টালে সুরক্ষিত থাকে।'
+              : 'Student/Guardian and Tutor portals remain completely separate—even when signing in with the same Gmail account.'}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-[#858585]">
@@ -145,28 +163,60 @@ export const AuthPage: React.FC = () => {
                     alt="FeLoW WebStaR"
                     className="h-[0.95em] w-auto shrink-0 brightness-0 invert select-none"
                   />
-                  <span>-এ স্বাগতম</span>
+                  <span>-এ আলাদা লগইন পোর্টাল</span>
                 </>
               ) : (
                 <>
-                  <span>Welcome to</span>
+                  <span>Choose Your</span>
                   <img
                     src="/assets/aistudio/felow-webstar-side-by-side_1__1df0def6.svg"
                     alt="FeLoW WebStaR"
                     className="h-[0.95em] w-auto shrink-0 brightness-0 invert select-none"
                   />
+                  <span>Portal</span>
                 </>
               )}
             </h1>
             <p className="text-sm sm:text-base text-white/95 font-medium leading-relaxed text-balance">
               {language === 'bn'
-                ? 'একসাথে শিখুন। উদ্দেশ্য নিয়ে পড়ান। সঠিক সহায়তা খুঁজে নিন।'
-                : 'Learn together. Teach with purpose. Find the right support.'}
+                ? 'টিউটর ও গার্জিয়ান অ্যাকাউন্ট আলাদাভাবে লগইন করুন। কোনো স্বয়ংক্রিয় রোল সুইচ নেই।'
+                : 'Select Student/Guardian or Tutor login. Accounts stay strictly isolated.'}
             </p>
           </div>
 
-          {/* 2 Unified Role Selection Buttons (Student / Guardian & Tutor) */}
-          <div className="space-y-3" role="radiogroup" aria-label="Choose your role">
+          {/* Segmented Portal Switcher Tabs */}
+          <div
+            className="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-black/15 border border-white/25"
+            role="tablist"
+            aria-label={language === 'bn' ? 'লগইন পোর্টাল নির্বাচন' : 'Select login portal'}
+          >
+            {roleOptions.map((option) => {
+              const isSelected = selectedRole === option.id;
+              const Icon = option.Icon;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  onClick={() => handleSelectPortal(option.id)}
+                  className={`h-10 px-3 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-white text-[#18181B] shadow-sm'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-[#EB624B]' : 'text-white'}`} />
+                  <span className="truncate">
+                    {language === 'bn' ? option.labelBn : option.labelEn}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Detailed Portal Selection Cards */}
+          <div className="space-y-2.5" role="radiogroup" aria-label="Choose your login portal">
             {roleOptions.map((option) => {
               const isSelected = selectedRole === option.id;
               const Icon = option.Icon;
@@ -176,11 +226,11 @@ export const AuthPage: React.FC = () => {
                   type="button"
                   role="radio"
                   aria-checked={isSelected}
-                  onClick={() => setSelectedRole(option.id)}
-                  className={`w-full min-h-[68px] px-4 py-3 rounded-full bg-white text-left flex items-center gap-3.5 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#E45A43] ${
+                  onClick={() => handleSelectPortal(option.id)}
+                  className={`w-full min-h-[72px] px-4 py-3 rounded-[24px] bg-white text-left flex items-center gap-3.5 cursor-pointer transition-all duration-150 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#E45A43] ${
                     isSelected
                       ? 'ring-4 ring-white/45 shadow-lg'
-                      : 'opacity-95 hover:opacity-100 shadow-sm'
+                      : 'opacity-85 hover:opacity-100 shadow-sm'
                   }`}
                 >
                   <div
@@ -196,10 +246,13 @@ export const AuthPage: React.FC = () => {
                   <span className="w-px h-8 bg-[#EFEAE7] shrink-0" aria-hidden="true" />
 
                   <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#EB624B]">
+                      {language === 'bn' ? option.portalTagBn : option.portalTagEn}
+                    </div>
                     <div className="font-display text-base font-extrabold text-[#18181B] leading-tight truncate">
                       {language === 'bn' ? option.labelBn : option.labelEn}
                     </div>
-                    <div className="text-xs text-[#6B6B6B] leading-snug truncate mt-0.5">
+                    <div className="text-xs text-[#6B6B6B] leading-snug line-clamp-1 mt-0.5">
                       {language === 'bn' ? option.hintBn : option.hintEn}
                     </div>
                   </div>
@@ -263,7 +316,7 @@ export const AuthPage: React.FC = () => {
               type="button"
               disabled={isSubmitting}
               onClick={handleGoogleLogin}
-              className="w-full h-13 px-6 rounded-full bg-white hover:bg-[#FCFBFA] text-[#18181B] font-display text-base font-extrabold shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
+              className="w-full h-13 px-6 rounded-full bg-white hover:bg-[#FCFBFA] text-[#18181B] font-display text-sm sm:text-base font-extrabold shadow-md flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-60 transition-all duration-150 active:scale-[0.98] whitespace-nowrap"
             >
               <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -271,14 +324,24 @@ export const AuthPage: React.FC = () => {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
               </svg>
-              <span>
+              <span className="truncate">
                 {isSubmitting
                   ? (language === 'bn' ? 'অপেক্ষা করুন...' : 'Signing in...')
-                  : isSignInMode
-                    ? (language === 'bn' ? 'Google দিয়ে সাইন ইন করুন' : 'Sign in with Google')
-                    : (language === 'bn' ? 'Google দিয়ে অ্যাকাউন্ট খুলুন' : 'Create an account')}
+                  : selectedRole === 'tutor'
+                    ? (language === 'bn'
+                        ? 'Google দিয়ে টিউটর হিসেবে সাইন ইন'
+                        : 'Continue to Tutor Login with Google')
+                    : (language === 'bn'
+                        ? 'Google দিয়ে স্টুডেন্ট / গার্জিয়ান লগইন'
+                        : 'Continue as Student / Guardian')}
               </span>
             </button>
+
+            <div className="px-3.5 py-2.5 rounded-2xl bg-black/15 border border-white/20 text-[11px] text-white/95 text-center leading-relaxed">
+              {language === 'bn'
+                ? 'টিপস: একই জিমেইল দিয়ে টিউটর এবং গার্জিয়ান উভয় পোর্টালে আলাদাভাবে লগইন করতে পারবেন — একটিতে ঢুকলে অন্যটিতে স্বয়ংক্রিয়ভাবে সুইচ হবে না।'
+                : 'Same Gmail supported separately: signing into Student/Guardian keeps you strictly in your Guardian account, and Tutor Login opens your Tutor account.'}
+            </div>
 
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-white">
               <button

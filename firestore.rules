@@ -412,6 +412,16 @@ service cloud.firestore {
         data.updatedAt is timestamp;
     }
 
+    function isValidTutorProfileView(data) {
+      return data.keys().hasAll(['tutorId', 'viewerId', 'viewedDate', 'createdAt']) &&
+        data.keys().hasOnly(['tutorId', 'viewerId', 'viewedDate', 'source', 'createdAt']) &&
+        isValidId(data.tutorId) &&
+        isValidId(data.viewerId) &&
+        data.viewedDate is string && data.viewedDate.size() > 0 && data.viewedDate.size() <= 32 &&
+        (!('source' in data) || (data.source is string && data.source.size() <= 64)) &&
+        data.createdAt is timestamp;
+    }
+
     // 4. Connection Health Check (Read-only single document)
     match /test/connection {
       allow get: if true;
@@ -622,6 +632,25 @@ service cloud.firestore {
           isValidId(profileId) &&
           isValidId(reviewerId) &&
           (reviewerId == request.auth.uid || profileId == request.auth.uid || isAdmin());
+      }
+
+      match /profileViews/{viewId} {
+        allow get: if isValidId(profileId) && isValidId(viewId) && (isOwner(profileId) || isAdmin());
+        allow list: if isValidId(profileId) && (isOwner(profileId) || isAdmin());
+        allow create: if isVerifiedUser() &&
+          isValidId(profileId) &&
+          isValidId(viewId) &&
+          profileId != request.auth.uid &&
+          exists(/databases/$(database)/documents/tutorProfiles/$(profileId)) &&
+          isValidTutorProfileView(incoming()) &&
+          incoming().tutorId == profileId &&
+          incoming().viewerId == request.auth.uid &&
+          incoming().createdAt == request.time;
+        allow update: if false;
+        allow delete: if isVerifiedUser() &&
+          isValidId(profileId) &&
+          isValidId(viewId) &&
+          (isOwner(profileId) || isAdmin());
       }
     }
 

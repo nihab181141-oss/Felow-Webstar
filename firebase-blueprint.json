@@ -364,6 +364,19 @@
         "updatedAt": { "type": "string" }
       },
       "required": ["userId", "endpoint", "keys"]
+    },
+    "TutorProfileView": {
+      "title": "TutorProfileView",
+      "description": "Tracked tutor profile visit event used for tutor dashboard monthly analytics",
+      "type": "object",
+      "properties": {
+        "tutorId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "viewerId": { "type": "string", "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "viewedDate": { "type": "string", "maxLength": 32 },
+        "source": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["tutorId", "viewerId", "viewedDate"]
     }
   },
   "firestore": {
@@ -386,6 +399,10 @@
     "/tutorProfiles/{profileId}/reviews/{reviewerId}": {
       "schema": { "$ref": "#/entities/TutorReview" },
       "description": "Public student and guardian reviews and star ratings for a tutor"
+    },
+    "/tutorProfiles/{profileId}/profileViews/{viewId}": {
+      "schema": { "$ref": "#/entities/TutorProfileView" },
+      "description": "Profile visit analytics events readable only by the tutor owner and admins"
     },
     "/tuitionPosts/{postId}": {
       "schema": { "$ref": "#/entities/TuitionPost" },

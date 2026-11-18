@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import {
+  BadgeCheck,
+  BookOpen,
   Edit3,
   Eye,
   MessageCircle,
   Upload,
   CheckCircle2,
   Globe,
-  Repeat,
+  Search,
   ShieldCheck,
-  Share2
+  Share2,
+  Award
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { TuitionPostCard } from '../shared/TuitionPostCard';
 import { DeleteAccountSection } from '../shared/DeleteAccountSection';
 import { ShareModal } from '../shared/ShareModal';
 import { PushNotificationCard } from '../shared/PushNotificationCard';
+import { TutorAnalyticsCard } from './TutorAnalyticsCard';
 import { buildWhatsAppUrl } from '../../utils/contactLinks';
 import { buildTutorSharePayload } from '../../utils/shareLinks';
+import { computeTutorMilestones } from '../../utils/tutorBadges';
 import { DEFAULT_PLACEHOLDER_AVATAR } from '../../types';
 
 export const TutorDashboard: React.FC = () => {
@@ -25,6 +30,7 @@ export const TutorDashboard: React.FC = () => {
     myTutorProfile,
     applications,
     invitations,
+    tutorProfileViews,
     tuitionPosts,
     savedTuitionIds,
     verificationQueue,
@@ -36,7 +42,9 @@ export const TutorDashboard: React.FC = () => {
     submitNewVerificationDoc,
     getTuitionPrivateContact,
     isAuthenticated,
-    switchUserRole,
+    setIsUserManualOpen,
+    setIsTutorSearchOpen,
+    showToast,
     language,
     setLanguage
   } = useApp();
@@ -44,8 +52,14 @@ export const TutorDashboard: React.FC = () => {
   const isBn = language === 'bn';
   const [activeTab, setActiveTab] = useState<'applications' | 'invitations' | 'saved' | 'settings'>('applications');
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [reqVerifyType, setReqVerifyType] = useState<'institution' | 'identity' | 'qualification'>('institution');
+  const [reqVerifyFile, setReqVerifyFile] = useState<File | null>(null);
+  const [submittingRequest, setSubmittingRequest] = useState(false);
   const [guardianContacts, setGuardianContacts] = useState<Record<string, string>>({});
   const [isShareOpen, setIsShareOpen] = useState(false);
+
+  const milestones = myTutorProfile ? computeTutorMilestones(myTutorProfile) : null;
+  const isGoldVerified = Boolean(milestones?.isGoldVerified);
 
   const myApps = applications.filter(
     a => a.tutorId === currentUser.id || a.tutorId === currentUser.tutorProfileId
@@ -92,7 +106,7 @@ export const TutorDashboard: React.FC = () => {
 
   const handleDocUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    type: 'identity' | 'institution'
+    type: 'identity' | 'institution' | 'qualification'
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -114,6 +128,35 @@ export const TutorDashboard: React.FC = () => {
     }
   };
 
+  const handleSettingsVerificationRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reqVerifyFile) {
+      showToast(
+        isBn
+          ? 'দয়া করে আপনার পরিচয়পত্র বা স্টুডেন্ট আইডি ফাইল সংযুক্ত করুন।'
+          : 'Please attach your ID card or certificate file before requesting verification.',
+        'info'
+      );
+      return;
+    }
+    setSubmittingRequest(true);
+    try {
+      const url = await uploadTutorDoc(reqVerifyFile);
+      if (!url) return;
+      await submitNewVerificationDoc(
+        myTutorProfile?.id || currentUser.id,
+        reqVerifyType,
+        reqVerifyFile.name,
+        url
+      );
+      setReqVerifyFile(null);
+    } catch {
+      // Error toast already handled
+    } finally {
+      setSubmittingRequest(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#FCFBFA] pb-12 text-left animate-fade-up">
       {/* Tutor Profile Manager Header */}
@@ -131,10 +174,21 @@ export const TutorDashboard: React.FC = () => {
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-sm bg-white shrink-0"
                 />
                 <div className="pb-1 min-w-0">
-                  <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[#18181B] leading-snug break-words text-balance">
-                    {myTutorProfile?.name || currentUser.name}
-                  </h1>
-                  <p className="text-xs sm:text-sm text-[#6B6B6B] break-words">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-[#18181B] leading-snug break-words text-balance">
+                      {myTutorProfile?.name || currentUser.name}
+                    </h1>
+                    {isGoldVerified && (
+                      <span
+                        title={isBn ? 'ভেরিফাইড টিউটর (গোল্ড ব্যাজ)' : 'Verified Tutor'}
+                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF3C7] border border-[#F59E0B]/40 text-[#92400E] text-xs font-extrabold shrink-0"
+                      >
+                        <BadgeCheck className="w-4 h-4 text-[#D97706] fill-[#FDE68A] shrink-0" aria-hidden="true" />
+                        <span>{isBn ? 'ভেরিফাইড' : 'Verified'}</span>
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm text-[#6B6B6B] break-words mt-0.5">
                     {myTutorProfile?.university || 'Tutor Profile'}
                     {myTutorProfile?.department ? ` · ${myTutorProfile.department}` : ''}
                     {' · '}
@@ -144,6 +198,14 @@ export const TutorDashboard: React.FC = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setIsTutorSearchOpen(true)}
+                  className="h-10 px-4 rounded-full bg-[#DCEBFA]/85 hover:bg-[#DCEBFA] border border-[#C6DDF5] text-[#18181B] text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
+                >
+                  <Search className="w-3.5 h-3.5 shrink-0" />
+                  <span>{isBn ? 'টিউটর খুঁজুন' : 'Find Tutors'}</span>
+                </button>
                 {myTutorProfile && (
                   <>
                     <button
@@ -256,6 +318,13 @@ export const TutorDashboard: React.FC = () => {
 
       {/* Body */}
       <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-6 space-y-4">
+        <TutorAnalyticsCard
+          profileViews={tutorProfileViews}
+          invitations={myInvites}
+          language={language}
+          onViewInquiries={() => setActiveTab('invitations')}
+        />
+
         {activeTab === 'applications' && (
           <>
             {myApps.length === 0 ? (
@@ -517,15 +586,6 @@ export const TutorDashboard: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => switchUserRole('learner')}
-                  className="h-10 px-4 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
-                >
-                  <Repeat className="w-3.5 h-3.5 shrink-0" />
-                  <span>{isBn ? 'স্টুডেন্ট / গার্জিয়ান মোডে যান' : 'Switch to Student / Guardian'}</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
                   className="h-10 px-4 rounded-full bg-[#F6F4F3] hover:bg-[#EAE4E1] text-[#18181B] font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
                 >
@@ -535,11 +595,175 @@ export const TutorDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Profile Settings: Credential Verification Request Card */}
+            <div className="ivory-card p-5 sm:p-6 space-y-4 text-xs">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-9 h-9 rounded-full bg-[#FEF3C7] border border-[#F59E0B]/40 flex items-center justify-center shrink-0">
+                    <BadgeCheck className="w-5 h-5 text-[#D97706] fill-[#FDE68A]" />
+                  </span>
+                  <div>
+                    <h3 className="font-display text-base font-extrabold text-[#18181B]">
+                      {isBn ? 'ভেরিফিকেশন রিকোয়েস্ট ও গোল্ড ব্যাজ' : 'Profile Verification & Gold Badge'}
+                    </h3>
+                    <p className="text-[#6B6B6B] mt-0.5 leading-relaxed">
+                      {isGoldVerified
+                        ? isBn
+                          ? 'আপনার টিউটর প্রোফাইল সম্পূর্ণ ভেরিফাইড এবং গোল্ড চেকমার্ক সক্রিয় রয়েছে।'
+                          : 'Your profile is verified with the Gold Checkmark badge. You can submit additional qualifications anytime.'
+                        : isBn
+                          ? 'গোল্ড ভেরিফাইড চেকমার্ক পেতে আপনার বিশ্ববিদ্যালয় আইডি কার্ড এবং এনআইডি জমা দিয়ে রিকোয়েস্ট করুন।'
+                          : 'Submit your University ID, NID, or qualification credential to request the Gold Verified Checkmark on your tutor profile.'}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  className={`px-3 py-1 rounded-full font-bold text-[11px] uppercase whitespace-nowrap ${
+                    isGoldVerified
+                      ? 'bg-[#FEF3C7] text-[#92400E] border border-[#F59E0B]/40'
+                      : 'bg-[#F6F4F3] text-[#52525B] border border-[#EAE4E1]'
+                  }`}
+                >
+                  {isGoldVerified ? 'Verified' : 'Standard Tutor'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                {[
+                  {
+                    label: isBn ? 'বিশ্ববিদ্যালয় আইডি' : 'University ID',
+                    status: myTutorProfile?.verification?.institution?.status || 'unverified'
+                  },
+                  {
+                    label: isBn ? 'জাতীয় পরিচয়পত্র (NID)' : 'Identity (NID)',
+                    status: myTutorProfile?.verification?.identity?.status || 'unverified'
+                  },
+                  {
+                    label: isBn ? 'শিক্ষাগত যোগ্যতা' : 'Qualification',
+                    status: myTutorProfile?.verification?.qualification?.status || 'unverified'
+                  }
+                ].map(item => (
+                  <div
+                    key={item.label}
+                    className="p-3 rounded-[16px] bg-[#F8F6F5] border border-[#EFEAE7] flex items-center justify-between gap-2"
+                  >
+                    <span className="font-semibold text-[#18181B]">{item.label}</span>
+                    <span
+                      className={`font-bold capitalize ${
+                        item.status === 'verified'
+                          ? 'text-[#D97706]'
+                          : item.status === 'pending'
+                            ? 'text-[#C94A35]'
+                            : 'text-[#6B6B6B]'
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <form onSubmit={handleSettingsVerificationRequest} className="pt-2 border-t border-[#EFEAE7] space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-[#18181B] mb-1">
+                      {isBn ? 'ডকুমেন্টের ধরন' : 'Credential Type'}
+                    </label>
+                    <select
+                      value={reqVerifyType}
+                      onChange={(e) =>
+                        setReqVerifyType(e.target.value as 'institution' | 'identity' | 'qualification')
+                      }
+                      className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-[#18181B] font-semibold focus:bg-white focus:border-[#18181B] focus:outline-none"
+                    >
+                      <option value="institution">University Student ID Card</option>
+                      <option value="identity">National ID (NID)</option>
+                      <option value="qualification">Academic Certificate / Transcript</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-[#18181B] mb-1">
+                      {isBn ? 'ফাইল নির্বাচন করুন (ছবি বা PDF)' : 'Credential Document (Image or PDF)'}
+                    </label>
+                    <label className="w-full h-10 px-3 rounded-xl bg-[#F6F4F3] hover:bg-[#EAE4E1] border border-[#EAE4E1] text-[#18181B] font-medium flex items-center justify-between gap-2 cursor-pointer transition-colors">
+                      <span className="truncate text-[#52525B]">
+                        {reqVerifyFile ? reqVerifyFile.name : 'Choose file...'}
+                      </span>
+                      <Upload className="w-3.5 h-3.5 shrink-0 text-[#EB624B]" />
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => setReqVerifyFile(e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-[11px] text-[#6B6B6B] inline-flex items-center gap-1.5">
+                    <Award className="w-3.5 h-3.5 text-[#D97706] shrink-0" />
+                    <span>
+                      {isBn
+                        ? 'আপনার ডকুমেন্ট শুধুমাত্র অ্যাডমিন যাচাইয়ের জন্য নিরাপদে সংরক্ষিত থাকে।'
+                        : 'Credentials remain private and are reviewed solely by FeLoW WebStaR admins.'}
+                    </span>
+                  </span>
+
+                  <button
+                    type="submit"
+                    disabled={submittingRequest}
+                    className="h-10 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] disabled:opacity-60 text-white font-bold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <BadgeCheck className="w-4 h-4 text-[#FBBF24] shrink-0" />
+                    <span>
+                      {submittingRequest
+                        ? isBn
+                          ? 'জমা দেওয়া হচ্ছে...'
+                          : 'Submitting Request...'
+                        : isBn
+                          ? 'ভেরিফিকেশন রিকোয়েস্ট পাঠান'
+                          : 'Request Verification'}
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
             <PushNotificationCard />
 
             <DeleteAccountSection />
           </div>
         )}
+
+        {/* Account Page Bottom User Manual Card */}
+        <section className="ivory-card p-5 sm:p-6 bg-[#FFF6F3]/80 border-[#F5E4DF] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5 min-w-0">
+            <span className="w-10 h-10 rounded-full bg-white border border-[#F5E4DF] flex items-center justify-center shrink-0">
+              <BookOpen className="w-5 h-5 text-[#EB624B]" />
+            </span>
+            <div className="min-w-0 space-y-1">
+              <h2 className="font-display text-sm sm:text-base font-extrabold text-[#18181B]">
+                {isBn ? 'টিউটর ইউজার ম্যানুয়াল ও গাইড' : 'Platform User Manual'}
+              </h2>
+              <p className="text-xs text-[#52525B] leading-relaxed">
+                {isBn
+                  ? 'ভেরিফিকেশন, টিউশন আবেদন ও প্রোফাইল সেটআপ সংক্রান্ত বিস্তারিত গাইড (ইংরেজি বা বাংলা) পড়ুন।'
+                  : 'Read our complete step-by-step guide (English & বাংলা) covering Tutor verification, applications, and WhatsApp tips.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsUserManualOpen(true)}
+            className="h-10 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+          >
+            <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <span>{isBn ? 'ইউজার ম্যানুয়াল খুলুন' : 'Open User Manual'}</span>
+          </button>
+        </section>
       </div>
 
       <div className="max-w-4xl mx-auto px-3 sm:px-6 pt-12 pb-6 flex justify-center">

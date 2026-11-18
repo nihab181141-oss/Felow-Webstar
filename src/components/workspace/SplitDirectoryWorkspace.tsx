@@ -16,6 +16,7 @@ import {
   Send,
   Share2,
   ShieldCheck,
+  SlidersHorizontal,
   Star,
   Trash2,
   Users,
@@ -132,7 +133,7 @@ const TutorCardItem = memo<TutorCardItemProps>(({
                 </h3>
                 {verified && (
                   <BadgeCheck
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#F47C68] shrink-0"
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#D97706] fill-[#FDE68A] shrink-0"
                     aria-label="Verified Tutor"
                   />
                 )}
@@ -486,14 +487,22 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     isAuthenticated,
     setIsAuthModalOpen,
     setAuthModalMode,
-    activateDualRole,
+    openLoginForPortal,
     submitReport,
     showToast,
     language,
-    isMarketplaceLoading
+    isMarketplaceLoading,
+    setIsTutorSearchOpen
   } = useApp();
 
   const [subjectFilter, setSubjectFilter] = useState('All');
+  const [rateRangeFilter, setRateRangeFilter] = useState<
+    'all' | 'under-4k' | '4k-8k' | '8k-12k' | '12k-plus' | 'custom'
+  >('all');
+  const [customMinRate, setCustomMinRate] = useState('');
+  const [customMaxRate, setCustomMaxRate] = useState('');
+  const [verifiedOnlyFilter, setVerifiedOnlyFilter] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [recentSearches, setRecentSearches] = useState<RecentSearchEntry[]>(() =>
     loadRecentSearches()
   );
@@ -523,17 +532,36 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
   const q = searchQuery.trim().toLowerCase();
 
+  const resolvedRateBounds = useMemo(() => {
+    if (rateRangeFilter === 'under-4k') return { min: 0, max: 4000 };
+    if (rateRangeFilter === '4k-8k') return { min: 4000, max: 8000 };
+    if (rateRangeFilter === '8k-12k') return { min: 8000, max: 12000 };
+    if (rateRangeFilter === '12k-plus') return { min: 12000, max: Infinity };
+    if (rateRangeFilter === 'custom') {
+      const min = customMinRate ? Math.max(0, Number(customMinRate)) : 0;
+      const max = customMaxRate ? Math.max(0, Number(customMaxRate)) : Infinity;
+      return { min, max: max >= min ? max : Infinity };
+    }
+    return null;
+  }, [rateRangeFilter, customMinRate, customMaxRate]);
+
   const filteredTutors = useMemo(() => {
     const matched = tutors.filter(tutor => {
       if (tutor.isPublished === false || tutor.profileVisibility === 'hidden') return false;
       if (districtFilter !== 'All' && tutor.district !== districtFilter) return false;
       if (subjectFilter !== 'All' && !tutor.subjects.includes(subjectFilter)) return false;
+      if (verifiedOnlyFilter && !isTutorVerified(tutor)) return false;
+      if (resolvedRateBounds) {
+        const tMin = tutor.expectedSalaryMin || 0;
+        const tMax = tutor.expectedSalaryMax || tMin || 0;
+        if (tMax < resolvedRateBounds.min || tMin > resolvedRateBounds.max) return false;
+      }
       if (q && !matchesTutorSearchQuery(tutor, q)) return false;
       return true;
     });
     if (!q) return matched;
     return [...matched].sort((a, b) => scoreTutorSearchMatch(b, q) - scoreTutorSearchMatch(a, q));
-  }, [tutors, districtFilter, subjectFilter, q]);
+  }, [tutors, districtFilter, subjectFilter, verifiedOnlyFilter, resolvedRateBounds, q]);
 
   const filteredTuitions = useMemo(() => {
     return tuitionPosts.filter(post => {
@@ -565,7 +593,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
 
   useEffect(() => {
     setVisibleCount(10);
-  }, [directoryTab, districtFilter, subjectFilter, q]);
+  }, [directoryTab, districtFilter, subjectFilter, rateRangeFilter, customMinRate, customMaxRate, verifiedOnlyFilter, q]);
 
   useEffect(() => {
     if (!q && districtFilter === 'All' && subjectFilter === 'All') return;
@@ -797,10 +825,9 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       }
     }
 
-    const url = buildWhatsAppUrl(
-      phone,
-      `${DEFAULT_TUTOR_WHATSAPP_MESSAGE} (Tutor: ${tutor.name})`
-    );
+    const subjectList = tutor.subjects.slice(0, 3).join(', ') || 'Tutoring';
+    const prefilledMsg = `${DEFAULT_TUTOR_WHATSAPP_MESSAGE} (Tutor: ${tutor.name}, Subjects: ${subjectList}, District: ${tutor.district})`;
+    const url = buildWhatsAppUrl(phone, prefilledMsg);
     if (url) {
       trackAnalyticsEvent('whatsapp_contact_click', {
         target_type: 'tutor',
@@ -836,11 +863,22 @@ export const SplitDirectoryWorkspace: React.FC = () => {
     setInviteMessage('');
   };
 
-  const hasFilters = districtFilter !== 'All' || subjectFilter !== 'All' || q.length > 0;
+  const activeFilterCount =
+    (districtFilter !== 'All' ? 1 : 0) +
+    (subjectFilter !== 'All' ? 1 : 0) +
+    (rateRangeFilter !== 'all' ? 1 : 0) +
+    (verifiedOnlyFilter ? 1 : 0) +
+    (q.length > 0 ? 1 : 0);
+
+  const hasFilters = activeFilterCount > 0;
 
   const resetAllFilters = () => {
     setDistrictFilter('All');
     setSubjectFilter('All');
+    setRateRangeFilter('all');
+    setCustomMinRate('');
+    setCustomMaxRate('');
+    setVerifiedOnlyFilter(false);
     setSearchQuery('');
   };
 
@@ -910,10 +948,210 @@ export const SplitDirectoryWorkspace: React.FC = () => {
       <div
         id="directory-feed"
         ref={directorySectionRef}
-        className="max-w-[1440px] mx-auto py-5 sm:py-6 px-3 sm:px-5 flex flex-col xl:flex-row gap-6 items-start scroll-mt-20"
+        className="max-w-[1440px] mx-auto py-5 sm:py-6 px-3 sm:px-5 flex flex-col lg:flex-row gap-5 items-start scroll-mt-20"
       >
+        {/* TUTORS DIRECTORY FILTERING SIDEBAR (Desktop lg+) */}
+        {directoryTab === 'tutors' && (
+          <aside
+            aria-label={language === 'bn' ? 'টিউটর ফিল্টার সাইডবার' : 'Tutor filters sidebar'}
+            className="hidden lg:block w-[252px] xl:w-[248px] shrink-0 lg:sticky lg:top-[84px]"
+          >
+            <div className="ivory-card p-4 space-y-4 text-xs">
+              <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-[#EFEAE7]">
+                <div className="flex items-center gap-1.5 font-display text-sm font-extrabold text-[#18181B]">
+                  <SlidersHorizontal className="w-4 h-4 text-[#EB624B] shrink-0" />
+                  <span>{language === 'bn' ? 'ফিল্টার টিউটর' : 'Filter Tutors'}</span>
+                </div>
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="text-[11px] font-bold text-[#C94A35] hover:underline cursor-pointer"
+                  >
+                    {language === 'bn' ? 'রিসেট' : 'Reset'}
+                  </button>
+                )}
+              </div>
+
+              {/* Location Filter */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-bold uppercase tracking-wide text-[#52525B]">
+                  {language === 'bn' ? 'লোকেশন (জেলা)' : 'Location'}
+                </label>
+                <select
+                  value={districtFilter}
+                  onChange={(e) => setDistrictFilter(e.target.value)}
+                  aria-label="Filter tutors by district"
+                  className="w-full h-9 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-semibold text-[#18181B] focus:bg-white focus:border-[#18181B] focus:outline-none cursor-pointer"
+                >
+                  <option value="All">{language === 'bn' ? 'সকল জেলা' : 'All Locations'}</option>
+                  {ALL_DISTRICTS.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {['All', 'Dhaka', 'Chattogram', 'Rajshahi', 'Sylhet', 'Khulna'].map(city => {
+                    const active = districtFilter === city;
+                    return (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => setDistrictFilter(city)}
+                        className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors ${
+                          active
+                            ? 'bg-[#18181B] text-white'
+                            : 'bg-[#F8F6F5] text-[#52525B] hover:bg-[#EAE4E1] hover:text-[#18181B]'
+                        }`}
+                      >
+                        {city === 'All' ? (language === 'bn' ? 'সব' : 'All') : city}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Subject Filter */}
+              <div className="space-y-2 pt-2 border-t border-[#EFEAE7]">
+                <label className="block text-[11px] font-bold uppercase tracking-wide text-[#52525B]">
+                  {language === 'bn' ? 'বিষয় (Subject)' : 'Subject'}
+                </label>
+                <select
+                  value={subjectFilter}
+                  onChange={(e) => setSubjectFilter(e.target.value)}
+                  aria-label="Filter tutors by subject"
+                  className="w-full h-9 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-semibold text-[#18181B] focus:bg-white focus:border-[#18181B] focus:outline-none cursor-pointer"
+                >
+                  <option value="All">{language === 'bn' ? 'সকল বিষয়' : 'All Subjects'}</option>
+                  {POPULAR_SUBJECTS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                  {['Higher Mathematics', 'Physics', 'Chemistry', 'English Language & Grammar'].map(sub => {
+                    const active = subjectFilter === sub;
+                    return (
+                      <button
+                        key={sub}
+                        type="button"
+                        onClick={() => setSubjectFilter(active ? 'All' : sub)}
+                        className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold cursor-pointer transition-colors truncate max-w-full ${
+                          active
+                            ? 'bg-[#EB624B] text-white'
+                            : 'bg-[#FFF6F3] text-[#18181B] border border-[#F5E4DF] hover:bg-[#FFE8E1]'
+                        }`}
+                      >
+                        {sub === 'Higher Mathematics'
+                          ? 'Higher Math'
+                          : sub === 'English Language & Grammar'
+                            ? 'English'
+                            : sub}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Hourly / Monthly Rate Range Filter */}
+              <div className="space-y-2 pt-2 border-t border-[#EFEAE7]">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-[#52525B]">
+                    {language === 'bn' ? 'সম্মানী সীমা (BDT)' : 'Rate Range (BDT)'}
+                  </span>
+                  <span className="text-[10px] text-[#858585]">Mo / ~Hr</span>
+                </div>
+                <div className="space-y-1.5">
+                  {(
+                    [
+                      { id: 'all', label: 'Any Rate', sub: 'All fees' },
+                      { id: 'under-4k', label: 'Up to ৳4,000/mo', sub: '~৳330/hr' },
+                      { id: '4k-8k', label: '৳4,000 – ৳8,000/mo', sub: '~৳330–৳650/hr' },
+                      { id: '8k-12k', label: '৳8,000 – ৳12,000/mo', sub: '~৳650–৳1,000/hr' },
+                      { id: '12k-plus', label: '৳12,000+/mo', sub: '~৳1,000+/hr' }
+                    ] as const
+                  ).map(opt => {
+                    const active = rateRangeFilter === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setRateRangeFilter(opt.id);
+                          setCustomMinRate('');
+                          setCustomMaxRate('');
+                        }}
+                        className={`w-full px-3 py-2 rounded-xl border text-left flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                          active
+                            ? 'bg-[#EFEAFF] border-[#7C5DFA]/50 text-[#18181B] font-bold'
+                            : 'bg-[#F8F6F5] border-[#EAE4E1] text-[#52525B] hover:text-[#18181B]'
+                        }`}
+                      >
+                        <span className="truncate tabular-nums">{opt.label}</span>
+                        <span className="text-[10px] font-mono text-[#6B6B6B] shrink-0 tabular-nums">
+                          {opt.sub}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Min-Max Monthly Fee */}
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  <input
+                    type="number"
+                    min={0}
+                    step={500}
+                    value={customMinRate}
+                    onChange={(e) => {
+                      setCustomMinRate(e.target.value);
+                      setRateRangeFilter('custom');
+                    }}
+                    placeholder="Min ৳"
+                    aria-label="Minimum monthly rate in BDT"
+                    className="w-full h-8 px-2.5 rounded-lg bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-mono text-[#18181B] focus:bg-white focus:border-[#18181B] focus:outline-none"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    step={500}
+                    value={customMaxRate}
+                    onChange={(e) => {
+                      setCustomMaxRate(e.target.value);
+                      setRateRangeFilter('custom');
+                    }}
+                    placeholder="Max ৳"
+                    aria-label="Maximum monthly rate in BDT"
+                    className="w-full h-8 px-2.5 rounded-lg bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-mono text-[#18181B] focus:bg-white focus:border-[#18181B] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Verified Only Toggle */}
+              <div className="pt-2 border-t border-[#EFEAE7]">
+                <label className="flex items-center justify-between gap-2 cursor-pointer select-none">
+                  <span className="flex items-center gap-1.5 font-semibold text-[#18181B]">
+                    <BadgeCheck className="w-4 h-4 text-[#D97706] fill-[#FDE68A] shrink-0" />
+                    <span>{language === 'bn' ? 'শুধু ভেরিফাইড টিউটর' : 'Verified Tutors Only'}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={verifiedOnlyFilter}
+                    onChange={(e) => setVerifiedOnlyFilter(e.target.checked)}
+                    className="w-4 h-4 accent-[#D97706] rounded cursor-pointer"
+                  />
+                </label>
+              </div>
+            </div>
+          </aside>
+        )}
+
         {/* MASTER LIST PANE */}
-        <section className="w-full max-w-3xl mx-auto xl:mx-0 xl:w-[540px] 2xl:w-[600px] shrink-0 space-y-4">
+        <section
+          className={`w-full max-w-3xl mx-auto lg:mx-0 shrink-0 space-y-4 ${
+            directoryTab === 'tutors'
+              ? 'lg:flex-1 lg:min-w-0 xl:flex-none xl:w-[490px] 2xl:w-[540px]'
+              : 'xl:w-[540px] 2xl:w-[600px]'
+          }`}
+        >
           <div className="px-0.5 space-y-1">
             <h2 className="font-display text-lg sm:text-xl font-extrabold text-[#18181B] leading-snug">
               {isTuitionsMode
@@ -990,6 +1228,66 @@ export const SplitDirectoryWorkspace: React.FC = () => {
               )}
             </div>
 
+            {q.length > 0 && !isTuitionsMode && (
+              <div className="bg-white rounded-2xl border border-[#EFEAE7] shadow-[0_10px_28px_rgba(24,24,27,0.08)] overflow-hidden">
+                <div className="px-3.5 py-2 bg-[#F8F6F5] border-b border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
+                  <span>
+                    {language === 'bn'
+                      ? `টিউটর অ্যাকাউন্ট (${filteredTutors.length})`
+                      : `Matching Tutor Profiles (${filteredTutors.length})`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsTutorSearchOpen(true)}
+                    className="text-[#C94A35] hover:underline cursor-pointer"
+                  >
+                    {language === 'bn' ? 'পূর্ণ সার্চ →' : 'Full Search →'}
+                  </button>
+                </div>
+                {filteredTutors.length === 0 ? (
+                  <div className="px-3.5 py-3 text-xs text-[#6B6B6B]">
+                    {language === 'bn'
+                      ? `"${searchQuery.trim()}" নামে কোনো টিউটর প্রোফাইল পাওয়া যায়নি।`
+                      : `No tutor profiles matched "${searchQuery.trim()}".`}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-[#F6F4F3]">
+                    {filteredTutors.slice(0, 5).map(tutor => (
+                      <button
+                        key={tutor.id}
+                        type="button"
+                        onClick={() => viewTutorDetail(tutor)}
+                        className="w-full px-3.5 py-2.5 hover:bg-[#FFF6F3] flex items-center justify-between gap-2.5 text-left cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={tutor.profilePhotoURL || tutor.avatar || DEFAULT_PLACEHOLDER_AVATAR}
+                            alt={tutor.name}
+                            referrerPolicy="no-referrer"
+                            className="w-9 h-9 rounded-full object-cover border border-[#EFEAE7] shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <div className="text-xs font-bold text-[#18181B] flex items-center gap-1 truncate">
+                              <span className="truncate">{tutor.name}</span>
+                              {isTutorVerified(tutor) && (
+                                <BadgeCheck className="w-3.5 h-3.5 text-[#EB624B] shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-[11px] text-[#6B6B6B] truncate">
+                              {[tutor.university, tutor.department, tutor.district]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </div>
+                          </div>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-[#858585] shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             <select
               value={districtFilter}
               onChange={(e) => setDistrictFilter(e.target.value)}
@@ -1003,8 +1301,8 @@ export const SplitDirectoryWorkspace: React.FC = () => {
             </select>
           </div>
 
-          {/* Quiet Guest / Quick Action Strip */}
-          {!isAuthenticated ? (
+          {/* Quiet Guest Quick Sign-In Strip (strictly separated; no cross-role promo for signed-in learners) */}
+          {!isAuthenticated && (
             <div className="ivory-card bg-[#FFF6F3] border-[#F5E4DF] px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0 flex-1">
                 <div className="text-xs sm:text-sm font-bold text-[#18181B]">
@@ -1027,88 +1325,150 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 {language === 'bn' ? 'সাইন ইন' : 'Sign In'}
               </button>
             </div>
-          ) : currentRole !== 'tutor' && currentRole !== 'admin' ? (
-            <div className="ivory-card bg-[#EFEAFF]/70 border-[#E1D8FF] px-4 py-3 flex items-center justify-between gap-3">
-              <span className="text-xs text-[#52525B] font-medium">
-                {language === 'bn' ? 'টিউটর হিসেবে পড়াতে চান?' : 'Teach students in your area?'}
-              </span>
-              <button
-                type="button"
-                onClick={() => activateDualRole('tutor')}
-                className="text-xs font-bold text-[#18181B] hover:text-[#EB624B] hover:underline cursor-pointer whitespace-nowrap shrink-0"
-              >
-                {language === 'bn' ? 'টিউটর পেজ খুলুন →' : 'Create Tutor Page →'}
-              </button>
-            </div>
-          ) : null}
+          )}
 
-          {/* Instant Tutors | Tuitions Segmented Switch + Subject Filter */}
-          <div className="ivory-card p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-            <div className="flex items-center gap-1 bg-[#F6F4F3] p-1 rounded-full self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  if (isTuitionsMode) {
-                    setDirectoryTab('tutors');
-                    setActiveView('tutors');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }
-                }}
-                className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
-                  !isTuitionsMode
-                    ? 'bg-[#18181B] text-white shadow-xs font-bold'
-                    : 'text-[#6B6B6B] hover:text-[#18181B]'
-                }`}
-              >
-                <Users className="w-3.5 h-3.5 shrink-0" />
-                <span>{language === 'bn' ? 'টিউটর' : 'Tutors'}</span>
-                <span className="tabular-nums opacity-75">({filteredTutors.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isTuitionsMode) {
-                    setDirectoryTab('tuitions');
-                    setActiveView('tuitions');
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }
-                }}
-                className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
-                  isTuitionsMode
-                    ? 'bg-[#18181B] text-white shadow-xs font-bold'
-                    : 'text-[#6B6B6B] hover:text-[#18181B]'
-                }`}
-              >
-                <Briefcase className="w-3.5 h-3.5 shrink-0" />
-                <span>{language === 'bn' ? 'টিউশন' : 'Tuitions'}</span>
-                <span className="tabular-nums opacity-75">({filteredTuitions.length})</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <select
-                value={subjectFilter}
-                onChange={(e) => setSubjectFilter(e.target.value)}
-                aria-label="Filter by subject"
-                className="flex-1 sm:flex-initial h-9 px-3.5 rounded-full bg-[#F6F4F3] text-xs font-bold text-[#18181B] border border-[#EAE4E1] focus:border-[#18181B] focus:outline-none cursor-pointer sm:max-w-[200px]"
-              >
-                <option value="All">{language === 'bn' ? 'সকল বিষয়' : 'All Subjects'}</option>
-                {POPULAR_SUBJECTS.map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-
-              {hasFilters && (
+          {/* Instant Tutors | Tuitions Segmented Switch + Mobile/Quick Filter Controls */}
+          <div className="ivory-card p-3 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-1 bg-[#F6F4F3] p-1 rounded-full self-start sm:self-auto">
                 <button
                   type="button"
-                  onClick={resetAllFilters}
-                  className="h-9 px-3.5 rounded-full bg-[#EFEAFF] text-xs font-bold text-[#18181B] hover:bg-[#E1D8FF] cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+                  onClick={() => {
+                    if (isTuitionsMode) {
+                      setDirectoryTab('tutors');
+                      setActiveView('tutors');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
+                    !isTuitionsMode
+                      ? 'bg-[#18181B] text-white shadow-xs font-bold'
+                      : 'text-[#6B6B6B] hover:text-[#18181B]'
+                  }`}
                 >
-                  Reset
+                  <Users className="w-3.5 h-3.5 shrink-0" />
+                  <span>{language === 'bn' ? 'টিউটর' : 'Tutors'}</span>
+                  <span className="tabular-nums opacity-75">({filteredTutors.length})</span>
                 </button>
-              )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isTuitionsMode) {
+                      setDirectoryTab('tuitions');
+                      setActiveView('tuitions');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }}
+                  className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap ${
+                    isTuitionsMode
+                      ? 'bg-[#18181B] text-white shadow-xs font-bold'
+                      : 'text-[#6B6B6B] hover:text-[#18181B]'
+                  }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5 shrink-0" />
+                  <span>{language === 'bn' ? 'টিউশন' : 'Tuitions'}</span>
+                  <span className="tabular-nums opacity-75">({filteredTuitions.length})</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {directoryTab === 'tutors' && (
+                  <button
+                    type="button"
+                    onClick={() => setMobileFiltersOpen(prev => !prev)}
+                    className={`lg:hidden h-9 px-3.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 border transition-colors ${
+                      mobileFiltersOpen || activeFilterCount > 0
+                        ? 'bg-[#FFF6F3] border-[#EB624B]/50 text-[#C94A35]'
+                        : 'bg-[#F6F4F3] border-[#EAE4E1] text-[#18181B]'
+                    }`}
+                  >
+                    <SlidersHorizontal className="w-3.5 h-3.5 shrink-0" />
+                    <span>{language === 'bn' ? 'ফিল্টার' : 'Filters'}</span>
+                    {activeFilterCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full bg-[#EB624B] text-white text-[10px] font-mono tabular-nums">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+
+                <select
+                  value={subjectFilter}
+                  onChange={(e) => setSubjectFilter(e.target.value)}
+                  aria-label="Filter by subject"
+                  className="flex-1 sm:flex-initial h-9 px-3.5 rounded-full bg-[#F6F4F3] text-xs font-bold text-[#18181B] border border-[#EAE4E1] focus:border-[#18181B] focus:outline-none cursor-pointer sm:max-w-[200px]"
+                >
+                  <option value="All">{language === 'bn' ? 'সকল বিষয়' : 'All Subjects'}</option>
+                  {POPULAR_SUBJECTS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+
+                {hasFilters && (
+                  <button
+                    type="button"
+                    onClick={resetAllFilters}
+                    className="h-9 px-3.5 rounded-full bg-[#EFEAFF] text-xs font-bold text-[#18181B] hover:bg-[#E1D8FF] cursor-pointer whitespace-nowrap shrink-0 transition-colors"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
+
+            {/* Mobile / Tablet Expandable Tutors Filter Panel */}
+            {directoryTab === 'tutors' && mobileFiltersOpen && (
+              <div className="lg:hidden pt-3 border-t border-[#EFEAE7] space-y-3 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#52525B] mb-1">
+                      {language === 'bn' ? 'লোকেশন (জেলা)' : 'Location (District)'}
+                    </label>
+                    <select
+                      value={districtFilter}
+                      onChange={(e) => setDistrictFilter(e.target.value)}
+                      className="w-full h-9 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-semibold text-[#18181B]"
+                    >
+                      <option value="All">All Locations</option>
+                      {ALL_DISTRICTS.map(d => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#52525B] mb-1">
+                      {language === 'bn' ? 'সম্মানী সীমা' : 'Rate Range (Monthly / ~Hr)'}
+                    </label>
+                    <select
+                      value={rateRangeFilter}
+                      onChange={(e) => setRateRangeFilter(e.target.value as any)}
+                      className="w-full h-9 px-3 rounded-xl bg-[#F6F4F3] border border-[#EAE4E1] text-xs font-semibold text-[#18181B]"
+                    >
+                      <option value="all">Any Rate Range</option>
+                      <option value="under-4k">Up to ৳4,000/mo (~৳330/hr)</option>
+                      <option value="4k-8k">৳4,000 – ৳8,000/mo (~৳330–৳650/hr)</option>
+                      <option value="8k-12k">৳8,000 – ৳12,000/mo (~৳650–৳1,000/hr)</option>
+                      <option value="12k-plus">৳12,000+/mo (~৳1,000+/hr)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label className="flex items-center justify-between gap-2 pt-1 cursor-pointer select-none">
+                  <span className="flex items-center gap-1.5 font-semibold text-[#18181B]">
+                    <BadgeCheck className="w-4 h-4 text-[#D97706] fill-[#FDE68A]" />
+                    <span>{language === 'bn' ? 'শুধু ভেরিফাইড টিউটর দেখুন' : 'Verified Tutors Only'}</span>
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={verifiedOnlyFilter}
+                    onChange={(e) => setVerifiedOnlyFilter(e.target.checked)}
+                    className="w-4 h-4 accent-[#D97706] cursor-pointer"
+                  />
+                </label>
+              </div>
+            )}
           </div>
 
           {/* Recent Searches (Last 5 locations, subjects, or keyword queries in localStorage) */}
@@ -1225,12 +1585,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isAuthenticated) {
-                        setAuthModalMode('register');
-                        setIsAuthModalOpen(true);
-                        return;
-                      }
-                      activateDualRole('tutor');
+                      void openLoginForPortal('tutor', 'register');
                     }}
                     className="h-10 px-6 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs sm:text-sm font-bold cursor-pointer"
                   >
@@ -1667,12 +2022,7 @@ export const SplitDirectoryWorkspace: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!isAuthenticated) {
-                      setAuthModalMode('register');
-                      setIsAuthModalOpen(true);
-                      return;
-                    }
-                    activateDualRole('tutor');
+                    void openLoginForPortal('tutor', 'register');
                   }}
                   className="h-10 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-xs font-bold cursor-pointer transition-colors"
                 >

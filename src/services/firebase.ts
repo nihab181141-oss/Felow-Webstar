@@ -316,19 +316,25 @@ export async function loginWithGooglePopup(
         }).catch(() => undefined);
       }
     } else {
-      // Preserve existing user data. Only fill missing Google display name / photoURL if blank.
+      // Keep Tutor and Student/Guardian sessions strictly separated by the chosen login portal,
+      // even when signing in with the same Google email.
       const existingData = snap.data();
       const updates: Record<string, any> = {};
       if (!existingData.name && safeDisplayName) updates.name = safeDisplayName;
       if (!existingData.photoURL && safePhotoUrl) updates.photoURL = safePhotoUrl;
 
-      // Respect user's role selection on sign-in when switching to tutor/learner
       const currentRoles: string[] = Array.isArray(existingData.availableRoles)
         ? existingData.availableRoles.filter((r: string) => r === 'learner' || r === 'tutor')
         : ['learner'];
-      if (intendedRole === 'tutor' && existingData.activeRole !== 'tutor') {
-        updates.activeRole = 'tutor';
-        updates.availableRoles = Array.from(new Set([...currentRoles, 'tutor']));
+
+      if (existingData.activeRole !== safeRole) {
+        updates.activeRole = safeRole;
+      }
+      if (!currentRoles.includes(safeRole)) {
+        updates.availableRoles = Array.from(new Set([...currentRoles, safeRole]));
+      }
+      if (safeRole === 'learner' && existingData.learnerSubtype !== learnerSubtype) {
+        updates.learnerSubtype = learnerSubtype;
       }
 
       if (Object.keys(updates).length > 0) {
@@ -336,8 +342,25 @@ export async function loginWithGooglePopup(
         await updateDoc(userRef, updates);
       }
 
-      const activeRole = updates.activeRole || existingData.activeRole || safeRole;
-      if (activeRole === 'tutor' || intendedRole === 'tutor') {
+      if (safeRole === 'learner') {
+        const learnerSnap = await getDoc(doc(db, 'learnerProfiles', fbUser.uid));
+        if (!learnerSnap.exists()) {
+          await setDoc(doc(db, 'learnerProfiles', fbUser.uid), {
+            uid: fbUser.uid,
+            name: existingData.name || safeDisplayName,
+            learnerType: learnerSubtype,
+            phone: existingData.phone || safePhone,
+            whatsappNumber: existingData.whatsappNumber || safePhone,
+            division: existingData.division || 'Dhaka',
+            district: existingData.district || 'Dhaka',
+            area: existingData.area || 'Dhanmondi',
+            phoneVisibility: existingData.phoneVisibility ?? false,
+            profileCompletion: 60,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+        }
+      } else {
         const tutorSnap = await getDoc(doc(db, 'tutorProfiles', fbUser.uid));
         const tutorData = tutorSnap.exists() ? tutorSnap.data() : null;
         if (!tutorData || tutorData.isPublished !== true) {
@@ -837,7 +860,7 @@ export async function saveTutorProfileInFirestore(
 }
 
 export async function fetchTutorProfilesPage(
-  pageSize = 500,
+  pageSize = 1000,
   lastDoc?: QueryDocumentSnapshot<DocumentData>
 ): Promise<{ items: TutorProfile[]; lastVisible: QueryDocumentSnapshot<DocumentData> | null }> {
   const path = 'tutorProfiles';
@@ -1829,20 +1852,30 @@ export async function updateVerificationInFirestore(
         };
         const badgeLabel = badgeLabelMap[verificationType];
         const prevBadges: string[] = Array.isArray(tData.badges) ? tData.badges : [];
-        const nextBadges =
+        const updatedVerification = {
+          ...prevVerification,
+          [verificationType]: {
+            ...(prevVerification[verificationType] || {}),
+            status: status === 'approved' ? 'verified' : 'unverified',
+            ...(status === 'approved' ? { verifiedAt: new Date().toISOString() } : {})
+          }
+        };
+        const bothVerified =
+          updatedVerification.identity?.status === 'verified' &&
+          updatedVerification.institution?.status === 'verified';
+
+        let nextBadges =
           status === 'approved'
-            ? Array.from(new Set([...prevBadges, badgeLabel])).slice(0, 15)
-            : prevBadges.filter(b => b !== badgeLabel);
+            ? Array.from(new Set([...prevBadges, badgeLabel]))
+            : prevBadges.filter(b => b !== badgeLabel && b !== 'Verified');
+
+        if (bothVerified) {
+          nextBadges = Array.from(new Set([...nextBadges, 'Verified']));
+        }
+        nextBadges = nextBadges.slice(0, 15);
 
         await updateDoc(tutorRef, {
-          verification: {
-            ...prevVerification,
-            [verificationType]: {
-              ...(prevVerification[verificationType] || {}),
-              status: status === 'approved' ? 'verified' : 'unverified',
-              ...(status === 'approved' ? { verifiedAt: new Date().toISOString() } : {})
-            }
-          },
+          verification: updatedVerification,
           badges: nextBadges,
           updatedAt: serverTimestamp()
         });
@@ -2193,5 +2226,74 @@ export async function deletePushSubscriptionFromFirestore(
     handleFirestoreError(error, OperationType.DELETE, `pushSubscriptions/${subId}`);
   }
 }
+
+// -------------------------------------------------------------
+// Tutor Profile Views Analytics
+// -------------------------------------------------------------
+
+const recordedProfileViewsToday = new Set<string>();
+
+function getLocalTodayKey(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export async function recordTutorProfileViewInFirestore(
+  tutorId: string,
+  source = 'profile'
+): Promise<void> {
+  const viewer = auth.currentUser;
+  const targetTutorId = (tutorId || '').trim();
+  if (!viewer || !viewer.emailVerified || !targetTutorId || targetTutorId === viewer.uid) {
+    return;
+  }
+
+  const todayKey = getLocalTodayKey();
+  const dedupeKey = `felow_pv_${viewer.uid}_${targetTutorId}_${todayKey}`;
+  if (recordedProfileViewsToday.has(dedupeKey)) {
+    return;
+  }
+  try {
+    if (typeof window !== 'undefined' && window.localStorage.getItem(dedupeKey) === '1') {
+      recordedProfileViewsToday.add(dedupeKey);
+      return;
+    }
+  } catch {
+    // Ignore storage quota/privacy mode failures
+  }
+
+  // Mark optimistic dedupe immediately to avoid duplicate concurrent writes in React StrictMode
+  recordedProfileViewsToday.add(dedupeKey);
+
+  const compactDate = todayKey.replace(/-/g, '');
+  const viewId = `${viewer.uid}_${compactDate}_${Date.now().toString(36)}`
+    .replace(/[^a-zA-Z0-9_\-]/g, '_')
+    .slice(0, 128);
+  const path = `tutorProfiles/${targetTutorId}/profileViews/${viewId}`;
+
+  try {
+    await setDoc(doc(db, 'tutorProfiles', targetTutorId, 'profileViews', viewId), {
+      tutorId: targetTutorId,
+      viewerId: viewer.uid,
+      viewedDate: todayKey,
+      source: (source || 'profile').trim().slice(0, 64) || 'profile',
+      createdAt: serverTimestamp()
+    });
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(dedupeKey, '1');
+      }
+    } catch {
+      // Ignore storage write errors
+    }
+  } catch (error) {
+    recordedProfileViewsToday.delete(dedupeKey);
+    handleFirestoreError(error, OperationType.CREATE, path);
+  }
+}
+
 
 

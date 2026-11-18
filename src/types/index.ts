@@ -249,6 +249,16 @@ export interface Invitation {
   message: string;
   status: 'pending' | 'accepted' | 'declined';
   sentAt: string;
+  createdAt?: string;
+}
+
+export interface TutorProfileView {
+  id: string;
+  tutorId: string;
+  viewerId: string;
+  viewedDate: string;
+  source?: string;
+  createdAt?: string;
 }
 
 export interface VerificationQueueItem {

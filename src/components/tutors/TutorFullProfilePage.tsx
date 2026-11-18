@@ -8,17 +8,22 @@ import {
   Calendar,
   ChevronRight,
   Clock,
+  Edit3,
   ExternalLink,
   GraduationCap,
   MapPin,
   MessageCircle,
+  Search,
   Send,
   Share2,
   ShieldCheck,
+  Sparkles,
   Star,
+  Trophy,
   UserCheck
 } from 'lucide-react';
 import { trackAnalyticsEvent } from '../../utils/analytics';
+import { recordTutorProfileViewInFirestore } from '../../services/firebase';
 import { useApp } from '../../context/AppContext';
 import {
   TutorPrivateContact,
@@ -32,6 +37,7 @@ import {
   DEFAULT_TUTOR_WHATSAPP_MESSAGE
 } from '../../utils/contactLinks';
 import { buildTutorSharePayload } from '../../utils/shareLinks';
+import { computeTutorMilestones } from '../../utils/tutorBadges';
 import { ShareModal } from '../shared/ShareModal';
 import { TutorReviewsSection } from './TutorReviewsSection';
 
@@ -56,7 +62,9 @@ export const TutorFullProfilePage: React.FC = () => {
     setIsAuthModalOpen,
     setAuthModalMode,
     submitReport,
-    showToast
+    showToast,
+    setIsTutorSearchOpen,
+    language
   } = useApp();
 
   const tutor =
@@ -102,6 +110,16 @@ export const TutorFullProfilePage: React.FC = () => {
     getTutorContactInfo
   ]);
 
+  useEffect(() => {
+    if (!tutor || !isAuthenticated) return;
+    if (tutor.isPublished === false) return;
+    const targetId = tutor.uid || tutor.id;
+    if (!targetId || targetId === currentUser.id) return;
+    void recordTutorProfileViewInFirestore(targetId, 'full_profile').catch(() => {
+      // Non-blocking analytics write
+    });
+  }, [tutor?.id, tutor?.uid, tutor?.isPublished, isAuthenticated, currentUser.id]);
+
   if (!tutor) {
     return (
       <div className="min-h-[70vh] bg-[#FCFBFA] flex items-center justify-center px-4">
@@ -125,8 +143,14 @@ export const TutorFullProfilePage: React.FC = () => {
     );
   }
 
-  const verified = isTutorVerified(tutor);
+  const isBn = language === 'bn';
+  const milestones = computeTutorMilestones(tutor);
+  const verified = milestones.isGoldVerified || isTutorVerified(tutor);
   const isSaved = savedTutorIds.includes(tutor.id);
+  const isOwnProfile = Boolean(
+    isAuthenticated &&
+      (tutor.id === currentUser.id || (tutor.uid && tutor.uid === currentUser.id))
+  );
   const canWa = canViewTutorWhatsApp(tutor);
   const fbUrl = sanitizeFacebookUrl(privateContact?.facebookUrl || tutor.facebookUrl);
   const openMyPosts = tuitionPosts.filter(
@@ -236,7 +260,17 @@ export const TutorFullProfilePage: React.FC = () => {
             <span>Back to Tutors</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsTutorSearchOpen(true)}
+              className="h-10 px-3.5 sm:px-4 rounded-full bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B] text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer shadow-2xs"
+            >
+              <Search className="w-4 h-4 shrink-0" />
+              <span className="hidden sm:inline">{isBn ? 'অন্য টিউটর খুঁজুন' : 'Search Tutors'}</span>
+              <span className="sm:hidden">{isBn ? 'খুঁজুন' : 'Find'}</span>
+            </button>
+
             {currentRole === 'admin' && (
               <button
                 type="button"
@@ -256,18 +290,20 @@ export const TutorFullProfilePage: React.FC = () => {
               <span>Share</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => toggleSaveTutor(tutor.id)}
-              className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
-                isSaved
-                  ? 'bg-[#EB624B] text-white'
-                  : 'bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B]'
-              }`}
-            >
-              <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
-              <span>{isSaved ? 'Saved' : 'Save Tutor'}</span>
-            </button>
+            {!isOwnProfile && (
+              <button
+                type="button"
+                onClick={() => toggleSaveTutor(tutor.id)}
+                className={`h-10 px-4 rounded-full text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-all active:scale-[0.98] cursor-pointer shadow-2xs ${
+                  isSaved
+                    ? 'bg-[#EB624B] text-white'
+                    : 'bg-white/95 hover:bg-white border border-[#EFEAE7] text-[#18181B]'
+                }`}
+              >
+                <Bookmark className={`w-4 h-4 shrink-0 ${isSaved ? 'fill-white' : ''}`} />
+                <span>{isSaved ? 'Saved' : 'Save Tutor'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -323,9 +359,9 @@ export const TutorFullProfilePage: React.FC = () => {
                     {tutor.name}
                   </h1>
                   {verified && (
-                    <span className="inline-flex items-center gap-1 text-xs font-bold text-[#EB624B]">
-                      <BadgeCheck className="w-5 h-5 text-[#EB624B] shrink-0" />
-                      <span>Verified Tutor</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FEF3C7] border border-[#F59E0B]/40 text-xs font-extrabold text-[#92400E] shrink-0">
+                      <BadgeCheck className="w-4 h-4 text-[#D97706] fill-[#FDE68A] shrink-0" />
+                      <span>{isBn ? 'ভেরিফাইড টিউটর' : 'Verified Tutor'}</span>
                     </span>
                   )}
                 </div>
@@ -369,25 +405,38 @@ export const TutorFullProfilePage: React.FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row md:flex-col lg:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                disabled={openingWa}
-                onClick={handleWhatsAppClick}
-                className="h-11 px-6 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
-              >
-                <MessageCircle className="w-4 h-4 shrink-0" />
-                <span>{openingWa ? 'Opening...' : 'Message on WhatsApp'}</span>
-              </button>
-
-              {!canWa && (
+              {isOwnProfile ? (
                 <button
                   type="button"
-                  onClick={openInviteModal}
-                  className="h-11 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                  onClick={() => setActiveView('tutor-onboarding')}
+                  className="h-11 px-6 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
                 >
-                  <Send className="w-4 h-4 shrink-0" />
-                  <span>Send Invite</span>
+                  <Edit3 className="w-4 h-4 shrink-0" />
+                  <span>{isBn ? 'প্রোফাইল এডিট করুন' : 'Edit My Profile'}</span>
                 </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    disabled={openingWa}
+                    onClick={handleWhatsAppClick}
+                    className="h-11 px-6 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-sm font-semibold inline-flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                    <span>{openingWa ? 'Opening...' : 'Message on WhatsApp'}</span>
+                  </button>
+
+                  {!canWa && (
+                    <button
+                      type="button"
+                      onClick={openInviteModal}
+                      className="h-11 px-5 rounded-full bg-[#EB624B] hover:bg-[#DC533D] text-white text-sm font-bold inline-flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer whitespace-nowrap"
+                    >
+                      <Send className="w-4 h-4 shrink-0" />
+                      <span>Send Invite</span>
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -437,31 +486,131 @@ export const TutorFullProfilePage: React.FC = () => {
                 <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF] space-y-1.5">
                   <div className="text-xs font-semibold text-[#6B6B6B]">Subjects Taught</div>
                   <div className="font-semibold text-[#18181B] leading-relaxed">
-                    {tutor.subjects.join(', ')}
+                    {tutor.subjects.length > 0 ? tutor.subjects.join(', ') : 'General Academic Mentoring'}
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#EFEAFF] border border-[#E1D8FF] space-y-1.5">
                   <div className="text-xs font-semibold text-[#52525B]">Classes & Levels</div>
                   <div className="font-semibold text-[#18181B] leading-relaxed">
-                    {tutor.classes.join(', ')}
+                    {tutor.classes.length > 0 ? tutor.classes.join(', ') : 'All School & College Levels'}
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#EFF6FF] border border-[#DCEBFA] space-y-1.5">
                   <div className="text-xs font-semibold text-[#52525B]">Education Mediums</div>
                   <div className="font-semibold text-[#18181B] leading-relaxed">
-                    {tutor.mediums.join(', ')}
+                    {tutor.mediums.length > 0 ? tutor.mediums.join(', ') : 'Bangla & English Medium'}
                   </div>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-[#FFF4D6] border border-[#F8E4AE] space-y-1.5">
                   <div className="text-xs font-semibold text-[#52525B]">Tuition Modes</div>
                   <div className="font-semibold text-[#18181B] leading-relaxed">
-                    {tutor.tuitionTypes.join(', ')}
+                    {tutor.tuitionTypes.length > 0 ? tutor.tuitionTypes.join(', ') : 'Home & Online Tuition'}
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* Achievements & Trust Badges */}
+            <section
+              aria-labelledby="tutor-achievements-heading"
+              className="ivory-card p-5 sm:p-6 space-y-4"
+            >
+              <div className="flex items-center justify-between gap-3">
+                <h2
+                  id="tutor-achievements-heading"
+                  className="font-display text-lg font-extrabold text-[#18181B] flex items-center gap-2"
+                >
+                  <Trophy className="w-5 h-5 text-[#D97706] shrink-0" />
+                  <span>{isBn ? 'অ্যাচিভমেন্ট ও ট্রাস্ট ব্যাজ' : 'Achievements & Trust Badges'}</span>
+                </h2>
+                <span className="text-xs font-semibold text-[#6B6B6B] tabular-nums">
+                  {milestones.badges.length + (tutor.achievements?.length || 0)}{' '}
+                  {isBn ? 'টি অর্জন' : 'earned'}
+                </span>
+              </div>
+
+              {milestones.badges.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {milestones.badges.map(badge => {
+                    const toneClasses =
+                      badge.tone === 'gold'
+                        ? 'bg-[#FEF3C7]/75 border-[#F59E0B]/40'
+                        : badge.tone === 'coral'
+                          ? 'bg-[#FFF6F3] border-[#F5E4DF]'
+                          : badge.tone === 'sky'
+                            ? 'bg-[#DCEBFA]/70 border-[#C6DDF5]'
+                            : badge.tone === 'emerald'
+                              ? 'bg-emerald-50/80 border-emerald-200'
+                              : 'bg-[#EFEAFF]/75 border-[#E1D8FF]';
+                    const Icon =
+                      badge.kind === 'verified'
+                        ? BadgeCheck
+                        : badge.kind === 'top-rated'
+                          ? Star
+                          : badge.kind === 'super-tutor'
+                            ? Sparkles
+                            : Award;
+                    const iconClass =
+                      badge.tone === 'gold'
+                        ? 'text-[#D97706] fill-[#FDE68A]'
+                        : badge.tone === 'coral'
+                          ? 'text-[#EB624B]'
+                          : badge.tone === 'emerald'
+                            ? 'text-[#15803D]'
+                            : 'text-[#7C5DFA]';
+
+                    return (
+                      <div
+                        key={badge.id}
+                        className={`p-4 rounded-2xl border ${toneClasses} flex items-start gap-3`}
+                      >
+                        <div className="w-9 h-9 rounded-full bg-white border border-[#EFEAE7] flex items-center justify-center shrink-0">
+                          <Icon className={`w-4 h-4 ${iconClass}`} />
+                        </div>
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="font-display text-sm font-extrabold text-[#18181B]">
+                            {isBn ? badge.titleBn : badge.title}
+                          </div>
+                          <p className="text-xs text-[#52525B] leading-relaxed">
+                            {isBn ? badge.descriptionBn : badge.description}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-[#F8F6F5] border border-[#EFEAE7] flex items-center gap-3 text-xs text-[#52525B]">
+                  <ShieldCheck className="w-4 h-4 text-[#EB624B] shrink-0" />
+                  <span>
+                    {isBn
+                      ? 'এই টিউটর এখনো আনুষ্ঠানিক ভেরিফিকেশন বা রেটিং ব্যাজ আনলক করার প্রক্রিয়ায় আছেন।'
+                      : 'Active community tutor — badges unlock as identity verification, student ratings, and completed tuitions are confirmed.'}
+                  </span>
+                </div>
+              )}
+
+              {tutor.achievements && tutor.achievements.length > 0 && (
+                <div className="p-4 rounded-2xl bg-[#DCEBFA]/55 border border-[#C6DDF5] space-y-2">
+                  <div className="text-xs font-bold text-[#18181B] flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-[#EB624B]" />
+                    <span>{isBn ? 'একাডেমিক সম্মাননা ও কৃতিত্ব' : 'Academic Honors & Milestones'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {tutor.achievements.map(item => (
+                      <span
+                        key={item}
+                        className="px-3 py-1 rounded-xl bg-white border border-[#C6DDF5] text-xs font-semibold text-[#18181B]"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
 
             {/* Full Educational Background */}
@@ -474,9 +623,15 @@ export const TutorFullProfilePage: React.FC = () => {
               <div className="space-y-3 text-sm">
                 <div className="p-4 rounded-2xl bg-[#FFF6F3] border border-[#F5E4DF] space-y-1">
                   <div className="text-xs font-bold text-[#EB624B]">University</div>
-                  <div className="font-bold text-[#18181B]">{tutor.university}</div>
+                  <div className="font-bold text-[#18181B]">{tutor.university || 'University Student / Graduate'}</div>
                   <div className="text-xs sm:text-sm text-[#52525B]">
-                    {[tutor.degree, tutor.department, tutor.academicYear, tutor.semester]
+                    {[
+                      tutor.degree,
+                      tutor.department,
+                      tutor.academicYear,
+                      tutor.semester,
+                      tutor.passingYear ? `Passing ${tutor.passingYear}` : ''
+                    ]
                       .filter(Boolean)
                       .join(' · ')}
                   </div>
@@ -552,10 +707,12 @@ export const TutorFullProfilePage: React.FC = () => {
                   <MapPin className="w-4 h-4 text-[#F47C68] shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold text-[#252525]">
-                      {tutor.district}, {tutor.division}
+                      {[tutor.upazila, tutor.district, tutor.division].filter(Boolean).join(', ')}
                     </div>
                     <div className="text-[#858585] leading-relaxed mt-0.5">
-                      {tutor.preferredAreas.join(', ')}
+                      {tutor.preferredAreas.length > 0
+                        ? tutor.preferredAreas.join(', ')
+                        : tutor.district}
                     </div>
                   </div>
                 </div>
@@ -565,7 +722,9 @@ export const TutorFullProfilePage: React.FC = () => {
                   <div>
                     <div className="font-semibold text-[#252525]">Weekly Availability</div>
                     <div className="text-[#858585]">
-                      {tutor.daysPerWeek.join('–')} days per week
+                      {tutor.daysPerWeek.length > 0
+                        ? `${tutor.daysPerWeek.join('–')} days per week`
+                        : 'Flexible weekly schedule'}
                     </div>
                   </div>
                 </div>
@@ -600,15 +759,26 @@ export const TutorFullProfilePage: React.FC = () => {
               </div>
 
               <div className="border-t border-[#F1E1DC] pt-4 space-y-2.5">
-                <button
-                  type="button"
-                  disabled={openingWa}
-                  onClick={handleWhatsAppClick}
-                  className="w-full h-11 px-5 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
-                >
-                  <MessageCircle className="w-4 h-4 shrink-0" />
-                  <span>{openingWa ? 'Opening...' : 'Contact via WhatsApp'}</span>
-                </button>
+                {isOwnProfile ? (
+                  <button
+                    type="button"
+                    onClick={() => setActiveView('tutor-onboarding')}
+                    className="w-full h-11 px-5 rounded-full bg-[#18181B] hover:bg-[#27272A] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 shrink-0" />
+                    <span>{isBn ? 'প্রোফাইল এডিট করুন' : 'Edit My Profile'}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={openingWa}
+                    onClick={handleWhatsAppClick}
+                    className="w-full h-11 px-5 rounded-full bg-[#15803D] hover:bg-[#166534] text-white text-sm font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4 shrink-0" />
+                    <span>{openingWa ? 'Opening...' : 'Contact via WhatsApp'}</span>
+                  </button>
+                )}
 
                 {fbUrl && (
                   <a
@@ -622,22 +792,24 @@ export const TutorFullProfilePage: React.FC = () => {
                   </a>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() =>
-                    submitReport({
-                      reportedItemType: 'tutor',
-                      targetTitle: `${tutor.name} (${tutor.university})`,
-                      targetId: tutor.id,
-                      reportedBy: currentUser.name,
-                      reportedById: currentUser.id,
-                      reason: 'Reported from Full Tutor Profile'
-                    })
-                  }
-                  className="w-full py-2 text-xs text-[#858585] hover:text-[#252525] hover:underline cursor-pointer text-center"
-                >
-                  Report this profile
-                </button>
+                {!isOwnProfile && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      submitReport({
+                        reportedItemType: 'tutor',
+                        targetTitle: `${tutor.name} (${tutor.university})`,
+                        targetId: tutor.id,
+                        reportedBy: currentUser.name,
+                        reportedById: currentUser.id,
+                        reason: 'Reported from Full Tutor Profile'
+                      })
+                    }
+                    className="w-full py-2 text-xs text-[#858585] hover:text-[#252525] hover:underline cursor-pointer text-center"
+                  >
+                    Report this profile
+                  </button>
+                )}
               </div>
             </div>
           </aside>

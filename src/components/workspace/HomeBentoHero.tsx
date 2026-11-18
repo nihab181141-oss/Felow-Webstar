@@ -16,7 +16,7 @@ import { useApp } from '../../context/AppContext';
 import { BD_DISTRICTS_BY_DIVISION } from '../../data/bangladeshData';
 import { DEFAULT_PLACEHOLDER_AVATAR, TuitionPost, TutorProfile, isTutorVerified } from '../../types';
 import { getLocationByDistrict } from '../../utils/routing';
-import { matchesTutorSearchQuery, scoreTutorSearchMatch } from '../../utils/tutorSearch';
+import { filterAndRankTutors } from '../../utils/tutorSearch';
 import heroTutorBento from '../../assets/images/hero_tutor_bento_1794837005690.jpg';
 
 const ALL_DISTRICTS = Array.from(new Set(Object.values(BD_DISTRICTS_BY_DIVISION).flat())).sort();
@@ -72,7 +72,8 @@ export const HomeBentoHero: React.FC<HomeBentoHeroProps> = ({
     openCreateTuitionModal,
     setIsAuthModalOpen,
     setAuthModalMode,
-    activateDualRole
+    setIsTutorSearchOpen,
+    openLoginForPortal
   } = useApp();
 
   const isBn = language === 'bn';
@@ -95,14 +96,16 @@ export const HomeBentoHero: React.FC<HomeBentoHeroProps> = ({
     [tutors]
   );
 
-  const quickMatchedTutors = React.useMemo(() => {
+  const allQuickMatchedTutors = React.useMemo(() => {
     const trimmed = searchQuery.trim();
     if (!trimmed) return [];
-    return publishedTutors
-      .filter(t => matchesTutorSearchQuery(t, trimmed))
-      .sort((a, b) => scoreTutorSearchMatch(b, trimmed) - scoreTutorSearchMatch(a, trimmed))
-      .slice(0, 5);
+    return filterAndRankTutors(publishedTutors, trimmed);
   }, [publishedTutors, searchQuery]);
+
+  const quickMatchedTutors = React.useMemo(
+    () => allQuickMatchedTutors.slice(0, 6),
+    [allQuickMatchedTutors]
+  );
 
   const openTuitions = React.useMemo(
     () => tuitionPosts.filter(p => p.status === 'open'),
@@ -142,16 +145,11 @@ export const HomeBentoHero: React.FC<HomeBentoHeroProps> = ({
   };
 
   const handleTutorAction = async () => {
-    if (!isAuthenticated) {
-      setAuthModalMode('register');
-      setIsAuthModalOpen(true);
-      return;
-    }
-    if (currentRole === 'tutor') {
+    if (isAuthenticated && currentRole === 'tutor') {
       setActiveView('dashboard');
       return;
     }
-    await activateDualRole('tutor');
+    await openLoginForPortal('tutor', 'register');
   };
 
   return (
@@ -275,19 +273,29 @@ export const HomeBentoHero: React.FC<HomeBentoHeroProps> = ({
                   <div className="px-3.5 py-2 bg-[#F8F6F5] border-b border-[#EFEAE7] flex items-center justify-between text-[11px] font-bold text-[#52525B]">
                     <span>
                       {isBn
-                        ? `টিউটর অ্যাকাউন্ট (${quickMatchedTutors.length})`
-                        : `Matching Tutor Profiles (${quickMatchedTutors.length})`}
+                        ? `টিউটর অ্যাকাউন্ট (${allQuickMatchedTutors.length})`
+                        : `Matching Tutor Profiles (${allQuickMatchedTutors.length})`}
                     </span>
                     <button
                       type="button"
                       onClick={() => {
                         setHeroSearchFocused(false);
-                        setDirectoryTab('tutors');
-                        onScrollToDirectory();
+                        if (allQuickMatchedTutors.length > quickMatchedTutors.length) {
+                          setIsTutorSearchOpen(true);
+                        } else {
+                          setDirectoryTab('tutors');
+                          onScrollToDirectory();
+                        }
                       }}
                       className="text-[#C94A35] hover:underline cursor-pointer"
                     >
-                      {isBn ? 'সব দেখুন →' : 'See all →'}
+                      {allQuickMatchedTutors.length > quickMatchedTutors.length
+                        ? isBn
+                          ? `সব ${allQuickMatchedTutors.length} জন দেখুন →`
+                          : `See all ${allQuickMatchedTutors.length} →`
+                        : isBn
+                          ? 'সব দেখুন →'
+                          : 'See all →'}
                     </button>
                   </div>
                   {quickMatchedTutors.length === 0 ? (

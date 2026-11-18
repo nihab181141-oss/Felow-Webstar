@@ -67,7 +67,7 @@ export const TuitionBentoHero: React.FC<TuitionBentoHeroProps> = ({
     openCreateTuitionModal,
     setIsAuthModalOpen,
     setAuthModalMode,
-    activateDualRole
+    openLoginForPortal
   } = useApp();
 
   const isBn = language === 'bn';
@@ -99,16 +99,11 @@ export const TuitionBentoHero: React.FC<TuitionBentoHeroProps> = ({
   };
 
   const handleTutorAction = async () => {
-    if (!isAuthenticated) {
-      setAuthModalMode('register');
-      setIsAuthModalOpen(true);
-      return;
-    }
-    if (currentRole === 'tutor') {
+    if (isAuthenticated && currentRole === 'tutor') {
       setActiveView('dashboard');
       return;
     }
-    await activateDualRole('tutor');
+    await openLoginForPortal('tutor', 'register');
   };
 
   return (

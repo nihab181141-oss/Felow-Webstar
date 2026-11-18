@@ -8,6 +8,8 @@ import { SeoHead } from './components/seo/SeoHead';
 import { PublicFooter } from './components/shared/PublicFooter';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { OfflineBanner } from './components/shared/OfflineBanner';
+import { TutorAccountSearchModal } from './components/shared/TutorAccountSearchModal';
+import { UserManualModal } from './components/shared/UserManualModal';
 import { CheckCircle2, Info, AlertCircle } from 'lucide-react';
 
 // Lazy-load secondary full-page views and modals for fast initial landing paint
@@ -173,6 +175,8 @@ const MainAppContent: React.FC = () => {
           />
         )}
       </Suspense>
+      <TutorAccountSearchModal />
+      <UserManualModal />
       <AuthModal />
 
       {toast && (
