@@ -206,9 +206,9 @@ export const SeoHead: React.FC = () => {
         ? tuitionPosts.find(p => p.id === selectedTuition?.id) || selectedTuition || null
         : null;
 
-    let title = 'FeLoW WebStaR | Find Tutors & Tuition in Bangladesh';
+    let title = 'FeLoW WebStaR (Fellow Webstar) | Find Tutors & Home Tuition in Bangladesh';
     let description =
-      'Find tutors and tuition opportunities across Bangladesh with FeLoW WebStaR. Discover tutor profiles, explore tuition listings, and connect directly through WhatsApp.';
+      'Find verified home and online university tutors across Bangladesh with FeLoW WebStaR (Fellow Webstar). Discover tutor profiles, explore open tuition jobs, and connect directly via WhatsApp.';
     let canonical: string | null = `${PRODUCTION_BASE_URL}/`;
     let robots = 'index, follow';
     let ogType = 'website';
@@ -540,6 +540,7 @@ export const SeoHead: React.FC = () => {
 
     document.title = title;
     upsertMeta('name', 'description', description);
+    upsertMeta('name', 'keywords', 'FeLoW WebStaR, Fellow Webstar, home tutor Bangladesh, online tuition, university tutors Dhaka, Chattogram tutors, tuition matching, student guardian portal');
     upsertMeta('name', 'robots', robots);
     upsertCanonical(canonical);
 
